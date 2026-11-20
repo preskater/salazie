@@ -34,6 +34,10 @@ Le joueur doit réussir toutes les tâches d’une map pour passer à la génér
 2. Cultiver et vendre comme cultivateur.
 3. Résoudre les problèmes comme héritier.
 
+## Cycle jour/nuit
+
+Chaque map alterne une phase de jour et une phase de nuit. Le nombre de nuits à passer avant de pouvoir rejoindre la map suivante est configurable dans `game/world/DayNightCycle.tscn`, via la propriété entière `nights_required_for_next_map`. Une nuit n'est comptée qu'une fois entièrement écoulée ; le signal `ready_for_next_map` est alors émis.
+
 ## Objectif final
 
 Le but du jeu est de traverser les trois générations et de devenir maire de Salazie.
