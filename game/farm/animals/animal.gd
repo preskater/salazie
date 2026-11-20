@@ -8,6 +8,11 @@ const DIRECTIONS := ["right", "up", "left", "down"]
 @export var cell_size := Vector2i(48, 48)
 @export var walk_row := 1
 @export var graze_row := 3
+## Frames per direction in each row. Chicken and rooster sheets only have two
+## frames in the eat row, so reading six slices empty cells and the animal
+## disappears.
+@export var walk_frames := 6
+@export var graze_frames := 6
 @export var move_speed := 24.0
 @export var roam_rect := Rect2()
 @export var graze_time := Vector2(2.5, 6.0)
@@ -72,22 +77,34 @@ func _play(anim: String) -> void:
 	sprite.play(anim)
 
 func _frames() -> SpriteFrames:
-	var key := "%s|%d|%d|%d|%d" % [sheet.resource_path, cell_size.x, cell_size.y, walk_row, graze_row]
+	var key := "%s|%d|%d|%d|%d|%d|%d" % [
+		sheet.resource_path, cell_size.x, cell_size.y,
+		walk_row, graze_row, walk_frames, graze_frames]
 	if _frame_cache.has(key):
 		return _frame_cache[key]
+
 	var frames := SpriteFrames.new()
-	for row_info in [["walk", walk_row, 10.0], ["graze", graze_row, 5.0]]:
-		for d in DIRECTIONS.size():
-			var anim := "%s_%s" % [row_info[0], DIRECTIONS[d]]
-			frames.add_animation(anim)
-			frames.set_animation_loop(anim, true)
-			frames.set_animation_speed(anim, row_info[2])
-			for i in 6:
-				var atlas := AtlasTexture.new()
-				atlas.atlas = sheet
-				atlas.region = Rect2((d * 6 + i) * cell_size.x, int(row_info[1]) * cell_size.y,
-					cell_size.x, cell_size.y)
-				frames.add_frame(anim, atlas)
+	_add_directional_animation(frames, "walk", walk_row, walk_frames, 10.0)
+	_add_directional_animation(frames, "graze", graze_row, graze_frames, 5.0)
 	frames.remove_animation("default")
 	_frame_cache[key] = frames
 	return frames
+
+
+func _add_directional_animation(
+		frames: SpriteFrames, prefix: String, row: int, frame_count: int, speed: float) -> void:
+	var count := maxi(1, frame_count)
+	for d in DIRECTIONS.size():
+		var anim := "%s_%s" % [prefix, DIRECTIONS[d]]
+		frames.add_animation(anim)
+		frames.set_animation_loop(anim, true)
+		frames.set_animation_speed(anim, speed)
+		for i in count:
+			var atlas := AtlasTexture.new()
+			atlas.atlas = sheet
+			atlas.region = Rect2(
+				(d * count + i) * cell_size.x,
+				row * cell_size.y,
+				cell_size.x,
+				cell_size.y)
+			frames.add_frame(anim, atlas)

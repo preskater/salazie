@@ -109,3 +109,39 @@ func test_npc_turns_to_face_a_nearby_player() -> void:
 	var sprite: AnimatedSprite2D = npc.get_node("AnimatedSprite2D")
 
 	assert_str(String(sprite.animation)).is_equal("idle_right")
+
+
+func test_chicken_graze_row_uses_two_frames_per_direction() -> void:
+	var sheet: Texture2D = load(CHICKEN_SHEET)
+	var animal: Node2D = auto_free(load(ANIMAL_SCENE).instantiate())
+	animal.set("sheet", sheet)
+	animal.set("cell_size", Vector2i(48, 48))
+	animal.set("graze_frames", 2)
+	add_child(animal)
+	var sprite: AnimatedSprite2D = animal.get_node("AnimatedSprite2D")
+
+	for direction in DIRECTIONS:
+		var graze := "graze_%s" % direction
+		assert_int(sprite.sprite_frames.get_frame_count(graze)).is_equal(2)
+		for i in 2:
+			var atlas := sprite.sprite_frames.get_frame_texture(graze, i) as AtlasTexture
+			assert_object(atlas) \
+				.override_failure_message("Missing %s frame %d" % [graze, i]).is_not_null()
+			if atlas == null:
+				continue
+			assert_float(atlas.region.end.x) \
+				.override_failure_message("%s frame %d is outside the sheet" % [graze, i]) \
+				.is_less_equal(float(sheet.get_width()))
+
+
+func test_cow_graze_keeps_six_frames_per_direction() -> void:
+	var sheet: Texture2D = load(
+		"res://assets/farm_48x48/animals/Cows_48x48/Cow_Big_White_48x48.png")
+	var animal: Node2D = auto_free(load(ANIMAL_SCENE).instantiate())
+	animal.set("sheet", sheet)
+	animal.set("cell_size", Vector2i(144, 144))
+	add_child(animal)
+	var sprite: AnimatedSprite2D = animal.get_node("AnimatedSprite2D")
+
+	for direction in DIRECTIONS:
+		assert_int(sprite.sprite_frames.get_frame_count("graze_" + direction)).is_equal(6)
