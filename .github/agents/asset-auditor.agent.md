@@ -1,0 +1,1 @@
+../../.agent/agents/asset-auditor.md

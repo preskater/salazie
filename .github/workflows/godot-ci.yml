@@ -1,0 +1,146 @@
+name: Godot CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+concurrency:
+  group: godot-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GODOT_VERSION: "4.7.2"
+
+jobs:
+  test:
+    name: Unit tests (gdUnit4)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Cache Godot imports
+        uses: actions/cache@v6
+        with:
+          path: .godot
+          key: ${{ runner.os }}-godot-${{ env.GODOT_VERSION }}-${{ hashFiles('project.godot', 'game/**', 'assets/**/*.import', 'icon.svg*') }}
+          restore-keys: |
+            ${{ runner.os }}-godot-${{ env.GODOT_VERSION }}-
+
+      - name: Run gdUnit4 tests
+        uses: godot-gdunit-labs/gdUnit4-action@v1
+        with:
+          godot-version: ${{ env.GODOT_VERSION }}
+          paths: res://tests
+          timeout: 15
+          publish-report: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+
+  prepare:
+    name: Prepare imports
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Cache Godot imports
+        uses: actions/cache@v6
+        with:
+          path: .godot
+          key: ${{ runner.os }}-godot-${{ env.GODOT_VERSION }}-${{ hashFiles('project.godot', 'game/**', 'assets/**/*.import', 'icon.svg*') }}
+          restore-keys: |
+            ${{ runner.os }}-godot-${{ env.GODOT_VERSION }}-
+
+      - name: Setup Godot
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: ${{ env.GODOT_VERSION }}
+          use-dotnet: false
+          include-templates: true
+
+      - name: Import project
+        run: godot --headless --import
+
+      - name: Smoke test main scene
+        run: timeout 60s godot --headless --quit-after 5 --audio-driver Dummy
+
+  build:
+    name: Export ${{ matrix.name }}
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux
+            preset: Linux
+            output: export/linux/salazie.x86_64
+            artifact: salazie-linux-x86_64
+            upload: export/linux/
+          - name: Windows
+            preset: Windows Desktop
+            output: export/windows/salazie.exe
+            artifact: salazie-windows-x86_64
+            upload: export/windows/
+          - name: macOS
+            preset: macOS
+            output: export/macos/salazie.zip
+            artifact: salazie-macos-universal
+            upload: export/macos/
+          - name: Web
+            preset: Web
+            output: export/web/index.html
+            artifact: salazie-web
+            upload: export/web/
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Cache Godot imports
+        uses: actions/cache@v6
+        with:
+          path: .godot
+          key: ${{ runner.os }}-godot-${{ env.GODOT_VERSION }}-${{ hashFiles('project.godot', 'game/**', 'assets/**/*.import', 'icon.svg*') }}
+          restore-keys: |
+            ${{ runner.os }}-godot-${{ env.GODOT_VERSION }}-
+
+      - name: Setup Godot
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: ${{ env.GODOT_VERSION }}
+          use-dotnet: false
+          include-templates: true
+
+      - name: Import project
+        run: godot --headless --import
+
+      - name: Export ${{ matrix.name }}
+        run: |
+          mkdir -p "$(dirname "${{ matrix.output }}")"
+          godot --headless --export-release "${{ matrix.preset }}" "${{ matrix.output }}"
+          test -f "${{ matrix.output }}"
+
+      - name: Package Linux
+        if: matrix.name == 'Linux'
+        run: tar -czf export/linux/salazie-linux-x86_64.tar.gz -C export/linux salazie.x86_64
+
+      - name: Upload ${{ matrix.name }} build
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.upload }}
+          if-no-files-found: error
+          retention-days: 7
