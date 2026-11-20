@@ -94,6 +94,7 @@
 [ext_resource type="Script" path="res://game/world/ambient_leaves.gd" id="89_lg7yc"]
 [ext_resource type="SpriteFrames" path="res://game/world/animations/Leaves_Yellow.tres" id="90_kf6ga"]
 [ext_resource type="SpriteFrames" path="res://game/world/animations/Leaves_Brown.tres" id="91_72rhk"]
+[ext_resource type="PackedScene" uid="uid://bqgrdlxcwts1a" path="res://game/world/ai/guard/guard.tscn" id="90_guard"]
 
 [sub_resource type="CompressedTexture2D" id="CompressedTexture2D_0ihjh"]
 load_path = "res://.godot/imported/Grass_Tufts_Flowers_48x48_7.png-665486e6692db37089ced1fdc493de7e.ctex"
@@ -1277,7 +1278,6 @@ offset = Vector2(0, -24)
 
 [node name="Player2" type="CharacterBody2D" parent="World" unique_id=17329257 instance=ExtResource("69_ranji")]
 position = Vector2(2280, 3168)
-scale = Vector2(3, 3)
 motion_mode = 1
 script = ExtResource("71_2vfb2")
 camera_zoom = 1.0
@@ -6392,6 +6392,10 @@ spin = 3.0
 eject_radius = 42.0
 eject_spin = 1.5
 eject_grace = 0.9
+
+[node name="Guard" parent="World" unique_id=796544600 instance=ExtResource("90_guard")]
+position = Vector2(3439, 2526)
+zone_size = Vector2(180, 120)
 
 [node name="PlayerSpawn" type="Marker2D" parent="." unique_id=407921640]
 position = Vector2(2280, 3168)
