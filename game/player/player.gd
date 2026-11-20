@@ -9,7 +9,7 @@ var last_direction := Vector2.DOWN
 func _physics_process(delta: float) -> void:
 	var direction = Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	
-	velocity = direction * SPEED * delta
+	velocity = direction * SPEED
 
 	if direction.length() > 0:
 		last_direction = direction
