@@ -1,16 +1,31 @@
 extends CharacterBody2D
 
 @onready var ANIMATIONS = $Sprite2D
+@onready var camera: Camera2D = $Camera2D
 
 @export var SPEED = 300.0
 @export var KNOCKBACK_DECAY := 900.0 
+@export var camera_zoom := 3.0
+@export var camera_limits := Rect2i()      # vide = pas de limite
+@export var sprite_scale := 1.0      # 1 = monde 16px, 3 = monde 48px
 
 var knockback := Vector2.ZERO
 var control_lock := 0.0
 
-const JUMP_VELOCITY = -400.0
 var last_direction := Vector2.DOWN
 var wind := Vector2.ZERO
+
+func _ready() -> void:
+	ANIMATIONS.scale = Vector2.ONE * sprite_scale
+	ANIMATIONS.position = Vector2(0, -16.0 * sprite_scale)
+	camera.position = Vector2(0, -16.0 * sprite_scale)
+	
+	camera.zoom = Vector2.ONE * camera_zoom
+	if camera_limits.size != Vector2i.ZERO:
+		camera.limit_left   = camera_limits.position.x
+		camera.limit_top    = camera_limits.position.y
+		camera.limit_right  = camera_limits.end.x
+		camera.limit_bottom = camera_limits.end.y
 
 func _physics_process(delta: float) -> void:
 	var input_dir = Input.get_vector("move_left", "move_right", "move_up", "move_down")

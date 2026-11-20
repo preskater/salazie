@@ -311,7 +311,7 @@ animations = [{
 }],
 "loop": 1,
 "name": &"walk_down",
-"speed": 10.0
+"speed": 5.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -334,7 +334,7 @@ animations = [{
 }],
 "loop": 1,
 "name": &"walk_left",
-"speed": 10.0
+"speed": 5.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -357,7 +357,7 @@ animations = [{
 }],
 "loop": 1,
 "name": &"walk_right",
-"speed": 10.0
+"speed": 5.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -380,7 +380,7 @@ animations = [{
 }],
 "loop": 1,
 "name": &"walk_up",
-"speed": 10.0
+"speed": 5.0
 }]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_5ghna"]
@@ -388,18 +388,21 @@ radius = 5.0
 height = 12.0
 
 [node name="Player" type="CharacterBody2D" unique_id=17329257]
+motion_mode = 1
 script = ExtResource("1_obar5")
 
 [node name="Sprite2D" type="AnimatedSprite2D" parent="." unique_id=1933368045]
 position = Vector2(0, -16)
 sprite_frames = SubResource("SpriteFrames_gp052")
-animation = &"idle_down"
-frame_progress = 0.10675829
-
-[node name="Camera2D" type="Camera2D" parent="." unique_id=761522993]
-zoom = Vector2(3, 3)
+animation = &"walk_up"
+frame_progress = 0.053041432
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1183153737]
 position = Vector2(0, -5)
 rotation = 1.5707964
 shape = SubResource("CapsuleShape2D_5ghna")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=2099787241]
+position = Vector2(0, -16)
+position_smoothing_enabled = true
+position_smoothing_speed = 12.0
