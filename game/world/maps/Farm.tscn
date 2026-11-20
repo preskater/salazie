@@ -69,6 +69,7 @@
 [ext_resource type="Texture2D" uid="uid://cmxricrkrck7s" path="res://assets/farm_48x48/singles/Props_and_Buildings/Grass_Tufts_Flowers_48x48_10.png" id="67_jlpwn"]
 [ext_resource type="Texture2D" uid="uid://cf5tm4jngq7b5" path="res://assets/farm_48x48/singles/Props_and_Buildings/Grass_Tufts_Flowers_48x48_11.png" id="68_7neas"]
 [ext_resource type="PackedScene" uid="uid://ua626s0cynio" path="res://game/player/player.tscn" id="69_ranji"]
+[ext_resource type="PackedScene" uid="uid://dvj4qrlxnbvrl" path="res://game/world/fx/Cyclone.tscn" id="70_0ihjh"]
 
 [sub_resource type="CompressedTexture2D" id="CompressedTexture2D_0ihjh"]
 load_path = "res://.godot/imported/Grass_Tufts_Flowers_48x48_7.png-665486e6692db37089ced1fdc493de7e.ctex"
@@ -1690,6 +1691,17 @@ position = Vector2(2280, 3168)
 scale = Vector2(3, 3)
 camera_zoom = 1.0
 camera_limits = Rect2i(0, 0, 4608, 3264)
+
+[node name="Cyclone" parent="World" unique_id=1240383706 instance=ExtResource("70_0ihjh")]
+position = Vector2(2285, 2727)
+scale = Vector2(3, 3)
+pull_radius = 300.0
+pull_speed = 1200.0
+swirl_speed = 900.0
+spin = 3.0
+eject_radius = 42.0
+eject_spin = 1.5
+eject_grace = 0.9
 
 [node name="PlayerSpawn" type="Marker2D" parent="." unique_id=407921640]
 position = Vector2(2280, 3168)
