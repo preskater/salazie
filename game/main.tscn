@@ -2,6 +2,7 @@
 
 [ext_resource type="PackedScene" uid="uid://ua626s0cynio" path="res://game/player/player.tscn" id="1_oa506"]
 [ext_resource type="PackedScene" uid="uid://dvj4qrlxnbvrl" path="res://game/world/fx/Cyclone.tscn" id="2_cyclone"]
+[ext_resource type="PackedScene" path="res://game/ui/hud/hud.tscn" id="3_hud"]
 
 [node name="Main" type="Node2D" unique_id=1747024271]
 
@@ -10,3 +11,5 @@ position = Vector2(573, 322)
 
 [node name="Cyclone" parent="." unique_id=83232216 instance=ExtResource("2_cyclone")]
 position = Vector2(420, 260)
+
+[node name="HUD" parent="." instance=ExtResource("3_hud")]
