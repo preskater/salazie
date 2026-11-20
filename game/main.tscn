@@ -4,7 +4,7 @@
 [ext_resource type="PackedScene" uid="uid://dvj4qrlxnbvrl" path="res://game/world/fx/Cyclone.tscn" id="2_cyclone"]
 [ext_resource type="PackedScene" path="res://game/ui/hud/hud.tscn" id="3_hud"]
 
-[node name="Main" type="Node2D" unique_id=1747024271]
+[node name="Main" type="Node2D" groups=["gameplay"] unique_id=1747024271]
 
 [node name="Player" parent="." unique_id=17329257 instance=ExtResource("1_oa506")]
 position = Vector2(573, 322)

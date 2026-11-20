@@ -1,6 +1,12 @@
 class_name FarmHUD
 extends CanvasLayer
 
+const TEXT_DARK := Color(0.22, 0.14, 0.08)
+const TEXT_MUTED := Color(0.46, 0.38, 0.3)
+const TEXT_ACCENT := Color(0.45, 0.24, 0.04)
+const POSITIVE := Color(0.12, 0.42, 0.16)
+const NEGATIVE := Color(0.62, 0.14, 0.1)
+
 @onready var money_label: Label = %MoneyLabel
 @onready var day_label: Label = %DayLabel
 @onready var prices_panel: PanelContainer = %PricesPanel
@@ -111,6 +117,9 @@ func close_inventory() -> void:
 	get_tree().paused = false
 
 func _unhandled_input(event: InputEvent) -> void:
+	# Another system (the pause menu) owns the paused tree: keep HUD toggles closed.
+	if get_tree().paused and not _market_open and not _inventory_open:
+		return
 	if _market_open:
 		if event.is_action_pressed("ui_cancel"):
 			close_market()
@@ -199,14 +208,14 @@ func _refresh_inventory_popup() -> void:
 		var produce: Label = _produce_labels[crop]
 		produce.text = "%s : %d" % [name, count]
 		produce.add_theme_color_override("font_color",
-			Color(0.94, 0.92, 0.84) if count > 0 else Color(0.5, 0.5, 0.46))
+			TEXT_DARK if count > 0 else TEXT_MUTED)
 		var seeds := GameState.seed_count(crop)
 		var selected := crop == GameState.selected_seed
 		var plural := "graines" if seeds > 1 else "graine"
 		var button: Button = _seed_buttons[crop]
 		button.text = "%s%s — %d %s" % ["▶ " if selected else "", name, seeds, plural]
 		button.add_theme_color_override("font_color",
-			Color(1.0, 0.93, 0.66) if selected else Color(0.94, 0.92, 0.84))
+			TEXT_ACCENT if selected else TEXT_DARK)
 
 func _on_inventory_seed(crop: String) -> void:
 	GameState.select_seed(crop)
@@ -218,13 +227,13 @@ func _refresh_prices() -> void:
 		var price := int(GameState.prices[crop])
 		var trend := GameState.price_trend(crop)
 		var arrow := "·"
-		var color := Color(0.94, 0.92, 0.84)
+		var color := TEXT_DARK
 		if trend > 0:
 			arrow = "▲"
-			color = Color(0.6, 0.95, 0.6)
+			color = POSITIVE
 		elif trend < 0:
 			arrow = "▼"
-			color = Color(1.0, 0.58, 0.52)
+			color = NEGATIVE
 		var row: Label = _price_labels[crop]
 		row.text = "%s — %d G %s" % [label, price, arrow]
 		row.add_theme_color_override("font_color", color)

@@ -11,8 +11,8 @@ const WARN_COLOR := Color(0.90, 0.18, 0.18)
 @onready var water_bar: ProgressBar = %WaterBar
 
 var _survival: Node = null
-var _food_fill: StyleBoxFlat
-var _water_fill: StyleBoxFlat
+var _food_fill: StyleBoxTexture
+var _water_fill: StyleBoxTexture
 
 
 func _ready() -> void:
@@ -37,9 +37,9 @@ func _ready() -> void:
 	_on_water_changed(_survival.water, _survival.water_max)
 
 
-func _duplicate_fill(bar: ProgressBar, color: Color) -> StyleBoxFlat:
-	var fill := (bar.get_theme_stylebox("fill") as StyleBoxFlat).duplicate() as StyleBoxFlat
-	fill.bg_color = color
+func _duplicate_fill(bar: ProgressBar, color: Color) -> StyleBoxTexture:
+	var fill := (bar.get_theme_stylebox("fill") as StyleBoxTexture).duplicate() as StyleBoxTexture
+	fill.modulate_color = color
 	bar.add_theme_stylebox_override("fill", fill)
 	return fill
 
@@ -52,9 +52,9 @@ func _on_water_changed(current: float, maximum: float) -> void:
 	_apply(water_bar, _water_fill, current, maximum, WATER_COLOR)
 
 
-func _apply(bar: ProgressBar, fill: StyleBoxFlat, current: float, maximum: float, color: Color) -> void:
+func _apply(bar: ProgressBar, fill: StyleBoxTexture, current: float, maximum: float, color: Color) -> void:
 	if maximum <= 0.0:
 		return
 	bar.max_value = maximum
 	bar.value = current
-	fill.bg_color = WARN_COLOR if current / maximum < WARN_RATIO else color
+	fill.modulate_color = WARN_COLOR if current / maximum < WARN_RATIO else color

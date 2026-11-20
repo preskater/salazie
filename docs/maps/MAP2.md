@@ -6,7 +6,8 @@ Technical reference for the second map of Salazie. Narrative intent lives in
 - Scene: `game/world/maps/Farm.tscn`, root script `game/farm/farm_map.gd`
 - Size: 96 × 68 tiles at 48 px → 4608 × 3264 px
 - Player: `World/Player2`, spawned at `PlayerSpawn` `(2280, 3168)`, tile `(47.5, 66)`
-- Open `Farm.tscn` directly to play the map
+- The game boots on `game/ui/menus/main_menu.tscn`; **Nouvelle partie** or **Continuer**
+  loads `Farm.tscn`. Open the scene directly to test the map without the menu.
 
 ## Scene structure
 
@@ -66,11 +67,15 @@ Objectives, in order: prepare a plot, plant a seed, harvest a crop, sell produce
 | `select_seed_1..4` | 1–4 | Choose seed (also in the inventory popup) |
 | `toggle_inventory` | I | Inventory popup (pause) |
 | `toggle_prices` | P | Show/hide market prices |
-| `ui_cancel` | Esc | Close the open overlay |
+| `pause` | Esc / Start | Open the pause menu |
+| `ui_cancel` | Esc / B | Close the open overlay |
 
 The HUD shows money and day (top-left), the current objective (top-centre), interaction
 prompts and notifications. The market overlay pauses the game; the inventory and price
-overlays never duplicate each other.
+overlays never duplicate each other. The pause menu only opens when no HUD overlay owns the
+pause, so `Esc` closes the market or inventory first.
+
+See [docs/UI.md](../UI.md) for the title screen, options and save format.
 
 ## Living world
 
@@ -146,7 +151,10 @@ their `lines` export. `FarmMap` assigns each NPC the player reference on ready.
 | `game/world/tree_sway.gd`, `crop_sway.gd`, `ambient_leaves.gd` / `.tscn` | World animation helpers |
 | `game/world/animations/` | Shared tree and leaf `SpriteFrames` |
 | `game/world/WorldObject.tscn` | Reusable prop: texture, bottom-centred collision |
-| `game/farm/farm_theme.tres` | HUD theme |
+| `game/ui/theme/salazie_theme.tres` | Shared UI-pack theme for menus and HUD |
+| `game/ui/menus/` | Title screen, options, pause, controls, credits, confirmations |
+| `game/ui/hud/hud.tscn` / `.gd` | Survival bars and UI-pack icons |
+| `game/systems/save/`, `game/systems/settings/`, `game/systems/scene_router.gd` | Save, settings and scene lifecycle |
 
 ## Verification
 
@@ -158,12 +166,13 @@ python3 .claude/skills/godot-nodes-scenes/scripts/check_godot_project.py . --jso
 ```
 
 Tests: `tests/unit/test_player.gd` and `tests/unit/test_farm_life.gd` (animal animations,
-roam bounds, tree and leaf frames, fruit slice geometry, NPC facing). Status at time of
-writing: 10/10 gdUnit4 tests pass.
+roam bounds, tree and leaf frames, fruit slice geometry, NPC facing), plus the menu,
+settings, save and UI-asset suites in `tests/unit/`. Status at time of writing: 52/52
+gdUnit4 tests pass.
 
 ## Known limits
 
-- No save/load; state resets when the scene restarts.
+- One autosave slot managed by `SaveGame`; state still resets if the save file is deleted.
 - Animals are decorative; they do not produce eggs or milk and do not react to the player.
 - Fruit trees and field crops are visual only; only the 8 `CropPlot`s are harvestable.
-- No audio yet.
+- No audio assets yet.
