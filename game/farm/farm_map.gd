@@ -21,6 +21,11 @@ func _find_player() -> Node2D:
 	return node as Node2D
 
 func _ready() -> void:
+	# Allow opening Farm.tscn directly for debugging, without going through the menu.
+	if not SceneRouter.is_gameplay:
+		SceneRouter.is_gameplay = true
+	if not GameState.playing:
+		GameState.playing = true
 	market_stand.market_requested.connect(hud.open_market)
 	for node: Node in get_tree().get_nodes_in_group("npc"):
 		var npc := node as FarmNPC

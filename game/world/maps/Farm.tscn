@@ -591,7 +591,7 @@ size = Vector2(4672, 32)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_822n0"]
 size = Vector2(4672, 32)
 
-[node name="Farm" type="Node2D" unique_id=307347657]
+[node name="Farm" type="Node2D" groups=["gameplay"] unique_id=307347657]
 script = ExtResource("1_2vfb2")
 
 [node name="Ground" type="TileMapLayer" parent="." unique_id=1952102756]

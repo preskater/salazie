@@ -54,10 +54,27 @@ On peut aussi appeler directement `SceneTransition.change_scene(chemin, titre, s
 
 Le but du jeu est de traverser les trois générations et de devenir maire de Salazie.
 
+## Menus et sauvegarde
+
+Le jeu démarre sur un menu d’accueil : **Nouvelle partie**, **Continuer**, **Options**,
+**Crédits** et **Quitter**. La map 2 est la première map jouable.
+
+- Une seule sauvegarde automatique est conservée dans `user://savegame.json`.
+- Elle est écrite au changement de jour, à l’ouverture de la pause, au retour au menu et à
+  la fermeture du jeu.
+- **Échap** ou **Start** ouvre le menu pause : reprendre, options, commandes, sauvegarder,
+  menu principal ou quitter.
+- Les options couvrent le volume général, la musique, les effets, le mode d’affichage, la
+  résolution et la synchronisation verticale.
+
+Détails techniques : [docs/UI.md](docs/UI.md).
+
 ## Assets du jeu
 
 Les assets utilisés dans le jeu proviennent de LimeZu.
 
 Ils servent à créer les personnages, les décors, les objets, les bâtiments et les éléments visuels des trois maps.
+
+L’interface (menus et HUD) utilise uniquement le pack **Modern UI 48x48** de LimeZu, afin de garder une direction artistique cohérente avec le reste du jeu.
 
 Site des assets : <https://limezu.itch.io/>

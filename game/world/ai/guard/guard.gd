@@ -21,6 +21,8 @@ const ARRIVE_DISTANCE := 10.0
 @export var patrol_speed := 70.0
 @export var wait_min := 1.0
 @export var wait_max := 2.0
+## Tests disable this so movement stays deterministic without a navigation map.
+@export var use_navigation := true
 
 @export_group("Vision")
 @export var vision_range := 400.0
@@ -309,15 +311,17 @@ func _zone_rect() -> Rect2:
 
 
 func _move_towards(target: Vector2, speed: float) -> void:
-	agent.target_position = target
-
-	# Without a baked navigation polygon the agent reports a "next point" that is
-	# its own position. Fall back to a straight line so patrols still work.
 	var next := target
-	if not agent.is_navigation_finished():
-		var candidate := agent.get_next_path_position()
-		if candidate.distance_to(global_position) > 0.5:
-			next = candidate
+	if use_navigation:
+		agent.target_position = target
+
+		# Without a baked navigation polygon the agent reports a "next point"
+		# that is its own position. Fall back to a straight line so patrols
+		# still work.
+		if not agent.is_navigation_finished():
+			var candidate := agent.get_next_path_position()
+			if candidate.distance_to(global_position) > 0.5:
+				next = candidate
 
 	var direction := global_position.direction_to(next)
 	velocity = direction * speed

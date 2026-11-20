@@ -4,6 +4,7 @@ signal money_changed(money: int)
 signal inventory_changed()
 signal prices_changed()
 signal day_changed(day: int)
+signal day_advanced(day: int)
 signal seed_changed(crop: String)
 signal plot_prepared()
 signal crop_planted(crop: String)
@@ -52,23 +53,27 @@ const CROPS := {
 }
 const CROP_ORDER := ["corn", "pumpkin", "tomato", "carrot"]
 
-var money := 30
-var day := 1
+const START_MONEY := 30
+const START_DAY := 1
+const START_SEEDS := {"corn": 2, "pumpkin": 1, "tomato": 2, "carrot": 1}
+
+var money := START_MONEY
+var day := START_DAY
 var day_length := 60.0
 var selected_seed := "corn"
-var seeds := {"corn": 2, "pumpkin": 1, "tomato": 2, "carrot": 1}
+var seeds: Dictionary = START_SEEDS.duplicate(true)
 var produce := {}
 var prices := {}
 var previous_prices := {}
+var playing := false
 var _day_time := 0.0
 
 func _ready() -> void:
-	for crop: String in CROP_ORDER:
-		prices[crop] = int(CROPS[crop]["base_price"])
-		previous_prices[crop] = prices[crop]
-		produce[crop] = 0
+	_reset_market_state()
 
 func _process(delta: float) -> void:
+	if not playing:
+		return
 	_day_time += delta
 	if _day_time >= day_length:
 		_day_time -= day_length
@@ -83,6 +88,7 @@ func _advance_day() -> void:
 		prices[crop] = maxi(1, roundi(base * (1.0 + change)))
 	prices_changed.emit()
 	day_changed.emit(day)
+	day_advanced.emit(day)
 
 func price_trend(crop: String) -> int:
 	return signi(int(prices[crop]) - int(previous_prices[crop]))
@@ -160,3 +166,128 @@ func announce(text: String) -> void:
 
 func show_dialogue(speaker: String, text: String) -> void:
 	dialogue_requested.emit(speaker, text)
+
+
+## Restarts the farm economy from its initial values without reloading the scene.
+func reset() -> void:
+	money = START_MONEY
+	day = START_DAY
+	selected_seed = "corn"
+	seeds = START_SEEDS.duplicate(true)
+	_day_time = 0.0
+	_reset_market_state()
+	_emit_state_changed()
+
+
+## Plain data only: no nodes, resources or engine objects.
+func to_dict() -> Dictionary:
+	return {
+		"money": money,
+		"day": day,
+		"day_time": _day_time,
+		"selected_seed": selected_seed,
+		"seeds": seeds.duplicate(true),
+		"produce": produce.duplicate(true),
+		"prices": prices.duplicate(true),
+		"previous_prices": previous_prices.duplicate(true),
+	}
+
+
+## Applies a save payload. Returns false and leaves the state untouched when invalid.
+func from_dict(data: Dictionary) -> bool:
+	if not _is_valid_state(data):
+		return false
+	money = maxi(0, _to_int(data.get("money"), START_MONEY))
+	day = maxi(1, _to_int(data.get("day"), START_DAY))
+	_day_time = clampf(_to_float(data.get("day_time"), 0.0), 0.0, day_length)
+	var saved_seed := String(data.get("selected_seed", "corn"))
+	selected_seed = saved_seed if CROPS.has(saved_seed) else "corn"
+	seeds = _read_counts(data.get("seeds", {}))
+	produce = _read_counts(data.get("produce", {}))
+	prices = _read_prices(data.get("prices", {}))
+	previous_prices = _read_prices(data.get("previous_prices", prices))
+	_emit_state_changed()
+	return true
+
+
+func _reset_market_state() -> void:
+	produce = _default_counts()
+	prices = _default_prices()
+	previous_prices = prices.duplicate()
+
+
+func _default_counts() -> Dictionary:
+	var result := {}
+	for crop: String in CROP_ORDER:
+		result[crop] = 0
+	return result
+
+
+func _default_prices() -> Dictionary:
+	var result := {}
+	for crop: String in CROP_ORDER:
+		result[crop] = int(CROPS[crop]["base_price"])
+	return result
+
+
+func _read_counts(raw: Variant) -> Dictionary:
+	var result := _default_counts()
+	if not (raw is Dictionary):
+		return result
+	var source := raw as Dictionary
+	for crop: String in CROP_ORDER:
+		result[crop] = maxi(0, _to_int(source.get(crop), 0))
+	return result
+
+
+func _read_prices(raw: Variant) -> Dictionary:
+	var result := _default_prices()
+	if not (raw is Dictionary):
+		return result
+	var source := raw as Dictionary
+	for crop: String in CROP_ORDER:
+		result[crop] = maxi(1, _to_int(source.get(crop), int(CROPS[crop]["base_price"])))
+	return result
+
+
+func _emit_state_changed() -> void:
+	money_changed.emit(money)
+	inventory_changed.emit()
+	prices_changed.emit()
+	day_changed.emit(day)
+	seed_changed.emit(selected_seed)
+
+
+func _is_valid_state(data: Dictionary) -> bool:
+	if not data.has("money") or not _is_number(data["money"]):
+		return false
+	if not data.has("day") or not _is_number(data["day"]):
+		return false
+	if data.has("day_time") and not _is_number(data["day_time"]):
+		return false
+	if data.has("selected_seed"):
+		var seed_type := typeof(data["selected_seed"])
+		if seed_type != TYPE_STRING and seed_type != TYPE_STRING_NAME:
+			return false
+	for key: String in ["seeds", "produce", "prices"]:
+		if not data.has(key) or not (data[key] is Dictionary):
+			return false
+	if data.has("previous_prices") and not (data["previous_prices"] is Dictionary):
+		return false
+	return true
+
+
+func _is_number(value: Variant) -> bool:
+	return typeof(value) == TYPE_INT or typeof(value) == TYPE_FLOAT
+
+
+func _to_int(value: Variant, fallback: int) -> int:
+	if _is_number(value):
+		return int(value)
+	return fallback
+
+
+func _to_float(value: Variant, fallback: float) -> float:
+	if _is_number(value):
+		return float(value)
+	return fallback
