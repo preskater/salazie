@@ -601,6 +601,7 @@ tile_set = ExtResource("1_ranji")
 
 [node name="World" type="Node2D" parent="." unique_id=982980734]
 y_sort_enabled = true
+z_index = 1
 
 [node name="Fences" type="TileMapLayer" parent="World" unique_id=1945920966]
 y_sort_enabled = true

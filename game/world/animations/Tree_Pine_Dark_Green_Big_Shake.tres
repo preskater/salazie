@@ -1,6 +1,6 @@
-[gd_resource type="SpriteFrames" format=3]
+[gd_resource type="SpriteFrames" format=3 uid="uid://cukd0p0fiyjnj"]
 
-[ext_resource type="Texture2D" path="res://assets/farm_48x48/animated/Trees_Pine_Dark_Green_Big_Shake_48x48.png" id="1_0ppah"]
+[ext_resource type="Texture2D" uid="uid://d2b860wkp5gx3" path="res://assets/farm_48x48/animated/Trees_Pine_Dark_Green_Big_Shake_48x48.png" id="1_0ppah"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_ogpc5"]
 atlas = ExtResource("1_0ppah")

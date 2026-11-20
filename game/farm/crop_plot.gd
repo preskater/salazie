@@ -11,12 +11,14 @@ const TILLED_TEXTURE := preload("res://assets/farm_48x48/singles/Fences/Topsoil_
 var state: State = State.EMPTY
 var growth := 0.0
 
-var _sprite: Sprite2D
+var _soil: Sprite2D
+var _crop: Sprite2D
 var _textures := {}
 var _shown_stage := -1
 
 func _ready() -> void:
-	_sprite = $Sprite
+	_soil = $Soil
+	_crop = $Sprite
 	add_to_group("interactable")
 	state = initial_state
 	_ensure_textures()
@@ -99,19 +101,26 @@ func _ensure_textures() -> void:
 	}
 
 func _sync_visual() -> void:
+	if state == State.EMPTY:
+		_soil.visible = false
+		_crop.visible = false
+		return
+
+	# The tilled ground is flat: it lives at z_index -1 (relative to World)
+	# so it can never cover the player.
+	_set_texture(_soil, TILLED_TEXTURE)
+
 	match state:
-		State.EMPTY:
-			_sprite.visible = false
 		State.TILLED:
-			_set_texture(TILLED_TEXTURE)
+			_crop.visible = false
 		State.GROWING:
 			var stage := 1 if growth >= float(GameState.CROPS[crop_type]["growth"]) * 0.5 else 0
 			var tex: Texture2D = _textures[crop_type]["sprout"] if stage == 0 else _textures[crop_type]["stage"]
-			_set_texture(tex)
+			_set_texture(_crop, tex)
 		State.READY:
-			_set_texture(_textures[crop_type]["ripe"])
+			_set_texture(_crop, _textures[crop_type]["ripe"])
 
-func _set_texture(texture: Texture2D) -> void:
-	_sprite.texture = texture
-	_sprite.visible = true
-	_sprite.offset = Vector2(0, -texture.get_height() / 2.0)
+func _set_texture(target: Sprite2D, texture: Texture2D) -> void:
+	target.texture = texture
+	target.visible = true
+	target.offset = Vector2(0, -texture.get_height() / 2.0)
