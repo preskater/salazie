@@ -1,0 +1,374 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://game/farm/farm_hud.gd" id="1_hud"]
+[ext_resource type="Theme" path="res://game/farm/farm_theme.tres" id="2_theme"]
+
+[node name="FarmHUD" type="CanvasLayer"]
+process_mode = 3
+layer = 10
+script = ExtResource("1_hud")
+
+[node name="Root" type="Control" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme = ExtResource("2_theme")
+
+[node name="MoneyPanel" type="PanelContainer" parent="Root"]
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 300.0
+offset_bottom = 130.0
+mouse_filter = 2
+
+[node name="VBox" type="VBoxContainer" parent="Root/MoneyPanel"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="MoneyLabel" type="Label" parent="Root/MoneyPanel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Argent : 30 G"
+
+[node name="DayLabel" type="Label" parent="Root/MoneyPanel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Jour 1"
+
+[node name="PricesPanel" type="PanelContainer" parent="Root"]
+unique_name_in_owner = true
+visible = false
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -300.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = 196.0
+grow_horizontal = 0
+mouse_filter = 2
+
+[node name="VBox" type="VBoxContainer" parent="Root/PricesPanel"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="PricesTitle" type="Label" parent="Root/PricesPanel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.79, 0.4, 1)
+theme_override_font_sizes/font_size = 20
+text = "Prix du marché"
+
+[node name="PriceList" type="VBoxContainer" parent="Root/PricesPanel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="ObjectivePanel" type="PanelContainer" parent="Root"]
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -260.0
+offset_top = 16.0
+offset_right = 260.0
+offset_bottom = 90.0
+grow_horizontal = 2
+mouse_filter = 2
+
+[node name="ObjectiveLabel" type="Label" parent="Root/ObjectivePanel"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Objectif : préparez une parcelle du potager, au nord de la ferme (E)."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="PromptPanel" type="PanelContainer" parent="Root"]
+unique_name_in_owner = true
+visible = false
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = -240.0
+offset_top = -112.0
+offset_right = 240.0
+offset_bottom = -56.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="PromptLabel" type="Label" parent="Root/PromptPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "E — Préparer la parcelle"
+horizontal_alignment = 1
+
+[node name="DialoguePanel" type="PanelContainer" parent="Root"]
+unique_name_in_owner = true
+visible = false
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = -380.0
+offset_top = -248.0
+offset_right = 380.0
+offset_bottom = -128.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="VBox" type="VBoxContainer" parent="Root/DialoguePanel"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="DialogueSpeaker" type="Label" parent="Root/DialoguePanel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.79, 0.4, 1)
+text = "Marchande"
+
+[node name="DialogueText" type="Label" parent="Root/DialoguePanel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Bienvenue à Salazie."
+autowrap_mode = 3
+
+[node name="NotificationLabel" type="Label" parent="Root"]
+unique_name_in_owner = true
+visible = false
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -250.0
+offset_top = 96.0
+offset_right = 250.0
+offset_bottom = 160.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.93, 0.66, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.06, 0.09, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
+autowrap_mode = 3
+text = "Map 2 — Le cultivateur"
+
+[node name="ControlsLabel" type="Label" parent="Root"]
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = -580.0
+offset_top = -44.0
+offset_right = -16.0
+offset_bottom = -14.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.72, 0.72, 0.66, 1)
+theme_override_font_sizes/font_size = 14
+horizontal_alignment = 2
+text = "WASD/Flèches · E interagir · 1-4 graines · I inventaire · P prix"
+
+[node name="MarketOverlay" type="Control" parent="Root"]
+unique_name_in_owner = true
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+
+[node name="Dim" type="ColorRect" parent="Root/MarketOverlay"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0.02, 0.03, 0.05, 0.6)
+
+[node name="MarketPanel" type="PanelContainer" parent="Root/MarketOverlay"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -350.0
+offset_top = -280.0
+offset_right = 350.0
+offset_bottom = 280.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+
+[node name="VBox" type="VBoxContainer" parent="Root/MarketOverlay/MarketPanel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="MarketTitle" type="Label" parent="Root/MarketOverlay/MarketPanel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.79, 0.4, 1)
+theme_override_font_sizes/font_size = 26
+horizontal_alignment = 1
+text = "Marché de Salazie"
+
+[node name="MarketDayLabel" type="Label" parent="Root/MarketOverlay/MarketPanel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+text = "Jour 1 — les prix changent chaque jour."
+
+[node name="MarketMessage" type="Label" parent="Root/MarketOverlay/MarketPanel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.94, 0.82, 0.52, 1)
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="Separator" type="HSeparator" parent="Root/MarketOverlay/MarketPanel/VBox"]
+layout_mode = 2
+
+[node name="Columns" type="HBoxContainer" parent="Root/MarketOverlay/MarketPanel/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 28
+
+[node name="SellBox" type="VBoxContainer" parent="Root/MarketOverlay/MarketPanel/VBox/Columns"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="SellTitle" type="Label" parent="Root/MarketOverlay/MarketPanel/VBox/Columns/SellBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.79, 0.4, 1)
+text = "VENDRE"
+
+[node name="SellRows" type="VBoxContainer" parent="Root/MarketOverlay/MarketPanel/VBox/Columns/SellBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="BuyBox" type="VBoxContainer" parent="Root/MarketOverlay/MarketPanel/VBox/Columns"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="BuyTitle" type="Label" parent="Root/MarketOverlay/MarketPanel/VBox/Columns/BuyBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.79, 0.4, 1)
+text = "GRAINES"
+
+[node name="BuyRows" type="VBoxContainer" parent="Root/MarketOverlay/MarketPanel/VBox/Columns/BuyBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Hint" type="Label" parent="Root/MarketOverlay/MarketPanel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.72, 0.66, 1)
+theme_override_font_sizes/font_size = 14
+horizontal_alignment = 1
+autowrap_mode = 3
+text = "Les prix changent chaque jour. Achetez des graines et adaptez vos cultures."
+
+[node name="CloseButton" type="Button" parent="Root/MarketOverlay/MarketPanel/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(240, 42)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Fermer (Échap)"
+
+[node name="InventoryOverlay" type="Control" parent="Root"]
+unique_name_in_owner = true
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+
+[node name="Dim" type="ColorRect" parent="Root/InventoryOverlay"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0.02, 0.03, 0.05, 0.6)
+
+[node name="InventoryPopup" type="PanelContainer" parent="Root/InventoryOverlay"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -330.0
+offset_top = -270.0
+offset_right = 330.0
+offset_bottom = 270.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+
+[node name="VBox" type="VBoxContainer" parent="Root/InventoryOverlay/InventoryPopup"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="InventoryTitle" type="Label" parent="Root/InventoryOverlay/InventoryPopup/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.79, 0.4, 1)
+theme_override_font_sizes/font_size = 26
+horizontal_alignment = 1
+text = "Inventaire"
+
+[node name="InventoryContext" type="Label" parent="Root/InventoryOverlay/InventoryPopup/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="Separator" type="HSeparator" parent="Root/InventoryOverlay/InventoryPopup/VBox"]
+layout_mode = 2
+
+[node name="ProduceTitle" type="Label" parent="Root/InventoryOverlay/InventoryPopup/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.79, 0.4, 1)
+text = "PANIER"
+
+[node name="ProduceList" type="VBoxContainer" parent="Root/InventoryOverlay/InventoryPopup/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="SeedTitle" type="Label" parent="Root/InventoryOverlay/InventoryPopup/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.79, 0.4, 1)
+text = "GRAINES"
+
+[node name="SeedList" type="VBoxContainer" parent="Root/InventoryOverlay/InventoryPopup/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="InventoryHint" type="Label" parent="Root/InventoryOverlay/InventoryPopup/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.72, 0.66, 1)
+theme_override_font_sizes/font_size = 14
+horizontal_alignment = 1
+autowrap_mode = 3
+text = "En jeu, les touches 1-4 choisissent la graine à planter."
+
+[node name="InventoryCloseButton" type="Button" parent="Root/InventoryOverlay/InventoryPopup/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(240, 42)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Fermer (I / Échap)"
+
+[node name="NotificationTimer" type="Timer" parent="."]
+wait_time = 3.5
+one_shot = true
+
+[node name="DialogueTimer" type="Timer" parent="."]
+wait_time = 6.0
+one_shot = true
