@@ -1,0 +1,34 @@
+[gd_resource type="ParticleProcessMaterial" format=3 uid="uid://biihn4hbyggwr"]
+
+[sub_resource type="Gradient" id="Gradient_fade"]
+offsets = PackedFloat32Array(0, 0.75, 1)
+colors = PackedColorArray(1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_fade"]
+gradient = SubResource("Gradient_fade")
+
+[resource]
+particle_flag_disable_z = true
+emission_shape_scale = Vector3(1, 0.45, 1)
+emission_shape = 6
+emission_ring_axis = Vector3(0, 0, 1)
+emission_ring_height = 1.0
+emission_ring_radius = 55.0
+emission_ring_inner_radius = 0.0
+emission_ring_cone_angle = 90.0
+direction = Vector3(0, -1, 0)
+spread = 180.0
+initial_velocity_min = 35.0
+initial_velocity_max = 55.0
+angular_velocity_min = 180.0
+angular_velocity_max = 360.0
+gravity = Vector3(0, 0, 0)
+radial_accel_min = -30.0
+radial_accel_max = -18.0
+tangential_accel_min = 45.0
+tangential_accel_max = 70.0
+damping_min = 5.0
+damping_max = 9.0
+scale_min = 0.12
+scale_max = 0.22
+color_ramp = SubResource("GradientTexture1D_fade")

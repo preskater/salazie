@@ -1,0 +1,1 @@
+../../.agent/agents/ci-fixer.md
