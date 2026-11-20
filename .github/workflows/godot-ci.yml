@@ -45,10 +45,10 @@ jobs:
           timeout: 15
           publish-report: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
 
-  build:
-    name: Export builds
+  prepare:
+    name: Prepare imports
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 25
 
     steps:
       - name: Checkout
@@ -75,35 +75,72 @@ jobs:
       - name: Smoke test main scene
         run: timeout 60s godot --headless --quit-after 5 --audio-driver Dummy
 
-      - name: Export Linux
-        run: |
-          mkdir -p export/linux
-          godot --headless --export-release "Linux" export/linux/salazie.x86_64
-          test -f export/linux/salazie.x86_64
-          tar -czf export/salazie-linux-x86_64.tar.gz -C export/linux salazie.x86_64
+  build:
+    name: Export ${{ matrix.name }}
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux
+            preset: Linux
+            output: export/linux/salazie.x86_64
+            artifact: salazie-linux-x86_64
+            upload: export/linux/
+          - name: Windows
+            preset: Windows Desktop
+            output: export/windows/salazie.exe
+            artifact: salazie-windows-x86_64
+            upload: export/windows/
+          - name: macOS
+            preset: macOS
+            output: export/macos/salazie.zip
+            artifact: salazie-macos-universal
+            upload: export/macos/
+          - name: Web
+            preset: Web
+            output: export/web/index.html
+            artifact: salazie-web
+            upload: export/web/
 
-      - name: Export Windows
-        run: |
-          mkdir -p export/windows
-          godot --headless --export-release "Windows Desktop" export/windows/salazie.exe
-          test -f export/windows/salazie.exe
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
 
-      - name: Export macOS
-        run: |
-          mkdir -p export/macos
-          godot --headless --export-release "macOS" export/macos/salazie.zip
-          test -f export/macos/salazie.zip
+      - name: Cache Godot imports
+        uses: actions/cache@v6
+        with:
+          path: .godot
+          key: ${{ runner.os }}-godot-${{ env.GODOT_VERSION }}-${{ hashFiles('project.godot', 'game/**', 'assets/**/*.import', 'icon.svg*') }}
+          restore-keys: |
+            ${{ runner.os }}-godot-${{ env.GODOT_VERSION }}-
 
-      - name: Export Web
-        run: |
-          mkdir -p export/web
-          godot --headless --export-release "Web" export/web/index.html
-          test -f export/web/index.html
+      - name: Setup Godot
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: ${{ env.GODOT_VERSION }}
+          use-dotnet: false
+          include-templates: true
 
-      - name: Upload builds
+      - name: Import project
+        run: godot --headless --import
+
+      - name: Export ${{ matrix.name }}
+        run: |
+          mkdir -p "$(dirname "${{ matrix.output }}")"
+          godot --headless --export-release "${{ matrix.preset }}" "${{ matrix.output }}"
+          test -f "${{ matrix.output }}"
+
+      - name: Package Linux
+        if: matrix.name == 'Linux'
+        run: tar -czf export/linux/salazie-linux-x86_64.tar.gz -C export/linux salazie.x86_64
+
+      - name: Upload ${{ matrix.name }} build
         uses: actions/upload-artifact@v7
         with:
-          name: salazie-godot-builds
-          path: export/
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.upload }}
           if-no-files-found: error
           retention-days: 7

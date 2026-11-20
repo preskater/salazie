@@ -162,7 +162,8 @@ GODOT_BIN="$GODOT_BIN" bash addons/gdUnit4/runtest.sh \
 Workflow: `.github/workflows/godot-ci.yml`
 
 - `test`: gdUnit4 on Ubuntu, report uploaded.
-- `build`: import, smoke test, then Linux, Windows, macOS and Web exports, uploaded as `salazie-godot-builds`.
+- `prepare`: imports the project once and runs the smoke test, then saves the `.godot` cache.
+- `build`: matrix over Linux, Windows, macOS and Web; each job restores the import cache, exports one platform, and uploads a `salazie-<platform>` artifact.
 
 macOS uses the **universal** template and requires `rendering/textures/vram_compression/import_etc2_astc=true`. Do not switch the preset back to `x86_64`: Godot issue #121170 makes single-architecture macOS export fail with `Requested template binary "godot_macos_release.x86_64" not found`.
 
