@@ -1,0 +1,1 @@
+../../.agent/agents/godot-verifier.md

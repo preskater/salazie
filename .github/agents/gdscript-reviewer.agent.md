@@ -1,0 +1,1 @@
+../../.agent/agents/gdscript-reviewer.md
