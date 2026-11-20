@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://p1rgkehpcxsb" path="res://game/player/player.gd" id="1_obar5"]
 [ext_resource type="Texture2D" uid="uid://nkdmu6n3yqnm" path="res://assets/characters_16x16/Alex_idle_anim_16x16.png" id="2_b2mth"]
 [ext_resource type="Texture2D" uid="uid://bjbf7jksigyye" path="res://assets/characters_16x16/Alex_run_16x16.png" id="3_8soms"]
-[ext_resource type="Script" path="res://game/systems/survival/survival_component.gd" id="4_survival"]
+[ext_resource type="Script" uid="uid://xay8lo641r37" path="res://game/systems/survival/survival_component.gd" id="4_survival"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_8soms"]
 atlas = ExtResource("2_b2mth")
@@ -385,23 +385,25 @@ animations = [{
 }]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_5ghna"]
-radius = 5.0
-height = 12.0
+radius = 11.0
+height = 40.0
 
 [node name="Player" type="CharacterBody2D" unique_id=17329257]
 motion_mode = 1
 script = ExtResource("1_obar5")
+sprite_scale = 3.0
 
 [node name="Survival" type="Node" parent="." unique_id=1904328871]
 script = ExtResource("4_survival")
 
 [node name="Sprite2D" type="AnimatedSprite2D" parent="." unique_id=1933368045]
-position = Vector2(0, -16)
+position = Vector2(0, -48)
+scale = Vector2(3, 3)
 sprite_frames = SubResource("SpriteFrames_gp052")
 animation = &"walk_down"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1183153737]
-position = Vector2(0, -5)
+position = Vector2(0, -12)
 rotation = 1.5707964
 shape = SubResource("CapsuleShape2D_5ghna")
 
