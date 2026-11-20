@@ -394,7 +394,7 @@ script = ExtResource("1_obar5")
 position = Vector2(0, -16)
 sprite_frames = SubResource("SpriteFrames_gp052")
 animation = &"idle_down"
-frame_progress = 0.18066029
+frame_progress = 0.10675829
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=761522993]
 zoom = Vector2(3, 3)
