@@ -154,17 +154,14 @@ func test_chase_moves_toward_player_outside_zone() -> void:
 		guard.tick(0.1)
 	assert_int(guard.state).is_equal(GUARD_SCRIPT.State.ALERT)
 
-	# move_and_slide() uses the engine physics delta, not the tick() argument,
-	# so drive the chase with the real physics step.
 	for i in range(90):
 		guard.tick(1.0 / 60.0)
 
-	# move_and_slide() uses the engine physics delta, which is not guaranteed
-	# while a test drives ticks synchronously. Assert the chase intent instead of
-	# a frame-rate-dependent absolute position.
+	# The engine physics delta is not guaranteed while ticks run synchronously.
+	# Assert the chase direction relative to the player instead of a world-axis sign.
 	assert_int(guard.state).is_equal(GUARD_SCRIPT.State.ALERT)
-	assert_float(guard.velocity.x).is_greater(0.0)
-	assert_float(guard.global_position.x).is_greater(0.0)
+	var to_player := guard.global_position.direction_to(player.global_position)
+	assert_float(guard.velocity.normalized().dot(to_player)).is_greater(0.0)
 
 
 func test_ignores_noise_during_give_up_cooldown() -> void:
