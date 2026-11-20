@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://p1rgkehpcxsb" path="res://game/player/player.gd" id="1_obar5"]
 [ext_resource type="Texture2D" uid="uid://nkdmu6n3yqnm" path="res://assets/characters_16x16/Alex_idle_anim_16x16.png" id="2_b2mth"]
 [ext_resource type="Texture2D" uid="uid://bjbf7jksigyye" path="res://assets/characters_16x16/Alex_run_16x16.png" id="3_8soms"]
+[ext_resource type="Script" path="res://game/systems/survival/survival_component.gd" id="4_survival"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_8soms"]
 atlas = ExtResource("2_b2mth")
@@ -390,6 +391,9 @@ height = 12.0
 [node name="Player" type="CharacterBody2D" unique_id=17329257 groups=["player"]]
 motion_mode = 1
 script = ExtResource("1_obar5")
+
+[node name="Survival" type="Node" parent="." unique_id=1904328871]
+script = ExtResource("4_survival")
 
 [node name="Sprite2D" type="AnimatedSprite2D" parent="." unique_id=1933368045]
 position = Vector2(0, -16)
