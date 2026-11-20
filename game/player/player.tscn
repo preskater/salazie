@@ -388,7 +388,7 @@ animations = [{
 radius = 11.0
 height = 40.0
 
-[node name="Player" type="CharacterBody2D" unique_id=17329257]
+[node name="Player" type="CharacterBody2D" unique_id=17329257 groups=["player"]]
 motion_mode = 1
 script = ExtResource("1_obar5")
 sprite_scale = 3.0

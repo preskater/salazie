@@ -1,0 +1,18 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://game/farm/market_stand.gd" id="1_stand"]
+[ext_resource type="Texture2D" path="res://assets/farm_48x48/singles/Props_and_Buildings/Market_Stand_Yellow_Example_48x48.png" id="2_art"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_stand"]
+size = Vector2(230, 70)
+
+[node name="MarketStand" type="StaticBody2D"]
+script = ExtResource("1_stand")
+
+[node name="Sprite" type="Sprite2D" parent="."]
+texture = ExtResource("2_art")
+offset = Vector2(0, -120)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -35)
+shape = SubResource("RectangleShape2D_stand")
