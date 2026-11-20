@@ -1,0 +1,109 @@
+name: Godot CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+concurrency:
+  group: godot-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GODOT_VERSION: "4.7.2"
+
+jobs:
+  test:
+    name: Unit tests (gdUnit4)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Cache Godot imports
+        uses: actions/cache@v6
+        with:
+          path: .godot
+          key: ${{ runner.os }}-godot-${{ env.GODOT_VERSION }}-${{ hashFiles('project.godot', 'game/**', 'assets/**/*.import', 'icon.svg*') }}
+          restore-keys: |
+            ${{ runner.os }}-godot-${{ env.GODOT_VERSION }}-
+
+      - name: Run gdUnit4 tests
+        uses: godot-gdunit-labs/gdUnit4-action@v1
+        with:
+          godot-version: ${{ env.GODOT_VERSION }}
+          paths: res://tests
+          timeout: 15
+          publish-report: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+
+  build:
+    name: Export builds
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Cache Godot imports
+        uses: actions/cache@v6
+        with:
+          path: .godot
+          key: ${{ runner.os }}-godot-${{ env.GODOT_VERSION }}-${{ hashFiles('project.godot', 'game/**', 'assets/**/*.import', 'icon.svg*') }}
+          restore-keys: |
+            ${{ runner.os }}-godot-${{ env.GODOT_VERSION }}-
+
+      - name: Setup Godot
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: ${{ env.GODOT_VERSION }}
+          use-dotnet: false
+          include-templates: true
+
+      - name: Import project
+        run: godot --headless --import
+
+      - name: Smoke test main scene
+        run: timeout 60s godot --headless --quit-after 5 --audio-driver Dummy
+
+      - name: Export Linux
+        run: |
+          mkdir -p export/linux
+          godot --headless --export-release "Linux" export/linux/salazie.x86_64
+          test -f export/linux/salazie.x86_64
+          tar -czf export/salazie-linux-x86_64.tar.gz -C export/linux salazie.x86_64
+
+      - name: Export Windows
+        run: |
+          mkdir -p export/windows
+          godot --headless --export-release "Windows Desktop" export/windows/salazie.exe
+          test -f export/windows/salazie.exe
+
+      - name: Export macOS
+        run: |
+          mkdir -p export/macos
+          godot --headless --export-release "macOS" export/macos/salazie.zip
+          test -f export/macos/salazie.zip
+
+      - name: Export Web
+        run: |
+          mkdir -p export/web
+          godot --headless --export-release "Web" export/web/index.html
+          test -f export/web/index.html
+
+      - name: Upload builds
+        uses: actions/upload-artifact@v7
+        with:
+          name: salazie-godot-builds
+          path: export/
+          if-no-files-found: error
+          retention-days: 7
