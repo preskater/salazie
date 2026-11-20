@@ -67,6 +67,7 @@
 [ext_resource type="SpriteFrames" path="res://game/world/animations/Tree_Pine_Green_Medium_Shake.tres" id="68_afqp4"]
 [ext_resource type="SpriteFrames" path="res://game/world/animations/Tree_Birch_Brown_Medium_Shake.tres" id="69_6huka"]
 [ext_resource type="PackedScene" path="res://game/player/player.tscn" id="69_ranji"]
+[ext_resource type="PackedScene" path="res://game/world/fx/Cyclone.tscn" id="70_0ihjh"]
 [ext_resource type="SpriteFrames" path="res://game/world/animations/Tree_Pine_Dark_Green_Medium_Shake.tres" id="70_r3xjy"]
 [ext_resource type="Script" path="res://game/player/player.gd" id="71_2vfb2"]
 [ext_resource type="SpriteFrames" path="res://game/world/animations/Tree_Birch_Green_Small_Shake.tres" id="71_pptwd"]
@@ -6380,6 +6381,17 @@ position = Vector2(3400, 1400)
 sprite_frames = ExtResource("88_g36yh")
 animation = &"fall"
 script = ExtResource("89_lg7yc")
+
+[node name="Cyclone" parent="World" unique_id=1240383706 instance=ExtResource("70_0ihjh")]
+position = Vector2(2285, 2727)
+scale = Vector2(3, 3)
+pull_radius = 300.0
+pull_speed = 1200.0
+swirl_speed = 900.0
+spin = 3.0
+eject_radius = 42.0
+eject_spin = 1.5
+eject_grace = 0.9
 
 [node name="PlayerSpawn" type="Marker2D" parent="." unique_id=407921640]
 position = Vector2(2280, 3168)
