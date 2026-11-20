@@ -22,6 +22,8 @@ const CROPS := {
 		"sprout": "res://assets/farm_48x48/singles/Crops/Crop_Corn_Sprout_48x48.png",
 		"stage": "res://assets/farm_48x48/singles/Crops/Crop_Corn_Stage_1_48x48.png",
 		"ripe": "res://assets/farm_48x48/singles/Crops/Crop_Corn_Ripe_48x48.png",
+		"icon": "res://assets/farm_48x48/icons/Icons_32x32/Singles_Icons_32x32_Seed_Bags_Corn.png",
+		"produce_icon": "res://assets/farm_48x48/icons/Icons_32x32/Singles_Icons_32x32_Crops_Corn.png",
 	},
 	"pumpkin": {
 		"label": "Potiron",
@@ -31,6 +33,8 @@ const CROPS := {
 		"sprout": "res://assets/farm_48x48/singles/Crops/Crop_Pumpkin_Sprout_48x48.png",
 		"stage": "res://assets/farm_48x48/singles/Crops/Crop_Pumpkin_Stage_1_48x48.png",
 		"ripe": "res://assets/farm_48x48/singles/Crops/Crop_Pumpkin_Ripe_48x48.png",
+		"icon": "res://assets/farm_48x48/icons/Icons_32x32/Singles_Icons_32x32_Seed_Bags_Pumpkin.png",
+		"produce_icon": "res://assets/farm_48x48/icons/Icons_32x32/Singles_Icons_32x32_Crops_Pumpkin.png",
 	},
 	"tomato": {
 		"label": "Tomate",
@@ -40,6 +44,8 @@ const CROPS := {
 		"sprout": "res://assets/farm_48x48/singles/Crops/Crop_Tomato_Sprout_48x48.png",
 		"stage": "res://assets/farm_48x48/singles/Crops/Crop_Tomato_Stage_1_48x48.png",
 		"ripe": "res://assets/farm_48x48/singles/Crops/Crop_Tomato_Ripe_48x48.png",
+		"icon": "res://assets/farm_48x48/icons/Icons_32x32/Singles_Icons_32x32_Seed_Bags_Tomato.png",
+		"produce_icon": "res://assets/farm_48x48/icons/Icons_32x32/Singles_Icons_32x32_Crops_Tomato.png",
 	},
 	"carrot": {
 		"label": "Carotte",
@@ -49,6 +55,8 @@ const CROPS := {
 		"sprout": "res://assets/farm_48x48/singles/Crops/Crop_Carrot_Sprout_48x48.png",
 		"stage": "res://assets/farm_48x48/singles/Crops/Crop_Carrot_Stage_1_48x48.png",
 		"ripe": "res://assets/farm_48x48/singles/Crops/Crop_Carrot_Ripe_1_48x48.png",
+		"icon": "res://assets/farm_48x48/icons/Icons_32x32/Singles_Icons_32x32_Seed_Bags_Carrot.png",
+		"produce_icon": "res://assets/farm_48x48/icons/Icons_32x32/Singles_Icons_32x32_Crops_Carrot.png",
 	},
 }
 const CROP_ORDER := ["corn", "pumpkin", "tomato", "carrot"]

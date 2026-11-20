@@ -2,8 +2,6 @@ class_name FarmHUD
 extends CanvasLayer
 
 const TEXT_DARK := Color(0.22, 0.14, 0.08)
-const TEXT_MUTED := Color(0.46, 0.38, 0.3)
-const TEXT_ACCENT := Color(0.45, 0.24, 0.04)
 const POSITIVE := Color(0.12, 0.42, 0.16)
 const NEGATIVE := Color(0.62, 0.14, 0.1)
 
@@ -26,15 +24,20 @@ const NEGATIVE := Color(0.62, 0.14, 0.1)
 @onready var close_button: Button = %CloseButton
 @onready var inventory_overlay: Control = %InventoryOverlay
 @onready var inventory_context: Label = %InventoryContext
-@onready var produce_list: VBoxContainer = %ProduceList
-@onready var seed_list: VBoxContainer = %SeedList
+@onready var produce_grid: GridContainer = %ProduceGrid
+@onready var produce_empty: Label = %ProduceEmpty
+@onready var seed_grid: GridContainer = %SeedGrid
+@onready var seed_empty: Label = %SeedEmpty
 @onready var inventory_close_button: Button = %InventoryCloseButton
+
+const SLOT_SCENE := preload("res://game/farm/ui/item_slot.tscn")
 
 var _price_labels := {}
 var _sell_buttons := {}
 var _buy_buttons := {}
-var _produce_labels := {}
-var _seed_buttons := {}
+var _seed_slots := {}
+var _produce_slots := {}
+var _icons := {}
 var _prompt_text := ""
 var _market_open := false
 var _inventory_open := false
@@ -107,7 +110,20 @@ func open_inventory() -> void:
 	_refresh_inventory_popup()
 	inventory_overlay.visible = true
 	get_tree().paused = true
-	inventory_close_button.grab_focus()
+	var first: Control = _first_visible_slot(seed_grid)
+	if first == null:
+		first = _first_visible_slot(produce_grid)
+	if first == null:
+		first = inventory_close_button
+	first.grab_focus()
+
+
+func _first_visible_slot(grid: Container) -> Control:
+	for child: Node in grid.get_children():
+		var control := child as Control
+		if control != null and control.visible:
+			return control
+	return null
 
 func close_inventory() -> void:
 	if not _inventory_open:
@@ -167,16 +183,22 @@ func _build_market_rows() -> void:
 
 func _build_inventory_rows() -> void:
 	for crop: String in GameState.CROP_ORDER:
-		var produce := Label.new()
+		var data: Dictionary = GameState.CROPS[crop]
+		_icons[crop] = {
+			"seed": load(String(data["icon"])),
+			"produce": load(String(data["produce_icon"])),
+		}
+
+		var produce: ItemSlot = SLOT_SCENE.instantiate()
 		produce.name = "Produce_" + crop
-		produce_list.add_child(produce)
-		_produce_labels[crop] = produce
-		var seed_button := Button.new()
-		seed_button.name = "Seed_" + crop
-		seed_button.custom_minimum_size = Vector2(0, 38)
-		seed_button.pressed.connect(_on_inventory_seed.bind(crop))
-		seed_list.add_child(seed_button)
-		_seed_buttons[crop] = seed_button
+		produce_grid.add_child(produce)
+		_produce_slots[crop] = produce
+
+		var seed: ItemSlot = SLOT_SCENE.instantiate()
+		seed.name = "Seed_" + crop
+		seed.pressed.connect(_on_inventory_seed.bind(crop))
+		seed_grid.add_child(seed)
+		_seed_slots[crop] = seed
 
 func _refresh_all() -> void:
 	_on_money_changed(GameState.money)
@@ -202,20 +224,34 @@ func _on_seed_changed(_crop: String) -> void:
 
 func _refresh_inventory_popup() -> void:
 	inventory_context.text = "Argent : %d G · Jour %d" % [GameState.money, GameState.day]
+
+	var produce_visible := 0
+	var seed_visible := 0
 	for crop: String in GameState.CROP_ORDER:
-		var name := String(GameState.CROPS[crop]["label"])
-		var count := GameState.produce_count(crop)
-		var produce: Label = _produce_labels[crop]
-		produce.text = "%s : %d" % [name, count]
-		produce.add_theme_color_override("font_color",
-			TEXT_DARK if count > 0 else TEXT_MUTED)
-		var seeds := GameState.seed_count(crop)
-		var selected := crop == GameState.selected_seed
-		var plural := "graines" if seeds > 1 else "graine"
-		var button: Button = _seed_buttons[crop]
-		button.text = "%s%s — %d %s" % ["▶ " if selected else "", name, seeds, plural]
-		button.add_theme_color_override("font_color",
-			TEXT_ACCENT if selected else TEXT_DARK)
+		var data: Dictionary = GameState.CROPS[crop]
+		var label := String(data["label"])
+		var icons: Dictionary = _icons[crop]
+
+		var produce_count := GameState.produce_count(crop)
+		var produce_slot: ItemSlot = _produce_slots[crop]
+		produce_slot.setup(icons["produce"], produce_count, false,
+			"%s — %d dans le panier" % [label, produce_count])
+		produce_slot.visible = produce_count > 0
+		if produce_slot.visible:
+			produce_visible += 1
+
+		var seed_count := GameState.seed_count(crop)
+		var seed_slot: ItemSlot = _seed_slots[crop]
+		seed_slot.setup(icons["seed"], seed_count, crop == GameState.selected_seed,
+			"%s — %d graines" % [label, seed_count])
+		seed_slot.visible = seed_count > 0
+		if seed_slot.visible:
+			seed_visible += 1
+
+	produce_grid.visible = produce_visible > 0
+	produce_empty.visible = produce_visible == 0
+	seed_grid.visible = seed_visible > 0
+	seed_empty.visible = seed_visible == 0
 
 func _on_inventory_seed(crop: String) -> void:
 	GameState.select_seed(crop)
