@@ -19,6 +19,7 @@ var _fade_rect: ColorRect
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_build_fade()
+	_set_day_night_active(false)
 	get_tree().auto_accept_quit = false
 	get_tree().root.close_requested.connect(_on_close_requested)
 
@@ -29,10 +30,12 @@ func start_new_game() -> void:
 	GameState.reset()
 	GameState.playing = true
 	is_gameplay = true
+	_set_day_night_active(true, true)
 	var ok := await _change_scene(GAME_SCENE)
 	if not ok:
 		GameState.playing = false
 		is_gameplay = false
+		_set_day_night_active(false)
 		return
 	SaveGame.save_game()
 
@@ -44,10 +47,12 @@ func continue_game() -> void:
 		return
 	GameState.playing = true
 	is_gameplay = true
+	_set_day_night_active(true, true)
 	var ok := await _change_scene(GAME_SCENE)
 	if not ok:
 		GameState.playing = false
 		is_gameplay = false
+		_set_day_night_active(false)
 
 
 func go_to_main_menu() -> void:
@@ -57,6 +62,7 @@ func go_to_main_menu() -> void:
 		SaveGame.save_game()
 	GameState.playing = false
 	is_gameplay = false
+	_set_day_night_active(false)
 	await _change_scene(MAIN_MENU_SCENE)
 
 
@@ -96,6 +102,13 @@ func _on_close_requested() -> void:
 	get_tree().quit()
 
 
+func _set_day_night_active(active: bool, reset_cycle := false) -> void:
+	if reset_cycle:
+		DayNightCycle.reset_for_new_map()
+	DayNightCycle.running = active
+	DayNightCycle.tint_enabled = active
+
+
 func _build_fade() -> void:
 	_fade_layer = CanvasLayer.new()
 	_fade_layer.name = "FadeLayer"
@@ -106,7 +119,6 @@ func _build_fade() -> void:
 	_fade_rect = ColorRect.new()
 	_fade_rect.name = "Fade"
 	_fade_rect.color = Color(0.02, 0.03, 0.05, 1.0)
-	_fade_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_fade_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_fade_rect.modulate = Color(1.0, 1.0, 1.0, 0.0)
 	_fade_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE

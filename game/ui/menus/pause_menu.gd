@@ -46,7 +46,7 @@ func _ready() -> void:
 
 
 func open() -> void:
-	if visible or not SceneRouter.is_gameplay or get_tree().paused:
+	if visible or not SceneRouter.is_gameplay or get_tree().paused or SceneTransition.is_transitioning:
 		return
 	get_tree().paused = true
 	visible = true

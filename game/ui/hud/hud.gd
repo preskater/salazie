@@ -14,7 +14,6 @@ var _survival: Node = null
 var _food_fill: StyleBoxTexture
 var _water_fill: StyleBoxTexture
 
-
 func _ready() -> void:
 	_survival = get_tree().get_first_node_in_group("survival")
 	if _survival == null:

@@ -70,12 +70,20 @@ enforces this. The engine default font is kept because the UI pack does not ship
 | Autoload | Script | Responsibility |
 |---|---|---|
 | `Settings` | `game/systems/settings/settings.gd` | Load/apply/save audio, window and VSync settings |
+| `DayNightCycle` | `game/world/DayNightCycle.tscn` | Day/night phases and map-ready gating |
+| `SceneTransition` | `game/ui/SceneTransition.tscn` | Chapter fade used by map exits |
 | `GameState` | `game/farm/game_state.gd` | Farm economy, day timer, `playing` flag, serialisation |
 | `SaveGame` | `game/systems/save/save_game.gd` | Single-slot JSON save, autosave, `.bak` fallback |
-| `SceneRouter` | `game/systems/scene_router.gd` | New game, continue, menu/quit, fade transition |
+| `SceneRouter` | `game/systems/scene_router.gd` | New game, continue, menu/quit, menu fade |
 | `PauseMenu` | `game/ui/menus/pause_menu.tscn` | Global pause overlay, process mode `ALWAYS` |
 
-Autoload order matters: `Settings`, `GameState`, `SaveGame`, `SceneRouter`, `PauseMenu`.
+Autoload order matters: `Settings`, `DayNightCycle`, `SceneTransition`, `GameState`,
+`SaveGame`, `SceneRouter`, `PauseMenu`.
+
+`SceneRouter` stops and hides the day/night tint on the title screen, resets the cycle when a
+game starts or continues, and re-enables it in gameplay. Map exits keep using
+`SceneTransition` for their chapter fade; the pause menu is blocked while a chapter fade is
+running.
 
 ## Settings
 
