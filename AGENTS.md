@@ -24,6 +24,9 @@ Salazie is a 2D pixel-art narrative RPG made with **Godot 4.7.2** and GDScript. 
 | `.github/workflows/godot-ci.yml` | CI: gdUnit4 tests + four exports |
 | `.agent/` | Canonical agent and skill definitions |
 | `scripts/` | Maintenance scripts |
+| `opencode.json` | OpenCode config: Godot MCP server |
+| `.mcp.json` | Claude Code project-scope MCP servers |
+| `.vscode/mcp.json` | VS Code / Copilot workspace MCP servers |
 
 ## Canonical agent configuration
 
@@ -106,6 +109,39 @@ On Linux/CI, `godot` is on `PATH`.
 "$GODOT_BIN" --headless --export-release "macOS" export/macos/salazie.zip
 "$GODOT_BIN" --headless --export-release "Web" export/web/index.html
 ```
+
+### Godot MCP
+
+The Godot MCP server (`@coding-solo/godot-mcp`, pinned to `0.1.1`) is configured
+for every agent from one package. It launches the editor, runs the project,
+captures debug output and edits scenes through Godot itself.
+
+| Agent | Config file | Scope |
+|---|---|---|
+| OpenCode | `opencode.json` | project (`mcp.servers.godot`) |
+| Claude Code | `.mcp.json` | project, needs a one-time trust approval |
+| VS Code / Copilot | `.vscode/mcp.json` | workspace |
+
+Setup details:
+
+- The server finds Godot by itself; `/Applications/Godot.app/Contents/MacOS/Godot`
+  is its first macOS candidate. Override with `GODOT_PATH` only for a custom
+  install: OpenCode `environment`, Claude Code `claude mcp add --env GODOT_PATH=…`,
+  Copilot `env` in `.vscode/mcp.json`.
+- The first `npx` run downloads the package. Claude Code tunes startup with
+  `MCP_TIMEOUT=60000 claude`; its `.mcp.json` `timeout` field limits each tool
+  call, so it is intentionally unset.
+- `npx` must be on `PATH` (Node.js >= 18).
+
+Rules for using it:
+
+- `launch_editor` and `run_project` open real GUI windows. CI never runs the
+  MCP; keep headless commands for anything reproducible.
+- `update_project_uids` resaves resources wholesale and conflicts with the
+  "do not hand-edit UIDs" rule. Run it only when explicitly asked, then review
+  the diff.
+- Use the MCP mainly for run/debug feedback. Scene tools bypass the `.tscn`
+  conventions above, so review any scene they generate or change.
 
 Local gdUnit4 is not committed. Install it on demand:
 
