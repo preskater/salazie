@@ -7,9 +7,10 @@ const GUARD_SCRIPT := preload("res://game/world/ai/guard/guard.gd")
 func _spawn_guard(at := Vector2.ZERO) -> CharacterBody2D:
 	var guard: CharacterBody2D = auto_free(load(GUARD_SCENE).instantiate())
 	guard.set_physics_process(false)
-	# Keep movement tests independent of collisions left by other suites.
+	# Keep movement tests independent of leftover collisions and navigation maps.
 	guard.collision_layer = 0
 	guard.collision_mask = 0
+	guard.use_navigation = false
 	add_child(guard)
 	guard.global_position = at
 	guard.facing = Vector2.RIGHT
