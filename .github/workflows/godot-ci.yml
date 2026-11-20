@@ -43,7 +43,22 @@ jobs:
           godot-version: ${{ env.GODOT_VERSION }}
           paths: res://tests
           timeout: 15
-          publish-report: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+          # The action's built-in publisher can fail with a transient 404 on
+          # checks.update right after checks.create (dorny/test-reporter#866),
+          # turning a green test run into a red job. The test step remains the
+          # gate; the report is published to the job summary below instead.
+          publish-report: false
+
+      - name: Publish test summary
+        if: ${{ !cancelled() }}
+        uses: dorny/test-reporter@v3
+        with:
+          name: gdUnit4 summary
+          path: reports/**/*.xml
+          reporter: java-junit
+          use-actions-summary: true
+          fail-on-error: false
+          fail-on-empty: false
 
   prepare:
     name: Prepare imports
