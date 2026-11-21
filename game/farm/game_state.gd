@@ -63,9 +63,12 @@ const CROP_ORDER := ["corn", "pumpkin", "tomato", "carrot"]
 
 const START_MONEY := 30
 const START_DAY := 1
+const FARM_GENERATION := &"cultivateur"
 const START_SEEDS := {"corn": 2, "pumpkin": 1, "tomato": 2, "carrot": 1}
 
-var money := START_MONEY
+var _money := START_MONEY
+var _currency_id: StringName = &"gourde"
+var _syncing_money := false
 var day := START_DAY
 var day_length := 60.0
 var selected_seed := "corn"
@@ -76,7 +79,26 @@ var previous_prices := {}
 var playing := false
 var _day_time := 0.0
 
+## Wallet of the active generation. Falls back to the local mirror when the
+## economy is disabled, but spending is refused in that case.
+var money: int:
+	get:
+		if _uses_economy():
+			return Economy.balance(_currency_id)
+		return _money
+	set(value):
+		_money = maxi(0, value)
+		if _uses_economy():
+			Economy.set_balance(_currency_id, _money)
+
+
 func _ready() -> void:
+	_sync_currency()
+	if _uses_economy():
+		_money = Economy.balance(_currency_id)
+	Economy.generation_changed.connect(_on_economy_generation_changed)
+	Economy.balance_changed.connect(_on_economy_balance_changed)
+	Economy.economy_enabled_changed.connect(_on_economy_enabled_changed)
 	_reset_market_state()
 
 func _process(delta: float) -> void:
@@ -114,15 +136,53 @@ func produce_count(crop: String) -> int:
 	return int(produce.get(crop, 0))
 
 func add_money(amount: int) -> void:
-	money += amount
-	money_changed.emit(money)
+	if not _uses_economy():
+		return
+	if Economy.add_currency(_currency_id, amount):
+		_money = Economy.balance(_currency_id)
+
 
 func spend_money(amount: int) -> bool:
-	if money < amount:
+	if not _uses_economy():
 		return false
-	money -= amount
-	money_changed.emit(money)
+	if not Economy.spend_currency(_currency_id, amount):
+		return false
+	_money = Economy.balance(_currency_id)
 	return true
+
+
+func currency_id() -> StringName:
+	return _currency_id
+
+
+func currency_label() -> String:
+	return Economy.currency_label(_currency_id)
+
+
+func currency_symbol() -> String:
+	return Economy.currency_symbol(_currency_id)
+
+
+func format_money(amount: int) -> String:
+	if not Economy.has_currency(_currency_id):
+		return str(amount)
+	return Economy.format_amount(_currency_id, amount)
+
+
+## Every enabled wallet of the generation, for the HUD.
+func format_wallets() -> String:
+	var parts: PackedStringArray = []
+	for definition: EconomyCurrency in Economy.currencies():
+		if definition == null or not definition.enabled:
+			continue
+		parts.append(Economy.format_amount(definition.id, Economy.balance(definition.id)))
+	if parts.is_empty():
+		return format_money(money)
+	return " · ".join(parts)
+
+
+func is_economy_enabled() -> bool:
+	return _uses_economy()
 
 func add_seeds(crop: String, amount: int) -> void:
 	seeds[crop] = seed_count(crop) + amount
@@ -149,6 +209,8 @@ func add_produce(crop: String, amount: int) -> void:
 	inventory_changed.emit()
 
 func sell(crop: String, amount: int) -> int:
+	if not _uses_economy():
+		return 0
 	var have := produce_count(crop)
 	amount = mini(amount, have)
 	if amount <= 0:
@@ -178,7 +240,16 @@ func show_dialogue(speaker: String, text: String) -> void:
 
 ## Restarts the farm economy from its initial values without reloading the scene.
 func reset() -> void:
-	money = START_MONEY
+	_syncing_money = true
+	if Economy.has_generation(FARM_GENERATION):
+		Economy.select_generation(FARM_GENERATION, false)
+	Economy.reset()
+	_sync_currency()
+	if _uses_economy():
+		_money = Economy.balance(_currency_id)
+	else:
+		money = START_MONEY
+	_syncing_money = false
 	day = START_DAY
 	selected_seed = "corn"
 	seeds = START_SEEDS.duplicate(true)
@@ -198,6 +269,7 @@ func to_dict() -> Dictionary:
 		"produce": produce.duplicate(true),
 		"prices": prices.duplicate(true),
 		"previous_prices": previous_prices.duplicate(true),
+		"economy": Economy.to_dict(),
 	}
 
 
@@ -205,7 +277,14 @@ func to_dict() -> Dictionary:
 func from_dict(data: Dictionary) -> bool:
 	if not _is_valid_state(data):
 		return false
+	_syncing_money = true
+	if data.has("economy"):
+		Economy.from_dict(data["economy"] as Dictionary)
+	elif Economy.has_generation(FARM_GENERATION):
+		Economy.select_generation(FARM_GENERATION, true)
+	_sync_currency()
 	money = maxi(0, _to_int(data.get("money"), START_MONEY))
+	_syncing_money = false
 	day = maxi(1, _to_int(data.get("day"), START_DAY))
 	_day_time = clampf(_to_float(data.get("day_time"), 0.0), 0.0, day_length)
 	var saved_seed := String(data.get("selected_seed", "corn"))
@@ -282,6 +361,11 @@ func _is_valid_state(data: Dictionary) -> bool:
 			return false
 	if data.has("previous_prices") and not (data["previous_prices"] is Dictionary):
 		return false
+	if data.has("economy"):
+		if not (data["economy"] is Dictionary):
+			return false
+		if not Economy.can_restore(data["economy"] as Dictionary):
+			return false
 	return true
 
 
@@ -299,3 +383,35 @@ func _to_float(value: Variant, fallback: float) -> float:
 	if _is_number(value):
 		return float(value)
 	return fallback
+
+
+func _uses_economy() -> bool:
+	return Economy.is_enabled() and Economy.has_currency(_currency_id)
+
+
+func _sync_currency() -> void:
+	var primary := Economy.primary_currency_id()
+	_currency_id = primary if primary != &"" else &"gourde"
+
+
+func _on_economy_generation_changed(_generation_id: StringName) -> void:
+	var was_syncing := _syncing_money
+	_syncing_money = true
+	_sync_currency()
+	_money = Economy.balance(_currency_id) if _uses_economy() else _money
+	_syncing_money = was_syncing
+	if not was_syncing:
+		_emit_state_changed()
+
+
+func _on_economy_balance_changed(currency_id: StringName, _amount: int) -> void:
+	if currency_id != _currency_id or _syncing_money:
+		return
+	_money = Economy.balance(_currency_id)
+	money_changed.emit(_money)
+
+
+func _on_economy_enabled_changed(_enabled: bool) -> void:
+	if _syncing_money:
+		return
+	money_changed.emit(money)

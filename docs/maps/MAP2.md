@@ -45,6 +45,10 @@ buy more seeds. Prices change when the day changes.
 - Start: **30 G**, day 1, seeds `corn ×2, pumpkin ×1, tomato ×2, carrot ×1`
 - Day length: **60 s**; prices reroll each day by about **±25 %** around the base price
 - Selling pays the current daily price; buying a seed costs its `seed_price`
+- The `gourde` wallet, its starting balance and the `OBJETS & PROPRIÉTÉS` offers come from
+  `game/systems/economy/config/economy.tres`; see [ECONOMY.md](../ECONOMY.md)
+- `FarmMap.economy_generation` selects the generation before the HUD builds its rows; it is
+  `cultivateur` on this map
 
 | Crop | Label | Seed | Base price | Growth |
 |---|---|---|---|---|
@@ -71,9 +75,11 @@ Objectives, in order: prepare a plot, plant a seed, harvest a crop, sell produce
 | `ui_cancel` | Esc / B | Close the open overlay |
 
 The HUD shows money and day (top-left), the current objective (top-centre), interaction
-prompts and notifications. The market overlay pauses the game; the inventory and price
-overlays never duplicate each other. The pause menu only opens when no HUD overlay owns the
-pause, so `Esc` closes the market or inventory first.
+prompts and notifications. The market overlay pauses the game and lists crop sales, seeds
+and the generation's **OBJETS & PROPRIÉTÉS** offers (a barn, an extra field slot
+and a hoe by default). The
+inventory and price overlays never duplicate each other. The pause menu only opens when no
+HUD overlay owns the pause, so `Esc` closes the market or inventory first.
 
 See [docs/UI.md](../UI.md) for the title screen, options and save format.
 
@@ -142,6 +148,8 @@ their `lines` export. `FarmMap` assigns each NPC the player reference on ready.
 | Path | Purpose |
 |---|---|
 | `game/farm/game_state.gd` | Autoload: money, day, crops, seeds, produce, prices, signals |
+| `game/systems/economy/economy.gd` | Autoload: per-generation wallets, offers and ownership |
+| `game/systems/economy/config/economy.tres` | Currency, generation and property offer data |
 | `game/farm/crop_plot.gd` / `.tscn` | Plot states, growth, harvest |
 | `game/farm/market_stand.gd` / `.tscn` | Market interaction point |
 | `game/farm/npc.gd` / `.tscn` | Dialogue, patrol and player-facing |
@@ -167,12 +175,14 @@ python3 .claude/skills/godot-nodes-scenes/scripts/check_godot_project.py . --jso
 
 Tests: `tests/unit/test_player.gd` and `tests/unit/test_farm_life.gd` (animal animations,
 roam bounds, tree and leaf frames, fruit slice geometry, NPC facing), plus the menu,
-settings, save and UI-asset suites in `tests/unit/`. Status at time of writing: 52/52
+settings, save and UI-asset suites in `tests/unit/`. Status at time of writing: 123/123
 gdUnit4 tests pass.
 
 ## Known limits
 
 - One autosave slot managed by `SaveGame`; state still resets if the save file is deleted.
+- Buildings and slots bought at the market are recorded as owned assets only; they do not
+  appear in the world or unlock new plots yet.
 - Animals are decorative; they do not produce eggs or milk and do not react to the player.
 - Fruit trees and field crops are visual only; only the 8 `CropPlot`s are harvestable.
 - No audio assets yet.

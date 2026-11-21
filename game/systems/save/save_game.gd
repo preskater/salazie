@@ -2,7 +2,7 @@ extends Node
 ## Single-slot save file: versioned JSON, atomic write and a .bak fallback.
 ## Only plain data is stored; the farm scene rebuilds itself from GameState.
 
-const SAVE_VERSION := 1
+const SAVE_VERSION := 2
 const SAVE_PATH := "user://savegame.json"
 
 var save_path := SAVE_PATH

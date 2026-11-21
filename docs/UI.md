@@ -72,12 +72,13 @@ enforces this. The engine default font is kept because the UI pack does not ship
 | `Settings` | `game/systems/settings/settings.gd` | Load/apply/save audio, window and VSync settings |
 | `DayNightCycle` | `game/world/DayNightCycle.tscn` | Day/night phases and map-ready gating |
 | `SceneTransition` | `game/ui/SceneTransition.tscn` | Chapter fade used by map exits |
+| `Economy` | `game/systems/economy/economy.gd` | Per-generation wallets, offers, trading, ownership |
 | `GameState` | `game/farm/game_state.gd` | Farm economy, day timer, `playing` flag, serialisation |
 | `SaveGame` | `game/systems/save/save_game.gd` | Single-slot JSON save, autosave, `.bak` fallback |
 | `SceneRouter` | `game/systems/scene_router.gd` | New game, continue, menu/quit, menu fade |
 | `PauseMenu` | `game/ui/menus/pause_menu.tscn` | Global pause overlay, process mode `ALWAYS` |
 
-Autoload order matters: `Settings`, `DayNightCycle`, `SceneTransition`, `GameState`,
+Autoload order matters: `Settings`, `DayNightCycle`, `SceneTransition`, `Economy`, `GameState`,
 `SaveGame`, `SceneRouter`, `PauseMenu`.
 
 `SceneRouter` stops and hides the day/night tint on the title screen, resets the cycle when a
@@ -110,11 +111,12 @@ defaults above.
 ## Save format
 
 Only plain data is stored. The farm scene rebuilds itself from `GameState`; no nodes,
-resources or node paths are serialised.
+resources or node paths are serialised. Save version 2 adds the per-generation economy
+payload documented in [ECONOMY.md](ECONOMY.md).
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "saved_at": "2026-11-20T22:30:00",
   "money": 84,
   "day": 3,
@@ -123,7 +125,14 @@ resources or node paths are serialised.
   "seeds": {"corn": 2, "pumpkin": 1, "tomato": 2, "carrot": 1},
   "produce": {"corn": 1, "pumpkin": 0, "tomato": 3, "carrot": 0},
   "prices": {"corn": 10, "pumpkin": 16, "tomato": 9, "carrot": 7},
-  "previous_prices": {"corn": 10, "pumpkin": 16, "tomato": 9, "carrot": 7}
+  "previous_prices": {"corn": 10, "pumpkin": 16, "tomato": 9, "carrot": 7},
+  "economy": {
+    "generation": "cultivateur",
+    "enabled": true,
+    "wallets": {"gourde": 84},
+    "owned": {"barn": 1},
+    "stock": {"building_barn": 0, "slot_field": 2, "item_hoe": 1}
+  }
 }
 ```
 
@@ -131,6 +140,8 @@ resources or node paths are serialised.
   to `savegame.json.bak`.
 - Loading tries the primary file, then the backup. Invalid JSON, missing fields, or a newer
   `version` are refused without mutating the current state.
+- Version 1 payloads without the `economy` block still load; `money` is applied to the
+  active generation's primary currency.
 - JSON numbers load as floats; `GameState.to_dict()` / `from_dict()` convert them back to
   integers.
 - Autosave triggers: day change (`GameState.day_advanced`), opening the pause menu, pressing
@@ -155,6 +166,9 @@ systems apart:
 
 - `FarmHUD` small panels (money, objective, prompt, dialogue, prices) use the `HudPanel`
   type variation; the market and inventory use the large panel frame.
+- Money text uses `GameState.format_wallets()` so every enabled wallet follows the active
+  generation's currencies. The market adds an **OBJETS & PROPRIÉTÉS** section for `ITEM`,
+  `BUILDING` and `SLOT` offers; see [ECONOMY.md](ECONOMY.md).
 - `farm_hud.gd` keeps the market/inventory text colours in a small palette
   (`TEXT_DARK`, `TEXT_MUTED`, `TEXT_ACCENT`, `POSITIVE`, `NEGATIVE`) instead of the old
   cream-on-dark values.
@@ -195,6 +209,8 @@ Rebinding is not implemented; `Commandes` is a read-only screen.
 | `game/ui/hud/hud.tscn` / `.gd` | Survival bars and pack icons |
 | `game/farm/farm_hud.tscn` / `.gd` | Farm HUD, market and inventory |
 | `game/systems/settings/settings.gd` | Persistent settings |
+| `game/systems/economy/economy.gd` | Per-generation wallets, offers and ownership |
+| `game/systems/economy/config/economy.tres` | Shipped currency, generation and offer data |
 | `game/systems/save/save_game.gd` | Save/load and autosave |
 | `game/systems/scene_router.gd` | Scene transitions and game lifecycle |
 | `default_bus_layout.tres` | Master / Music / SFX buses |
@@ -220,16 +236,21 @@ Focused suites:
 - `tests/unit/test_menu_layout.gd` — off-screen controls and initial focus at 1280×720,
   1536×648, 1152×864 and 2560×1080.
 - `tests/unit/test_settings.gd` — defaults, round-trip, clamping, slider wiring, buses.
-- `tests/unit/test_save_game.gd` — round-trip, `.bak` fallback, newer version refusal.
+- `tests/unit/test_save_game.gd` — round-trip, `.bak` fallback, newer version refusal,
+  economy round-trip and version 1 migration.
+- `tests/unit/test_economy.gd` — generation currencies, disabled generations, buy/sell,
+  trading, ownership and state round-trip.
 - `tests/unit/test_game_state_reset.gd` — reset, signals, day timer, JSON floats.
 - `tests/unit/test_ui_assets.gd` — UI-pack-only texture references, portrait layers, trio
   wiring, survival HUD icons and bars.
 
-Current status: 52/52 gdUnit4 tests pass.
+Current status: 123/123 gdUnit4 tests pass.
 
 ## Known limits
 
 - One save slot; no slot picker or cloud save.
+- Building and slot ownership is recorded by the economy but does not build anything in the
+  world yet.
 - No audio assets yet; music/SFX volumes are ready but silent.
 - No key rebinding and no language selector.
 - Display options are ignored in headless mode and may behave differently in a browser.

@@ -69,6 +69,22 @@ Le jeu démarre sur un menu d’accueil : **Nouvelle partie**, **Continuer**, **
 
 Détails techniques : [docs/UI.md](docs/UI.md).
 
+## Économie
+
+Chaque génération possède sa propre économie, configurable dans
+`game/systems/economy/config/economy.tres` :
+
+- **Le marron** : économie désactivée, le joueur survit sans argent.
+- **Le cultivateur** : gourdes (G), marché des récoltes, des graines et des propriétés.
+- **L’héritier** : euros (€) et crédits verts (CV), avec leurs propres offres.
+
+Le joueur peut acheter, vendre et échanger des objets, des bâtiments et des emplacements.
+Une génération peut être désactivée dans le fichier de configuration ; ses transactions et
+ses boutons de marché sont alors bloqués.
+
+Les portefeuilles, les stocks et les propriétés sont sauvegardés avec la partie. Détails
+techniques et API : [docs/ECONOMY.md](docs/ECONOMY.md).
+
 ## Assets du jeu
 
 Les assets utilisés dans le jeu proviennent de LimeZu.

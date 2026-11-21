@@ -3,6 +3,8 @@ extends Node2D
 
 const INTERACT_RANGE := 84.0
 
+@export var economy_generation: StringName = &"cultivateur"
+
 @onready var player: Node2D = _find_player()
 @onready var hud: FarmHUD = $HUD
 @onready var market_stand: MarketStand = $World/MarketStand
@@ -19,6 +21,13 @@ func _find_player() -> Node2D:
 	if node == null:
 		node = get_node_or_null("World/Player")
 	return node as Node2D
+
+
+func _enter_tree() -> void:
+	# Runs before the HUD builds its offer rows. A loaded save already matches.
+	if Economy.has_generation(economy_generation) \
+			and Economy.current_generation_id() != economy_generation:
+		Economy.select_generation(economy_generation)
 
 func _ready() -> void:
 	# Allow opening Farm.tscn directly for debugging, without going through the menu.
@@ -90,7 +99,7 @@ func _on_produce_sold(_crop: String, _amount: int, _total: int) -> void:
 func _on_money_changed(value: int) -> void:
 	if value >= 100 and not _goal:
 		_goal = true
-		GameState.announce("Objectif atteint : 100 G — la ferme prospère !")
+		GameState.announce("Objectif atteint : %s — la ferme prospère !" % GameState.format_money(100))
 		_refresh_objective()
 
 func _refresh_objective() -> void:
