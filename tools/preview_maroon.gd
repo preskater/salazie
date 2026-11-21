@@ -18,6 +18,11 @@ const SHOTS := [
 	{"name": "12_goats", "tile": Vector2(46, 29), "zoom": 2.5},
 	{"name": "13_rabbits", "tile": Vector2(24, 60), "zoom": 2.5},
 	{"name": "14_sea", "tile": Vector2(50, 108), "zoom": 2.0},
+	{"name": "15_cave", "tile": Vector2(18, 43), "zoom": 1.5},
+	{"name": "16_ridge", "tile": Vector2(42, 38), "zoom": 2.5},
+	{"name": "17_wreck", "tile": Vector2(14, 102), "zoom": 3.0},
+	{"name": "18_cascade_wide", "tile": Vector2(29, 40), "zoom": 1.2},
+	{"name": "19_drink_prompt", "tile": Vector2(43, 84), "zoom": 2.0},
 ]
 
 

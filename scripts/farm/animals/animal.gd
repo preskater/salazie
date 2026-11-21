@@ -2,11 +2,12 @@
 class_name FarmAnimal
 extends Node2D
 
-const DIRECTIONS := ["right", "up", "left", "down"]
+## Group order in the LimeZu animal sheets is left, up, right, down.
+const DIRECTIONS := ["left", "up", "right", "down"]
 
 @export var sheet: Texture2D
 @export var cell_size := Vector2i(48, 48)
-@export var walk_row := 1
+@export var walk_row := 2
 @export var graze_row := 3
 ## Frames per direction in each row. Chicken and rooster sheets only have two
 ## frames in the eat row, so reading six slices empty cells and the animal

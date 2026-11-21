@@ -2,7 +2,7 @@ shader_type canvas_item;
 render_mode blend_mix;
 
 // Scrolling cascade used by the Map 1 waterfall sprite. The custom waterfall
-// texture is a 3 x 9 tile column; adding a second offset sample hides the loop.
+// texture is a 6 x 9 tile column; adding a second offset sample hides the loop.
 
 uniform float speed = 0.38;
 uniform float opacity = 0.92;

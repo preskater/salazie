@@ -5,6 +5,8 @@ extends Node2D
 ## The static world is built by `maroon_layout.gd`; this script owns gameplay,
 ## tasks, UI and respawns.
 
+signal climb_finished
+
 const PLAYER_SCENE := preload("res://scenes/player/player.tscn")
 const GUARD_SCENE := preload("res://scenes/world/ai/guard/guard.tscn")
 const HUD_SCENE := preload("res://scenes/ui/hud/hud.tscn")
@@ -13,6 +15,8 @@ const RESULT_SCENE := preload("res://scenes/ui/tasks/generation_result.tscn")
 const FORAGE_SCENE := preload("res://scenes/maroon/forage_spot.tscn")
 const HIDE_SCENE := preload("res://scenes/maroon/hide_spot.tscn")
 const CHECKPOINT_SCENE := preload("res://scenes/maroon/checkpoint.tscn")
+const CLIMB_SCENE := preload("res://scenes/maroon/climb_point.tscn")
+const STEALTH_SCENE := preload("res://scenes/maroon/stealth_zone.tscn")
 const MAP_EXIT_SCENE := preload("res://scenes/world/map_exit.tscn")
 const LAYOUT := preload("res://scripts/maroon/maroon_layout.gd")
 
@@ -22,12 +26,17 @@ const FOOD_TEXTURES := [
 	"res://sprites/exteriors_48x48/singles/11_Camping/ME_Singles_Camping_48x48_Mushrooms_1.png",
 	"res://sprites/farm_48x48/singles/Crops/Crop_Berry_Small_Basket_48x48.png",
 ]
-const WATER_TEXTURE := "res://sprites/exteriors_48x48/singles/1_Terrains_and_Fences/ME_Singles_Terrains_and_Fences_48x48_Props_Water_1.png"
 const HIDE_TEXTURES := [
 	"res://sprites/exteriors_48x48/singles/17_Garden/ME_Singles_Garden_48x48_Bush_1.png",
 	"res://sprites/exteriors_48x48/singles/17_Garden/ME_Singles_Garden_48x48_Bush_3.png",
 	"res://sprites/exteriors_48x48/singles/17_Garden/ME_Singles_Garden_48x48_Bush_5.png",
 ]
+## A gourd of river water is worth one sip, and the volcanic silt needs ten
+## seconds to settle before the next one.
+const DRINK_WATER := 10.0
+const DRINK_COOLDOWN := 0.0
+const DRINK_REACH_TILES := 2
+const WATERFALL_TASK_RADIUS := 12.0 * 48.0
 
 var _terrain: Node2D
 var _world: Node2D
@@ -35,11 +44,23 @@ var _player: Node2D
 var _layout: RefCounted
 var _anchors: Dictionary
 var _map_size := Vector2.ZERO
+var _water_layer: TileMapLayer
 var _notification_label: Label
+var _prompt_label: Label
+var _hint_label: Label
+var _objective_bar: Node2D
+var _objective_arrow: Node2D
+var _objective_label: Label
 var _notification_timer: Timer
 var _respawn_overlay: ColorRect
 var _respawn_position := Vector2.ZERO
 var _respawning := false
+var _climbing := false
+var _target: Node = null
+var _near_fresh_water := false
+var _drink_cooldown := 0.0
+var _food_spots: Array[Area2D] = []
+var _hide_spots: Array[Area2D] = []
 var _guards: Array[Dictionary] = []
 
 
@@ -59,8 +80,10 @@ func _ready() -> void:
 	_add_player()
 	_add_ui()
 	_add_guards()
-	_add_forage_and_water()
+	_add_forage()
 	_add_hide_spots()
+	_add_climb_points()
+	_add_stealth_zones()
 	_add_checkpoints()
 	_add_refuge()
 	_build_navigation()
@@ -85,6 +108,7 @@ func _build_world() -> void:
 	_anchors = _layout.build(_terrain, _world)
 	_map_size = _anchors["size"]
 	_respawn_position = _anchors["spawn"]
+	_water_layer = _terrain.get_node("Water") as TileMapLayer
 
 
 func _build_navigation() -> void:
@@ -145,31 +169,74 @@ func _add_ui() -> void:
 	result.name = "GenerationResult"
 	add_child(result)
 
-	var hint := Label.new()
-	hint.name = "ControlsHint"
-	hint.text = "Déplacez-vous : WASD · Courir : Maj · Tâches : T"
-	hint.position = Vector2(18, _map_size.y - 42)
-	hint.add_theme_color_override("font_color", Color(0.95, 0.92, 0.82))
-	hint.add_theme_color_override("font_outline_color", Color(0.08, 0.06, 0.04))
-	hint.add_theme_constant_override("outline_size", 6)
-	add_child(hint)
+	var overlay := CanvasLayer.new()
+	overlay.name = "Overlay"
+	overlay.layer = 5
+	add_child(overlay)
+
+	_hint_label = Label.new()
+	_hint_label.name = "ControlsHint"
+	_hint_label.text = "WASD · Maj courir · E grimper · T tâches"
+	_hint_label.add_theme_color_override("font_color", Color(0.95, 0.92, 0.82))
+	_hint_label.add_theme_color_override("font_outline_color", Color(0.08, 0.06, 0.04))
+	_hint_label.add_theme_constant_override("outline_size", 6)
+	overlay.add_child(_hint_label)
 
 	_notification_label = Label.new()
 	_notification_label.name = "Notification"
 	_notification_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_notification_label.position = Vector2(240, _map_size.y - 92)
-	_notification_label.size = Vector2(_map_size.x - 480, 44)
 	_notification_label.add_theme_color_override("font_color", Color(0.98, 0.88, 0.66))
 	_notification_label.add_theme_color_override("font_outline_color", Color(0.08, 0.06, 0.04))
 	_notification_label.add_theme_constant_override("outline_size", 7)
 	_notification_label.add_theme_font_size_override("font_size", 22)
-	add_child(_notification_label)
+	overlay.add_child(_notification_label)
+
+	_prompt_label = Label.new()
+	_prompt_label.name = "PromptLabel"
+	_prompt_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_prompt_label.add_theme_color_override("font_color", Color(0.95, 0.90, 0.74))
+	_prompt_label.add_theme_color_override("font_outline_color", Color(0.08, 0.06, 0.04))
+	_prompt_label.add_theme_constant_override("outline_size", 6)
+	_prompt_label.add_theme_font_size_override("font_size", 19)
+	overlay.add_child(_prompt_label)
+
+	_objective_bar = Node2D.new()
+	_objective_bar.name = "ObjectiveBar"
+	overlay.add_child(_objective_bar)
+
+	_objective_arrow = Node2D.new()
+	_objective_arrow.name = "Arrow"
+	_objective_bar.add_child(_objective_arrow)
+	var arrow_outline := Polygon2D.new()
+	arrow_outline.polygon = PackedVector2Array([
+		Vector2(-13, -11), Vector2(13, 0), Vector2(-13, 11)])
+	arrow_outline.color = Color(0.08, 0.06, 0.04, 0.9)
+	_objective_arrow.add_child(arrow_outline)
+	var arrow := Polygon2D.new()
+	arrow.polygon = PackedVector2Array([
+		Vector2(-10, -8), Vector2(10, 0), Vector2(-10, 8)])
+	arrow.color = Color(0.98, 0.84, 0.35)
+	_objective_arrow.add_child(arrow)
+
+	_objective_label = Label.new()
+	_objective_label.name = "ObjectiveLabel"
+	_objective_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_objective_label.position = Vector2(-300, 14)
+	_objective_label.size = Vector2(600, 30)
+	_objective_label.add_theme_color_override("font_color", Color(0.98, 0.88, 0.62))
+	_objective_label.add_theme_color_override("font_outline_color", Color(0.08, 0.06, 0.04))
+	_objective_label.add_theme_constant_override("outline_size", 6)
+	_objective_label.add_theme_font_size_override("font_size", 20)
+	_objective_bar.add_child(_objective_label)
 
 	_notification_timer = Timer.new()
 	_notification_timer.one_shot = true
 	_notification_timer.wait_time = 4.0
 	_notification_timer.timeout.connect(_hide_notification)
-	add_child(_notification_timer)
+	overlay.add_child(_notification_timer)
+
+	get_viewport().size_changed.connect(_layout_hud)
+	_layout_hud()
 
 	var respawn_layer := CanvasLayer.new()
 	respawn_layer.name = "RespawnFade"
@@ -181,6 +248,158 @@ func _add_ui() -> void:
 	_respawn_overlay.visible = false
 	_respawn_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	respawn_layer.add_child(_respawn_overlay)
+
+
+func _layout_hud() -> void:
+	var screen := get_viewport_rect().size
+	_hint_label.position = Vector2(18, screen.y - 42)
+	_notification_label.position = Vector2(240, screen.y - 92)
+	_notification_label.size = Vector2(screen.x - 480, 44)
+	_prompt_label.position = Vector2(240, screen.y - 144)
+	_prompt_label.size = Vector2(screen.x - 480, 40)
+	_objective_bar.position = Vector2(screen.x * 0.5, 26)
+
+
+func _process(delta: float) -> void:
+	_drink_cooldown = maxf(0.0, _drink_cooldown - delta)
+	_update_objective_bar()
+	if _respawning or _climbing:
+		return
+	_near_fresh_water = _is_near_fresh_water()
+	var best: Node = null
+	var best_distance := 92.0
+	for node: Node in get_tree().get_nodes_in_group("interactable"):
+		var node2d := node as Node2D
+		if node2d == null or not node2d.is_inside_tree():
+			continue
+		var distance := _player.global_position.distance_to(node2d.global_position)
+		if distance < best_distance:
+			best_distance = distance
+			best = node
+	_target = best
+	if _target:
+		_set_prompt(String(_target.call("get_interaction_prompt")))
+	elif _near_fresh_water:
+		if _drink_cooldown > 0.0:
+			_set_prompt("L'eau se décante — %d s" % ceili(_drink_cooldown))
+		else:
+			_set_prompt("E — Boire (+10 eau)")
+	else:
+		_set_prompt("")
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if get_tree().paused or _respawning or _climbing:
+		return
+	if event.is_action_pressed("interact"):
+		if _target != null and _target.has_method("interact"):
+			_target.call("interact", _player)
+			get_viewport().set_input_as_handled()
+		elif _near_fresh_water:
+			_drink()
+			get_viewport().set_input_as_handled()
+
+
+func _is_near_fresh_water() -> bool:
+	if _water_layer == null or _player == null:
+		return false
+	var center := _water_layer.local_to_map(
+		_water_layer.to_local(_player.global_position))
+	for y in range(center.y - DRINK_REACH_TILES, center.y + DRINK_REACH_TILES + 1):
+		for x in range(center.x - DRINK_REACH_TILES, center.x + DRINK_REACH_TILES + 1):
+			if y >= LAYOUT.SEA_ROW:
+				continue
+			if _water_layer.get_cell_source_id(Vector2i(x, y)) != -1:
+				return true
+	return false
+
+
+func _drink() -> void:
+	if _drink_cooldown > 0.0:
+		_notify("L'eau est encore trouble : laissez la vase se déposer (%d s)." % ceili(_drink_cooldown))
+		return
+	var survival := _player.get_node_or_null("Survival")
+	if survival != null:
+		survival.call("add_water", DRINK_WATER)
+	_drink_cooldown = DRINK_COOLDOWN
+	if _player.global_position.distance_to(_anchors["water_spot"]) <= WATERFALL_TASK_RADIUS:
+		Campaign.complete_task("find_water")
+		_notify("Vous buvez au bassin (+10 eau). La vase doit se décanter.")
+	else:
+		_notify("Vous buvez à la rivière (+10 eau). La vase doit se décanter.")
+
+
+func _update_objective_bar() -> void:
+	if _objective_bar == null or _player == null:
+		return
+	var task := _current_task()
+	if task.is_empty():
+		_objective_bar.visible = false
+		return
+	var task_id := String(task["id"])
+	var target: Vector2 = _objective_target(task_id)
+	if target == Vector2.ZERO:
+		_objective_bar.visible = false
+		return
+	_objective_bar.visible = true
+	var offset := target - _player.global_position
+	_objective_arrow.rotation = offset.angle()
+	var text := "Objectif : %s" % String(task["label"])
+	if task_id == "find_food":
+		text += " (%d/3)" % Campaign.task_progress("find_food")
+	text += " — %d m" % maxi(0, roundi(offset.length() / 48.0))
+	if _objective_label.text != text:
+		_objective_label.text = text
+
+
+func _current_task() -> Dictionary:
+	for definition: Dictionary in Campaign.TASKS[1]:
+		if Campaign.task_status(String(definition["id"])) != Campaign.TaskStatus.DONE:
+			return definition
+	return {}
+
+
+func _objective_target(task_id: String) -> Vector2:
+	match task_id:
+		"follow_river":
+			var mouth: Vector2 = _anchors["river_mouth_checkpoint"]
+			return mouth
+		"find_water":
+			var water: Vector2 = _anchors["water_spot"]
+			return water
+		"find_food":
+			return _nearest_spot(_food_spots)
+		"hide_from_patrol":
+			return _nearest_spot(_hide_spots)
+		"cross_patrol":
+			var upper: Vector2 = _anchors["upper_checkpoint"]
+			return upper
+		"reach_refuge":
+			var refuge: Vector2 = _anchors["refuge"]
+			return refuge
+	return Vector2.ZERO
+
+
+func _nearest_spot(spots: Array[Area2D]) -> Vector2:
+	var best := Vector2.ZERO
+	var best_distance := INF
+	for spot: Area2D in spots:
+		if not is_instance_valid(spot):
+			continue
+		if spot.has_method("is_used") and bool(spot.call("is_used")):
+			continue
+		var distance := _player.global_position.distance_squared_to(spot.global_position)
+		if distance < best_distance:
+			best_distance = distance
+			best = spot.global_position
+	return best
+
+
+func _set_prompt(text: String) -> void:
+	if _prompt_label == null:
+		return
+	_prompt_label.text = text
+	_prompt_label.visible = not text.is_empty()
 
 
 func _add_guards() -> void:
@@ -202,21 +421,16 @@ func _add_guards() -> void:
 		_guards.append({"guard": guard, "spawn": spawn})
 
 
-func _add_forage_and_water() -> void:
+func _add_forage() -> void:
 	var food_points: Array = _anchors["food_spots"]
 	for index in food_points.size():
 		var texture: Texture2D = load(FOOD_TEXTURES[index % FOOD_TEXTURES.size()])
-		_spawn_forage(food_points[index], texture, 28.0, 0.0,
-			"find_food", 1, Color(1.0, 0.9, 0.75))
-	var water_texture: Texture2D = load(WATER_TEXTURE)
-	_spawn_forage(_anchors["water_spot"], water_texture, 0.0, 60.0,
-		"find_water", 1, Color(0.55, 0.78, 1.0))
-	_spawn_forage(_anchors["extra_water"], water_texture, 0.0, 40.0,
-		"", 1, Color(0.55, 0.78, 1.0))
+		_food_spots.append(_spawn_forage(food_points[index], texture, 28.0, 0.0,
+			"find_food", 1, Color(1.0, 0.9, 0.75)))
 
 
 func _spawn_forage(point: Vector2, texture: Texture2D, food: float, water: float,
-		task_id: String, progress: int, tint: Color) -> void:
+		task_id: String, progress: int, tint: Color) -> Area2D:
 	var spot: Area2D = FORAGE_SCENE.instantiate()
 	spot.name = "Forage_%d_%d" % [int(point.x), int(point.y)]
 	spot.position = point
@@ -229,6 +443,7 @@ func _spawn_forage(point: Vector2, texture: Texture2D, food: float, water: float
 	spot.set("kind", "water" if water > 0.0 else "food")
 	spot.picked.connect(_on_forage_picked)
 	_world.add_child(spot)
+	return spot
 
 
 func _add_hide_spots() -> void:
@@ -241,6 +456,37 @@ func _add_hide_spots() -> void:
 		spot.set("tint", Color(0.72, 0.95, 0.70))
 		spot.hidden_completed.connect(_on_hidden_completed)
 		_world.add_child(spot)
+		_hide_spots.append(spot)
+
+
+func _add_climb_points() -> void:
+	var climb_points: Array = _anchors["climb_points"]
+	for spec: Dictionary in climb_points:
+		var point: Area2D = CLIMB_SCENE.instantiate()
+		point.name = "Climb_%d_%d" % [int(spec["position"].x), int(spec["position"].y)]
+		point.position = spec["position"]
+		point.set("label", spec["label"])
+		point.set("destination", spec["destination"])
+		point.climb_requested.connect(_on_climb_requested)
+		_world.add_child(point)
+
+
+func _add_stealth_zones() -> void:
+	var stealth_zones: Array = _anchors["stealth_zones"]
+	for spec: Dictionary in stealth_zones:
+		var zone: Area2D = STEALTH_SCENE.instantiate()
+		zone.name = "Stealth_%d_%d" % [int(spec["position"].x), int(spec["position"].y)]
+		zone.position = spec["position"]
+		zone.set("zone_name", spec["name"])
+		zone.set("conceal_player", spec["conceal"])
+		zone.set("mute_noise", spec["mute"])
+		var collision := zone.get_node("CollisionShape2D") as CollisionShape2D
+		var rectangle := collision.shape.duplicate() as RectangleShape2D
+		rectangle.size = spec["size"]
+		collision.shape = rectangle
+		zone.entered.connect(_on_stealth_entered.bind(spec))
+		zone.exited.connect(_on_stealth_exited.bind(spec))
+		_world.add_child(zone)
 
 
 func _add_checkpoints() -> void:
@@ -302,15 +548,36 @@ func _add_shape(body: StaticBody2D, rect: Rect2) -> void:
 	body.add_child(collision)
 
 
-func _on_forage_picked(kind: String) -> void:
-	if kind == "water":
-		_notify("Vous buvez au bassin de la cascade.")
-	else:
-		_notify("Vivres trouvés (%d/3)." % Campaign.task_progress("find_food"))
+func _on_forage_picked(_kind: String) -> void:
+	_notify("Vivres trouvés (%d/3)." % Campaign.task_progress("find_food"))
 
 
 func _on_hidden_completed() -> void:
 	_notify("La patrouille est passée sans vous voir.")
+
+
+func _on_climb_requested(destination: Vector2) -> void:
+	if _climbing or _respawning:
+		return
+	_climbing = true
+	_set_prompt("")
+	await _fade_respawn(1.0)
+	_player.global_position = destination
+	await get_tree().physics_frame
+	await _fade_respawn(0.0)
+	_climbing = false
+	climb_finished.emit()
+
+
+func _on_stealth_entered(zone_name: String, spec: Dictionary) -> void:
+	if bool(spec["conceal"]):
+		_notify("Vous vous fondez dans %s." % zone_name)
+	else:
+		_notify("Le grondement de %s couvre vos pas." % zone_name)
+
+
+func _on_stealth_exited(zone_name: String, _spec: Dictionary) -> void:
+	_notify("Vous quittez %s." % zone_name)
 
 
 func _on_checkpoint_reached(point: Vector2) -> void:
@@ -332,7 +599,7 @@ func _on_map_resolved(_map_id: int, _summary: Dictionary) -> void:
 
 
 func _on_caught(_guard: CharacterBody2D) -> void:
-	if _respawning:
+	if _respawning or _climbing:
 		return
 	_respawning = true
 	var was_hidden := bool(_player.get("concealed"))

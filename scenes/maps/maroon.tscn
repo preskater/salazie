@@ -1,6 +1,6 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://co0ccopthnhvy"]
 
-[ext_resource type="Script" path="res://scripts/maroon/maroon_map.gd" id="1_maroon"]
+[ext_resource type="Script" uid="uid://cleqdtw6ntspi" path="res://scripts/maroon/maroon_map.gd" id="1_maroon"]
 
-[node name="Maroon" type="Node2D"]
+[node name="Maroon" type="Node2D" unique_id=1071386345]
 script = ExtResource("1_maroon")

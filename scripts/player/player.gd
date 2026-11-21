@@ -21,6 +21,7 @@ var last_direction := Vector2.DOWN
 var wind := Vector2.ZERO
 var is_running := false
 var concealed := false
+var noise_muted := false
 
 var _noise_timer := 0.0
 
@@ -75,7 +76,12 @@ func _tick_noise(delta: float) -> void:
 
 ## Tells every guard in range that the player is being noisy.
 func emit_noise() -> void:
+	if noise_muted:
+		return
 	get_tree().call_group("guards", "hear_noise", global_position, RUN_NOISE_RADIUS)
+
+func set_noise_muted(value: bool) -> void:
+	noise_muted = value
 
 func play_walk_animation(direction):
 	if direction.x  > 0:

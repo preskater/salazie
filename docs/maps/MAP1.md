@@ -18,17 +18,38 @@ mountain source above the refuge.
 | Tiles y | Zone | Content |
 |---|---|---|
 | 106–112 | Sea | animated water shader, tide foam, buoys, wreck rocks |
-| 92–108 | Beach and mouth | spawn, palms, shells, driftwood, seagulls, ruined dock |
+| 92–108 | Beach and mouth | spawn, palms, shells, driftwood, seagulls, ruined dock, wrecked boat |
 | 78–94 | Estuary | wooden bridge, fishing boat, fish, ducks, first patrol |
 | 62–80 | Wide river | second bridge, forest camp, river pool |
-| 46–70 | Tropical forest | tents, campfire, forage, three hide spots, two patrols |
-| 36–48 | Gorge and waterfall | animated cascade, pool, rocks, third bridge |
-| 20–40 | Mountain forest | pines, birches, boulders, goats, pass |
+| 46–70 | Tropical forest | tents, campfire, forage, two hide spots, two patrols |
+| 36–48 | Gorge and waterfall | animated cascade, pool, rocks, cave tunnel, waterfall alcove, third bridge |
+| 20–40 | Mountain forest | pines, birches, boulders, goats, pass, cliff-ridge trail, two hide spots |
 | 8–22 | Col and refuge | cabin, well, campfire, lanterns, fence, `MapExit` |
 | 0–8 | Rocky crest | large boulders and pines, collision band |
 
 The trail is painted from the beach to the cabin. It crosses the river on three
 bridges at rows 84, 52 and 26; everywhere else the water blocks movement.
+
+## Routes and stealth
+
+Two optional routes parallel the main trail through the gorge.
+
+| Route | Entry / exit | Mechanics |
+|---|---|---|
+| Cave tunnel | Trail at `(21, 50)` → `(20, 36)`, west of the trail | dark floor shade, rock walls, lanterns, food at `(18, 42)`, hide spot at `(18, 44)`; the cave zone conceals the player and mutes running noise |
+| Cliff ridge | Climb `(39, 51)` → `(42, 48)`, then climb `(42, 30)` → `(44, 28)` | sealed lane of rock walls, lanterns, hide spot at `(42, 40)`; both climbs are interactive and fade the screen |
+
+- The waterfall spray is a third stealth zone (`(28, 41)`, 9 × 4 tiles): it only
+  mutes noise, it does not conceal the player. The alcove at `(26, 42)` nests
+  inside it and both conceals and mutes.
+- `climb_point.gd` joins the `interactable` group; `E` starts a 0.22 s fade,
+  teleports the player to the destination and fades back in, then emits
+  `climb_finished`.
+- `stealth_zone.gd` joins the `stealth_zones` group. On exit it only clears
+  concealment or noise muting when no other overlapping zone still provides it,
+  so nested zones behave.
+- The player has `noise_muted`; while set, `emit_noise()` skips the guard
+  broadcast. Guards keep their normal vision, chase and catch logic.
 
 ## Scene structure
 
@@ -46,6 +67,9 @@ guards, pickups and animals).
 | `World/RiverMouthCheckpoint` | `Area2D` | Completes `follow_river` |
 | `World/ForestCheckpoint` | `Area2D` | Mid-map respawn point |
 | `World/UpperCheckpoint` | `Area2D` | Completes `cross_patrol` after the gorge |
+| `World/Climb_*` | `Area2D` | Ridge climb points (`climb_point.tscn`) |
+| `World/Stealth_*` | `Area2D` | Cave, cascade spray and alcove zones (`stealth_zone.tscn`) |
+| `Overlay` | `CanvasLayer` | Controls hint, notifications, interaction prompt, objective tracker |
 | `SurvivalHUD` | `CanvasLayer` | Food and water bars |
 | `TaskList` | `CanvasLayer` | Generation task list |
 | `GenerationResult` | `CanvasLayer` | Result shown before leaving |
@@ -56,7 +80,7 @@ guards, pickups and animals).
 | ID | Success | Failure | Retry |
 |---|---|---|---|
 | `follow_river` | Reach the estuary checkpoint | — | — |
-| `find_water` | Drink at the waterfall pool | — | — |
+| `find_water` | Drink at the waterfall basin (`E` near the pool) | — | — |
 | `find_food` | Collect 3 wild foods | — | — |
 | `hide_from_patrol` | Stay hidden for 1.5 s | Spotted while trying to hide | Yes |
 | `cross_patrol` | Reach the upper checkpoint | Caught by a guard | Yes |
@@ -66,16 +90,42 @@ Being caught records a failure for `cross_patrol` and, if not already hidden, fo
 `hide_from_patrol`. The player respawns at the last checkpoint, the failed tasks return to
 `PENDING`, and the failure history stays in the generation result.
 
+## Objective indicator
+
+The HUD shows exactly one objective tracker at a time (gold arrow, task label and
+distance in metres). It follows the first unresolved task in `Campaign.TASKS[1]`
+order and never marks the other pending tasks.
+
+| Task | Indicator points at |
+|---|---|
+| `follow_river` | River-mouth checkpoint |
+| `find_water` | Waterfall basin |
+| `find_food` | Nearest unused food spot |
+| `hide_from_patrol` | Nearest hide spot |
+| `cross_patrol` | Upper checkpoint |
+| `reach_refuge` | Refuge exit |
+
+The tracker updates as soon as a task is resolved; `find_food` also shows the
+current `(n/3)` progress. It lives under `Overlay/ObjectiveBar` in
+`maroon_map.gd`; no world nodes are created.
+
 Saves written before `follow_river` existed are migrated: when the saved game is already
 past Map 1, the river task is marked done.
 
 ## Survival and stealth
 
 - `SurvivalComponent`: food drains at 0.35/s, water at 0.55/s.
-- Forage restores 28 food; the waterfall pool restores 60 water and the estuary
-  refill restores 40 water.
+- Forage restores 28 food.
+- Drinking is an `E` interaction at any freshwater bank (river, estuary, pool).
+  Each drink restores 10 water. The sea is salt water and cannot be drunk.
+- Drinking has a 10 s cooldown. Salazie's rivers carry fine volcanic silt: the
+  gourd must stand for about ten seconds so the silt settles before the next
+  sip. The prompt shows the remaining settling time.
+- The first drink within 12 tiles of `WATER_SPOT_TILE` (the waterfall basin)
+  completes `find_water`. There are no water forage pickups any more.
 - A concealed player is ignored by guards beyond 32 px.
-- Running still emits noise and raises suspicion.
+- Running emits noise unless the player is inside the cave or the waterfall
+  spray, where the ambient noise masks the steps.
 - Guards use the existing vision cone, chase and catch logic with `pause_on_catch = false`
   so the map can respawn the player.
 
@@ -100,8 +150,10 @@ click-only, so the generator stays in the repository):
   --script res://tools/build_maroon_tilesets.gd
 ```
 
-`tools/preview_maroon.gd` renders zone screenshots, `tools/check_maroon_paths.gd`
-proves every bridge is crossable and that open water blocks movement, and
+`tools/preview_maroon.gd` renders zone screenshots, `tools/preview_maroon_anim.gd`
+captures the animated inhabitants, `tools/make_fish_sheets.gd` regenerates the
+transparent fish copies, `tools/check_maroon_paths.gd` proves every bridge is
+crossable and that open water blocks movement, and
 `tools/check_maroon_anchors.gd` verifies that no task anchor sits inside a
 static collision.
 
@@ -150,28 +202,37 @@ Ground and water come from the vendored LimeZu packs:
   sleeping bags, backpacks, benches, fishing crates, pier and dock pieces
 - `sprites/exteriors_48x48/singles/17_Garden` — flowers
 - `sprites/exteriors_48x48/singles/1_Terrains_and_Fences` — grass tufts, mound accents
-- `sprites/custom/waterfall_144x432.png` — gorge cascade
+- `sprites/custom/waterfall_gorge_288x432.png` — wide gorge cascade
+- `sprites/custom/waterfall_144x432.png` — mountain source cascade
+- `sprites/custom/fishes_1/2/3.png` — fish sheets with the water background keyed out
 
-All sprites are bottom-anchored for y-sorting.
+World props are bottom-anchored for y-sorting; fish and mist are centred in
+their cell.
 
 ## Animations
 
 | Effect | Source | Slice / rules |
 |---|---|---|
 | Water highlights | `water_flow.gdshader` on `Terrain/Water` | Static pure water tile; moving crests |
-| Cascade | `waterfall_flow.gdshader` + `sprites/custom/waterfall_144x432.png` | Integer scale 1.0, scrolling shader |
-| Seagulls | `Beach_Seagull_Idle_{Down,Left,Right}_48x48.png` | Down 6 frames; left/right 12 frames, row 0, cell 48×48 |
-| Boats and buoys | `Fishing_Boat_right_48x48.png`, `Beach_Water_Buoy_1/2_48x48.png` | **Cell 48×96**, 40 / 16 frames, bottom anchored |
-| Fish | `Fishes_1_48x48gif.png`, `Fishes_2/3_48x48.png` | 12–14 frames, centered in water |
+| Cascade | `waterfall_flow.gdshader` + `sprites/custom/waterfall_gorge_288x432.png` | Integer scale 1.0, scrolling shader; mountain source uses `waterfall_144x432.png` |
+| Seagulls | `Beach_Seagull_Idle_{Down,Left,Right}_48x48.png` | Down: 6 frames, cell 48×48; left/right: 6 frames, cell **96×48**, row 0 |
+| Boats and buoys | `Fishing_Boat_right_48x48.png`, `Beach_Water_Buoy_1/2_48x48.png` | Boat cell **240×96**, 8 frames; buoys cell **96×96**, 8 frames; bottom anchored |
+| Fish | `sprites/custom/fishes_1/2/3.png` | Copies of `Fishes_*` with the flat water colour keyed out; 48×48, 12 / 14 / 14 frames, centered in water |
 | Campfire | `Campfire_48x48.png` | **Row 1** (logs + flames), 6 frames |
 | Lanterns | `ME_Singles_Camping_48x48_Lantern_1.png` | Static prop, no frame cycling |
-| Mist and smoke | `...Fog_Only_Loop_48x48.png` | **Row 1**, 36 frames |
-| Trees | `game_resources/animations/Tree_*_Shake.tres` | Existing `shake` animations |
+| Mist | `...Fog_Only_Loop_48x48.png` | **Row 1**, 6 frames of **288×48** |
+| Smoke | `Stone_Oven_Smoke_Effect_48x48.png` | 8 frames of **144×192**, bottom anchored above the fire |
+| Trees | `game_resources/animations/Tree_*_Shake.tres` | Existing 3-frame `shake` animations |
 | Falling leaves | `Leaves_Green/Brown/Yellow.tres` | Existing `fall` animations |
-| Goats | `Goats_48x48/Goat_*.png` | **Cell 96×144**, walk row **2**, graze row **1**, 6 frames per direction |
-| Rabbits and ducks | `Rabbits/Ducks_48x48/*.png` | **Cell 96×96**, walk row **2**, graze row **1**, 6 frames per direction |
-| Crows | `Crow_Flap_Right_48x48.png` | **12 frames**, row 0, horizontal tween |
+| Goats | `Goats_48x48/Goat_*.png` | **Cell 96×144**, walk row **2**, graze row **3**, 6 frames per direction |
+| Rabbits and ducks | `Rabbits/Ducks_48x48/*.png` | **Cell 96×96**, walk row **2**, graze row **3**, 6 frames per direction |
+| Crows | `Crow_Flap_Right_48x48.png` | **6 frames** of **96×96**, row 0, horizontal tween |
 | Grass sway | `crop_sway.gd` | Small tufts only |
+
+Animal direction groups in the LimeZu sheets are ordered **left, up, right,
+down**, not right/up/left/down. The fish background is the pack's flat water
+colour, so `tools/make_fish_sheets.gd` copies the three sheets to
+`sprites/custom/` with that colour made transparent.
 
 The animated water sheets in the pack are **shoreline autotile** sheets; they do
 not contain a clean pure-water body. The water body therefore animates through
@@ -205,7 +266,7 @@ the crest shader, while the land/water edge uses the static pack variants.
 |---|---|---|
 | `move_*` | WASD / arrows | Move |
 | `run` | Shift | Run, emits noise |
-| `interact` | E | Not used for pickups; kept for consistency |
+| `interact` | E | Climb between the river trail and the cliff ridge; drink at a freshwater bank |
 | `toggle_tasks` | T / Select | Open the task list |
 | `pause` | Esc / Start | Pause menu |
 
@@ -217,14 +278,18 @@ the crest shader, while the land/water edge uses the static pack variants.
 | `scripts/maroon/maroon_map.gd` | Gameplay, UI, tasks and respawns |
 | `scripts/maroon/maroon_layout.gd` | Static world generation |
 | `scripts/maroon/maroon_decor.gd` | Props and animation factory |
-| `scripts/maroon/forage_spot.gd` / `scenes/maroon/forage_spot.tscn` | Food and water pickups |
+| `scripts/maroon/forage_spot.gd` / `scenes/maroon/forage_spot.tscn` | Wild food pickups |
 | `scripts/maroon/hide_spot.gd` / `scenes/maroon/hide_spot.tscn` | Concealment and hide task |
+| `scripts/maroon/climb_point.gd` / `scenes/maroon/climb_point.tscn` | Ridge climb interaction |
+| `scripts/maroon/stealth_zone.gd` / `scenes/maroon/stealth_zone.tscn` | Concealment and noise-masking areas |
 | `scripts/maroon/checkpoint.gd` / `scenes/maroon/checkpoint.tscn` | Respawn point and route tasks |
 | `scripts/systems/campaign/campaign_state.gd` | Task states, failures and generation result |
 | `scenes/ui/tasks/task_list.tscn` / `scripts/ui/tasks/task_list.gd` | Task list UI |
 | `scenes/ui/tasks/generation_result.tscn` / `scripts/ui/tasks/generation_result.gd` | Generation result overlay |
 | `tools/build_maroon_tilesets.gd` | TileSet generator |
+| `tools/make_fish_sheets.gd` | Fish-sheet transparency generator |
 | `tools/preview_maroon.gd` | Zone screenshot helper |
+| `tools/preview_maroon_anim.gd` | Animation close-up screenshot helper |
 | `tools/check_maroon_paths.gd` | Bridge and water collision helper |
 | `tools/check_maroon_anchors.gd` | Task-anchor collision helper |
 

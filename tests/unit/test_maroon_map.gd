@@ -1,6 +1,7 @@
 extends GdUnitTestSuite
 
 const MAROON_SCENE := preload("res://scenes/maps/maroon.tscn")
+const LAYOUT := preload("res://scripts/maroon/maroon_layout.gd")
 const TEST_SAVE_PATH := "user://test_maroon_save.json"
 
 var _original_save_path := ""
@@ -42,6 +43,7 @@ func test_map_builds_player_survival_and_generation_ui() -> void:
 	assert_object(map.get_node_or_null("SurvivalHUD")).is_not_null()
 	assert_object(map.get_node_or_null("TaskList")).is_not_null()
 	assert_object(map.get_node_or_null("GenerationResult")).is_not_null()
+	assert_object(map.get_node_or_null("Overlay")).is_not_null()
 	var survival := map.get_node("World/Player/Survival")
 	assert_bool(bool(survival.get("active"))).is_true()
 
@@ -143,7 +145,66 @@ func test_animated_frames_stay_inside_their_sheets() -> void:
 					"%s/%s frame %d is outside the sheet" % [sprite.name, animation, index]).is_true()
 
 
-func test_wild_animals_walk_on_row_two_and_graze_on_row_one() -> void:
+func test_animation_sheets_use_their_real_frame_grid() -> void:
+	var map := await _spawn_map()
+	var expectations := {
+		"res://sprites/exteriors_48x48/animated/sheets/Fishing_Boat_right_48x48.png":
+			{"cell": Vector2(240, 96), "frames": 8},
+		"res://sprites/exteriors_48x48/animated/sheets/Beach_Water_Buoy_1_48x48.png":
+			{"cell": Vector2(96, 96), "frames": 8},
+		"res://sprites/exteriors_48x48/animated/sheets/Beach_Seagull_Idle_Left_48x48.png":
+			{"cell": Vector2(96, 48), "frames": 6},
+		"res://sprites/exteriors_48x48/animated/sheets/Beach_Seagull_Idle_Right_48x48.png":
+			{"cell": Vector2(96, 48), "frames": 6},
+		"res://sprites/exteriors_48x48/animated/sheets/Crow_Flap_Right_48x48.png":
+			{"cell": Vector2(96, 96), "frames": 6},
+		"res://sprites/exteriors_48x48/animated/sheets/Beach_Stage_Fog_Machine_Fog_Only_Loop_48x48.png":
+			{"cell": Vector2(288, 48), "frames": 6},
+		"res://sprites/farm_48x48/animated/Stone_Oven_Smoke_Effect_48x48.png":
+			{"cell": Vector2(144, 192), "frames": 8},
+		"res://sprites/custom/fishes_1.png": {"cell": Vector2(48, 48), "frames": 12},
+		"res://sprites/custom/fishes_2.png": {"cell": Vector2(48, 48), "frames": 14},
+		"res://sprites/custom/fishes_3.png": {"cell": Vector2(48, 48), "frames": 14},
+	}
+	for path: String in expectations:
+		var expected: Dictionary = expectations[path]
+		var sprite := _animated_sprite_for_texture(map, path)
+		assert_object(sprite).override_failure_message(
+			"missing animation %s" % path).is_not_null()
+		if sprite == null:
+			continue
+		var frames := sprite.sprite_frames
+		assert_int(frames.get_frame_count(&"play")).override_failure_message(
+			"wrong frame count for %s" % path).is_equal(int(expected["frames"]))
+		var texture := frames.get_frame_texture(&"play", 0) as AtlasTexture
+		assert_object(texture).override_failure_message(
+			"missing atlas for %s" % path).is_not_null()
+		if texture != null:
+			assert_vector(texture.region.size).override_failure_message(
+				"wrong cell for %s" % path).is_equal(expected["cell"])
+			if path.begins_with("res://sprites/custom/fishes_"):
+				var atlas: Image = texture.atlas.get_image()
+				assert_object(atlas).is_not_null()
+				if atlas != null:
+					assert_bool(atlas.get_pixel(0, 0).a < 0.01).override_failure_message(
+						"%s still has the opaque water background" % path).is_true()
+
+
+func _animated_sprite_for_texture(map: Node, texture_path: String) -> AnimatedSprite2D:
+	for node: Node in map.find_children("*", "AnimatedSprite2D", true, false):
+		var sprite := node as AnimatedSprite2D
+		if sprite.sprite_frames == null:
+			continue
+		for animation: StringName in sprite.sprite_frames.get_animation_names():
+			if sprite.sprite_frames.get_frame_count(animation) == 0:
+				continue
+			var texture := sprite.sprite_frames.get_frame_texture(animation, 0) as AtlasTexture
+			if texture != null and texture.atlas.resource_path == texture_path:
+				return sprite
+	return null
+
+
+func test_wild_animals_walk_on_row_two_and_graze_on_row_three() -> void:
 	var map := await _spawn_map()
 	var animals := get_tree().get_nodes_in_group("wildlife")
 	assert_int(animals.size()).is_greater(0)
@@ -151,7 +212,7 @@ func test_wild_animals_walk_on_row_two_and_graze_on_row_one() -> void:
 		assert_int(int(node.get("walk_row"))).override_failure_message(
 			"%s walks on the wrong row" % node.name).is_equal(2)
 		assert_int(int(node.get("graze_row"))).override_failure_message(
-			"%s grazes on the wrong row" % node.name).is_equal(1)
+			"%s grazes on the wrong row" % node.name).is_equal(3)
 
 
 func test_world_props_keep_integer_scales() -> void:
@@ -222,8 +283,10 @@ func test_map_places_guards_forage_hides_and_checkpoints() -> void:
 	var map := await _spawn_map()
 
 	assert_int(get_tree().get_nodes_in_group("guards").size()).is_equal(5)
-	assert_int(get_tree().get_nodes_in_group("forage_spots").size()).is_equal(6)
-	assert_int(get_tree().get_nodes_in_group("hide_spots").size()).is_equal(3)
+	assert_int(get_tree().get_nodes_in_group("forage_spots").size()).is_equal(4)
+	assert_int(get_tree().get_nodes_in_group("hide_spots").size()).is_equal(6)
+	assert_int(get_tree().get_nodes_in_group("climb_points").size()).is_equal(2)
+	assert_int(get_tree().get_nodes_in_group("stealth_zones").size()).is_equal(3)
 	assert_object(map.get_node_or_null("World/UpperCheckpoint")).is_not_null()
 
 
@@ -247,6 +310,74 @@ func test_forage_restores_food_and_advances_find_food() -> void:
 	assert_bool(food_spot.call("is_used")).is_true()
 
 
+func test_drinking_restores_ten_water_with_a_cooldown() -> void:
+	var map := await _spawn_map()
+	var player: Node2D = map.get_node("World/Player")
+	var survival := player.get_node("Survival")
+	survival.set("water", 30.0)
+
+	map.call("_drink")
+	assert_float(float(survival.get("water"))).is_equal(40.0)
+
+	map.call("_drink")
+	assert_float(float(survival.get("water"))).is_equal(40.0)
+
+	map.set("_drink_cooldown", 0.0)
+	map.call("_drink")
+	assert_float(float(survival.get("water"))).is_equal(50.0)
+
+
+func test_drinking_at_the_waterfall_basin_completes_find_water() -> void:
+	var map := await _spawn_map()
+	var player: Node2D = map.get_node("World/Player")
+	player.global_position = map.get("_anchors")["water_spot"]
+
+	map.call("_drink")
+
+	assert_int(Campaign.task_status("find_water")).is_equal(Campaign.TaskStatus.DONE)
+
+
+func test_drink_reach_requires_fresh_water() -> void:
+	var map := await _spawn_map()
+	var player: Node2D = map.get_node("World/Player")
+	assert_bool(map.call("_is_near_fresh_water")).override_failure_message(
+		"the beach spawn must be out of freshwater reach").is_false()
+
+	var water: TileMapLayer = map.get_node("Terrain/Water")
+	for cell: Vector2i in water.get_used_cells():
+		if cell.y >= LAYOUT.SEA_ROW:
+			continue
+		for offset: Vector2i in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+			var bank: Vector2i = cell + offset
+			if water.get_cell_source_id(bank) != -1:
+				continue
+			if bank.x < 1 or bank.y < 1 or bank.x >= 71 or bank.y >= 111:
+				continue
+			player.global_position = Vector2(bank.x * 48 + 24, bank.y * 48 + 24)
+			assert_bool(map.call("_is_near_fresh_water")).override_failure_message(
+				"fresh water at %s cannot be reached from %s" % [cell, bank]).is_true()
+			return
+	assert_bool(false).override_failure_message("no freshwater bank found").is_true()
+
+
+func test_objective_indicator_only_tracks_the_current_task() -> void:
+	var map := await _spawn_map()
+	var label: Label = map.get_node_or_null("Overlay/ObjectiveBar/ObjectiveLabel")
+	assert_object(label).is_not_null()
+	if label == null:
+		return
+	assert_bool(label.text.contains("Trouver la rivière")).override_failure_message(
+		"the first objective should be the river").is_true()
+
+	Campaign.complete_task("follow_river")
+	await get_tree().process_frame
+	await get_tree().process_frame
+
+	assert_bool(label.text.contains("Boire à la rivière")).override_failure_message(
+		"the indicator should move to the next task").is_true()
+	assert_bool(label.text.contains("Trouver la rivière")).is_false()
+
+
 func test_hiding_completes_hide_task_and_conceals_player() -> void:
 	var map := await _spawn_map()
 	var player: Node2D = map.get_node("World/Player")
@@ -260,6 +391,60 @@ func test_hiding_completes_hide_task_and_conceals_player() -> void:
 	assert_int(Campaign.task_status("hide_from_patrol")).is_equal(Campaign.TaskStatus.DONE)
 	hide_spot.call("_on_body_exited", player)
 	assert_bool(bool(player.get("concealed"))).is_false()
+
+
+func test_climb_point_moves_the_player_to_its_destination() -> void:
+	var map := await _spawn_map()
+	var player: Node2D = map.get_node("World/Player")
+	var climb: Area2D = get_tree().get_nodes_in_group("climb_points")[0]
+	var destination: Vector2 = climb.get("destination")
+
+	climb.call("interact", player)
+	await map.climb_finished
+
+	assert_float(player.global_position.distance_to(destination)).is_less(1.0)
+
+
+func test_stealth_zones_conceal_and_mute_the_player() -> void:
+	var map := await _spawn_map()
+	var player: Node2D = map.get_node("World/Player")
+	var cave: Area2D = null
+	var cascade: Area2D = null
+	for node: Node in get_tree().get_nodes_in_group("stealth_zones"):
+		if String(node.get("zone_name")) == "la grotte":
+			cave = node as Area2D
+		elif String(node.get("zone_name")) == "la cascade":
+			cascade = node as Area2D
+	assert_object(cave).is_not_null()
+	assert_object(cascade).is_not_null()
+
+	cave.call("_on_body_entered", player)
+	assert_bool(bool(player.get("concealed"))).is_true()
+	assert_bool(bool(player.get("noise_muted"))).is_true()
+	cave.call("_on_body_exited", player)
+	assert_bool(bool(player.get("concealed"))).is_false()
+	assert_bool(bool(player.get("noise_muted"))).is_false()
+
+	cascade.call("_on_body_entered", player)
+	assert_bool(bool(player.get("concealed"))).is_false()
+	assert_bool(bool(player.get("noise_muted"))).is_true()
+	cascade.call("_on_body_exited", player)
+	assert_bool(bool(player.get("noise_muted"))).is_false()
+
+
+func test_waterfall_noise_muting_keeps_guards_unaware() -> void:
+	var map := await _spawn_map()
+	var player: Node2D = map.get_node("World/Player")
+	var guard: CharacterBody2D = get_tree().get_nodes_in_group("guards")[0]
+	player.global_position = guard.global_position + Vector2(100, 0)
+
+	player.call("set_noise_muted", true)
+	player.call("emit_noise")
+	assert_int(int(guard.get("state"))).is_equal(0)
+
+	player.call("set_noise_muted", false)
+	player.call("emit_noise")
+	assert_int(int(guard.get("state"))).is_equal(1)
 
 
 func test_upper_checkpoint_completes_cross_patrol() -> void:

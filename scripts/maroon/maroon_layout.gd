@@ -86,7 +86,6 @@ const UPPER_CHECKPOINT_TILE := Vector2i(44, 24)
 const REFUGE_TILE := Vector2i(52, 20)
 const CABIN_TILE := Vector2i(52, 18)
 const WATER_SPOT_TILE := Vector2i(26, 44)
-const EXTRA_WATER_TILE := Vector2i(50, 90)
 
 const BRIDGE_ROWS: Array[int] = [84, 52, 26]
 const BRIDGE_HEIGHT := 2
@@ -94,13 +93,16 @@ const BRIDGE_HEIGHT := 2
 const FOOD_TILES: Array[Vector2i] = [
 	Vector2i(10, 99),
 	Vector2i(40, 74),
-	Vector2i(20, 40),
+	Vector2i(18, 42),
 	Vector2i(48, 92),
 ]
 const HIDE_TILES: Array[Vector2i] = [
 	Vector2i(38, 72),
 	Vector2i(20, 50),
 	Vector2i(36, 30),
+	Vector2i(18, 44),
+	Vector2i(26, 42),
+	Vector2i(42, 40),
 ]
 const GUARD_TILES: Array[Vector2i] = [
 	Vector2i(47, 88),
@@ -119,11 +121,38 @@ const TRAIL_POINTS: Array[Vector2i] = [
 	Vector2i(28, 26), Vector2i(36, 26), Vector2i(42, 26), Vector2i(44, 22),
 	Vector2i(48, 18), Vector2i(52, 20),
 ]
+const RIDGE_TRAIL_POINTS: Array[Vector2i] = [
+	Vector2i(42, 48), Vector2i(42, 44), Vector2i(42, 40),
+	Vector2i(42, 36), Vector2i(42, 32), Vector2i(42, 30),
+]
+const CAVE_TRAIL_POINTS: Array[Vector2i] = [
+	Vector2i(21, 50), Vector2i(20, 50), Vector2i(19, 50), Vector2i(18, 50),
+	Vector2i(18, 48), Vector2i(18, 44), Vector2i(18, 40), Vector2i(18, 36),
+	Vector2i(20, 36),
+]
+const ALCOVE_TRAIL_POINTS: Array[Vector2i] = [
+	Vector2i(23, 42), Vector2i(24, 42), Vector2i(25, 42), Vector2i(26, 42),
+]
+const CLIMB_POINTS := [
+	{"tile": Vector2i(39, 51), "destination": Vector2i(42, 48),
+		"label": "E — Grimper sur la crête"},
+	{"tile": Vector2i(42, 30), "destination": Vector2i(44, 28),
+		"label": "E — Descendre vers la rivière"},
+]
+const STEALTH_ZONES := [
+	{"tile": Vector2i(18, 44), "tiles": Vector2i(2, 14), "name": "la grotte",
+		"conceal": true, "mute": true},
+	{"tile": Vector2i(28, 41), "tiles": Vector2i(9, 4), "name": "la cascade",
+		"conceal": false, "mute": true},
+	{"tile": Vector2i(26, 42), "tiles": Vector2i(3, 3), "name": "l'alcôve",
+		"conceal": true, "mute": true},
+]
 
 var size := Vector2(COLS * TILE, ROWS * TILE)
 
 var _ground: TileMapLayer
 var _water: TileMapLayer
+var _terrain: Node2D
 var _water_edges: Node2D
 var _bridges: TileMapLayer
 var _cliffs: TileMapLayer
@@ -152,6 +181,8 @@ func build(terrain: Node2D, world: Node2D) -> Dictionary:
 	_build_waterfall()
 	_build_gorge_cliffs()
 	_build_mountain_crest()
+	_build_cave()
+	_build_ridge()
 	_build_beach()
 	_build_estuary_dock()
 	_build_camp()
@@ -170,10 +201,11 @@ func build(terrain: Node2D, world: Node2D) -> Dictionary:
 		"upper_checkpoint": _tile_center(UPPER_CHECKPOINT_TILE),
 		"refuge": _tile_center(REFUGE_TILE),
 		"water_spot": _tile_center(WATER_SPOT_TILE),
-		"extra_water": _tile_center(EXTRA_WATER_TILE),
 		"food_spots": _tiles_to_points(FOOD_TILES),
 		"hide_spots": _tiles_to_points(HIDE_TILES),
 		"guards": _tiles_to_points(GUARD_TILES),
+		"climb_points": _climb_specs(),
+		"stealth_zones": _stealth_specs(),
 	}
 
 
@@ -203,6 +235,7 @@ func _build_river() -> void:
 
 
 func _build_layers(terrain: Node2D) -> void:
+	_terrain = terrain
 	_ground = _make_layer(terrain, "Ground")
 	_water = _make_layer(terrain, "Water")
 	var water_material := ShaderMaterial.new()
@@ -403,9 +436,26 @@ func _is_sand(tile: Vector2i) -> bool:
 
 
 func _build_trail() -> void:
-	for index in TRAIL_POINTS.size() - 1:
-		var from := Vector2(TRAIL_POINTS[index])
-		var to := Vector2(TRAIL_POINTS[index + 1])
+	_paint_trail(TRAIL_POINTS)
+	_paint_trail(RIDGE_TRAIL_POINTS)
+	_paint_trail(CAVE_TRAIL_POINTS)
+	_paint_trail(ALCOVE_TRAIL_POINTS)
+	# Small dirt clearings at the camps, checkpoints and new route ends.
+	_paint_clearing(RIVER_MOUTH_TILE, 1)
+	_paint_clearing(FOREST_CAMP_TILE, 2)
+	_paint_clearing(UPPER_CHECKPOINT_TILE, 1)
+	_paint_clearing(REFUGE_TILE, 1)
+	_paint_clearing(Vector2i(42, 48), 1)
+	_paint_clearing(Vector2i(42, 30), 1)
+	_paint_clearing(Vector2i(20, 50), 1)
+	_paint_clearing(Vector2i(20, 36), 1)
+	_paint_clearing(Vector2i(26, 42), 1)
+
+
+func _paint_trail(points: Array[Vector2i]) -> void:
+	for index in points.size() - 1:
+		var from := Vector2(points[index])
+		var to := Vector2(points[index + 1])
 		var steps := maxi(1, int(from.distance_to(to) * 2.0))
 		for step in steps + 1:
 			var point := from.lerp(to, float(step) / float(steps))
@@ -415,11 +465,6 @@ func _build_trail() -> void:
 			if _is_water(tile) or _is_sand(tile):
 				continue
 			_trail[tile] = true
-	# Small dirt clearings at the camps and checkpoints.
-	_paint_clearing(RIVER_MOUTH_TILE, 1)
-	_paint_clearing(FOREST_CAMP_TILE, 2)
-	_paint_clearing(UPPER_CHECKPOINT_TILE, 1)
-	_paint_clearing(REFUGE_TILE, 1)
 
 
 func _paint_clearing(center: Vector2i, radius: int) -> void:
@@ -441,13 +486,20 @@ func _reserve_anchors() -> void:
 	_reserve(UPPER_CHECKPOINT_TILE, 6)
 	_reserve(REFUGE_TILE, 13)
 	_reserve(WATER_SPOT_TILE, 3)
-	_reserve(EXTRA_WATER_TILE, 3)
 	for tile: Vector2i in FOOD_TILES:
 		_reserve(tile, 3)
 	for tile: Vector2i in HIDE_TILES:
 		_reserve(tile, 3)
 	for tile: Vector2i in GUARD_TILES:
 		_reserve(tile, 5)
+	for spec: Dictionary in CLIMB_POINTS:
+		var climb_tile: Vector2i = spec["tile"]
+		var climb_destination: Vector2i = spec["destination"]
+		_reserve(climb_tile, 3)
+		_reserve(climb_destination, 3)
+	for spec: Dictionary in STEALTH_ZONES:
+		var zone_tile: Vector2i = spec["tile"]
+		_reserve(zone_tile, 4)
 	for row: int in BRIDGE_ROWS:
 		for offset in range(-2, 4):
 			_reserve(Vector2i(int(_river_center[row]), row + offset), 3)
@@ -568,7 +620,7 @@ func _build_waterfall() -> void:
 	var base_y := 40 * TILE
 	var waterfall := Sprite2D.new()
 	waterfall.name = "Waterfall"
-	waterfall.texture = load("res://sprites/custom/waterfall_144x432.png")
+	waterfall.texture = load("res://sprites/custom/waterfall_gorge_288x432.png")
 	waterfall.position = Vector2(center, base_y)
 	waterfall.offset = Vector2(0, -216)
 	waterfall.scale = Vector2.ONE
@@ -595,12 +647,17 @@ func _build_waterfall() -> void:
 	lip.add_point(Vector2(center - 158.0, 31 * TILE + 4.0))
 	lip.add_point(Vector2(center + 158.0, 31 * TILE + 4.0))
 	_world.add_child(lip)
-	_decor.add_mist(_world, Vector2(center, base_y + 10.0), 3.0)
-	_decor.add_mist(_world, Vector2(center - 120.0, base_y - 20.0), 2.0)
-	_decor.add_mist(_world, Vector2(center + 120.0, base_y - 10.0), 2.0)
+	_decor.add_mist(_world, Vector2(center, base_y + 10.0), 1.0)
+	_decor.add_mist(_world, Vector2(center - 120.0, base_y - 20.0), 0.6)
+	_decor.add_mist(_world, Vector2(center + 120.0, base_y - 10.0), 0.6)
 	for offset: float in [-220.0, -170.0, 170.0, 220.0]:
 		_decor.add_prop(_world, DECOR.ROCKS[0],
 			Vector2(center + offset, base_y + 28.0), 2.0, Vector2(90, 42))
+	# The hidden alcove beside the pool.
+	_decor.add_lantern(_world, _tile_base(Vector2i(25, 42)), 1.0)
+	_decor.add_prop(_world, DECOR.BUSHES[4], _tile_base(Vector2i(26, 43)), 1.0)
+	_decor.add_prop(_world, DECOR.GRASS_TUFTS[3], _tile_base(Vector2i(24, 43)), 1.0,
+		Vector2.ZERO, true)
 	# A smaller cascade at the mountain source, visible from the pass.
 	var source := Sprite2D.new()
 	source.name = "MountainSource"
@@ -614,7 +671,64 @@ func _build_waterfall() -> void:
 	source_material.set_shader_parameter("speed", 0.24)
 	source.material = source_material
 	_world.add_child(source)
-	_decor.add_mist(_world, Vector2(_river_center[12] * TILE, 12 * TILE + 10.0), 2.0)
+	_decor.add_mist(_world, Vector2(_river_center[12] * TILE, 12 * TILE + 10.0), 0.6)
+
+
+func _build_cave() -> void:
+	# Dark floor under the west-cliff tunnel.
+	var shade := Polygon2D.new()
+	shade.name = "CaveShade"
+	shade.color = Color(0.03, 0.04, 0.06, 0.55)
+	shade.polygon = PackedVector2Array([
+		Vector2(16.5 * TILE, 36.0 * TILE),
+		Vector2(21.5 * TILE, 36.0 * TILE),
+		Vector2(21.5 * TILE, 51.0 * TILE),
+		Vector2(16.5 * TILE, 51.0 * TILE),
+	])
+	shade.z_index = 0
+	_terrain.add_child(shade)
+	for y in range(37, 50):
+		for side: int in [16, 20]:
+			var tile := Vector2i(side, y)
+			_decor.add_prop(_world, DECOR.ROCKS[(y + side) % DECOR.ROCKS.size()],
+				_tile_base(tile), 2.0, Vector2(60, 28))
+			_block_tile(tile, 1.2)
+	for tile: Vector2i in [Vector2i(17, 48), Vector2i(17, 44), Vector2i(17, 40),
+			Vector2i(19, 38)]:
+		_decor.add_lantern(_world, _tile_base(tile), 1.0)
+	_decor.add_prop(_world, DECOR.ROCKS[0], _tile_base(Vector2i(18, 35)),
+		2.0, Vector2(80, 30))
+	_decor.add_prop(_world, DECOR.ROCKS[1], _tile_base(Vector2i(21, 35)),
+		1.0, Vector2(60, 26))
+	_decor.add_prop(_world, DECOR.BUSHES[2], _tile_base(Vector2i(19, 46)), 1.0)
+
+
+func _build_ridge() -> void:
+	# A narrow ledge sealed by cliffs; the two climb points are the only entries.
+	for y in range(31, 48):
+		for side: int in [40, 44]:
+			var tile := Vector2i(side, y)
+			if _is_water(tile):
+				continue
+			_decor.add_prop(_world, DECOR.ROCKS[(y * 3 + side) % DECOR.ROCKS.size()],
+				_tile_base(tile), 2.0, Vector2(60, 28))
+			_block_tile(tile, 1.1)
+	for x in range(41, 44):
+		for tile: Vector2i in [Vector2i(x, 49), Vector2i(x, 29)]:
+			_decor.add_prop(_world, DECOR.ROCKS[1], _tile_base(tile),
+				2.0, Vector2(60, 28))
+			_block_tile(tile, 1.0)
+	_decor.add_lantern(_world, _tile_base(Vector2i(43, 46)), 1.0)
+	_decor.add_lantern(_world, _tile_base(Vector2i(43, 32)), 1.0)
+	_decor.add_prop(_world, DECOR.GRASS_TUFTS[1], _tile_base(Vector2i(41, 44)),
+		1.0, Vector2.ZERO, true)
+	var rope := Line2D.new()
+	rope.name = "ClimbRope"
+	rope.width = 4.0
+	rope.default_color = Color(0.55, 0.40, 0.22)
+	rope.add_point(Vector2(39.0 * TILE + 24.0, 51.0 * TILE + 24.0))
+	rope.add_point(Vector2(42.0 * TILE + 24.0, 48.0 * TILE + 24.0))
+	_bridge_deck.add_child(rope)
 
 
 func _build_mountain_crest() -> void:
@@ -707,6 +821,23 @@ func _build_beach() -> void:
 	_decor.add_prop(_world,
 		"res://sprites/exteriors_48x48/singles/21_Beach/21_Beach_48x48_Big_Sea_Rock_Vers_1.png",
 		Vector2(68 * TILE, 104 * TILE), 1.0)
+	# The maroon's wreck on the beach.
+	_decor.add_prop(_world,
+		"res://sprites/exteriors_48x48/singles/10_Vehicles/ME_Singles_Vehicles_48x48_Boat_1_Left_1.png",
+		_tile_base(Vector2i(8, 103)), 1.0, Vector2(90, 40))
+	_decor.add_prop(_world,
+		"res://sprites/exteriors_48x48/singles/11_Camping/ME_Singles_Camping_48x48_Pier_Pole_1.png",
+		_tile_base(Vector2i(9, 102)), 1.0)
+	_decor.add_prop(_world,
+		"res://sprites/exteriors_48x48/singles/11_Camping/ME_Singles_Camping_48x48_Pier_Barrel_1.png",
+		_tile_base(Vector2i(7, 102)), 1.0, Vector2(30, 20))
+	_decor.add_prop(_world,
+		"res://sprites/exteriors_48x48/singles/11_Camping/ME_Singles_Camping_48x48_Fish_Crate_1.png",
+		_tile_base(Vector2i(10, 103)), 1.0, Vector2(36, 20))
+	var broken_hull := _decor.add_prop(_world,
+		"res://sprites/exteriors_48x48/singles/11_Camping/ME_Singles_Camping_48x48_Pier_4.png",
+		_tile_base(Vector2i(11, 104)), 1.0)
+	broken_hull.rotation = 0.4
 
 
 func _build_estuary_dock() -> void:
@@ -729,26 +860,26 @@ func _build_estuary_dock() -> void:
 		_tile_base(Vector2i(59, 100)), 1.0)
 	_decor.add_sheet(_world,
 		"res://sprites/exteriors_48x48/animated/sheets/Fishing_Boat_right_48x48.png",
-		_tile_base(Vector2i(56, 107)), Vector2i(48, 96), 0, 40, 8.0, 1.0, false)
+		_tile_base(Vector2i(56, 107)), Vector2i(240, 96), 0, 8, 8.0, 1.0, false)
 	_decor.add_sheet(_world,
 		"res://sprites/exteriors_48x48/animated/sheets/Beach_Water_Buoy_1_48x48.png",
-		_tile_base(Vector2i(22, 108)), Vector2i(48, 96), 0, 16, 8.0, 1.0, true)
+		_tile_base(Vector2i(22, 108)), Vector2i(96, 96), 0, 8, 8.0, 1.0, true)
 	_decor.add_sheet(_world,
 		"res://sprites/exteriors_48x48/animated/sheets/Beach_Water_Buoy_2_48x48.png",
-		_tile_base(Vector2i(54, 109)), Vector2i(48, 96), 0, 16, 8.0, 1.0, true)
+		_tile_base(Vector2i(54, 109)), Vector2i(96, 96), 0, 8, 8.0, 1.0, true)
 	_decor.add_sheet(_world,
-		"res://sprites/exteriors_48x48/animated/sheets/Fishes_2_48x48.png",
+		"res://sprites/custom/fishes_2.png",
 		_tile_center(Vector2i(int(_river_center[96]), 96)), Vector2i(48, 48), 0, 14, 8.0,
 		1.0, true, Color.WHITE, false)
 	_decor.add_sheet(_world,
 		"res://sprites/exteriors_48x48/animated/sheets/Beach_Seagull_Idle_Left_48x48.png",
-		_tile_base(Vector2i(9, 100)), Vector2i(48, 48), 0, 12, 6.0, 1.0, true)
+		_tile_base(Vector2i(9, 100)), Vector2i(96, 48), 0, 6, 6.0, 1.0, true)
 	_decor.add_sheet(_world,
 		"res://sprites/exteriors_48x48/animated/sheets/Beach_Seagull_Idle_Down_48x48.png",
 		_tile_base(Vector2i(20, 101)), Vector2i(48, 48), 0, 6, 5.0, 1.0, true)
 	_decor.add_sheet(_world,
 		"res://sprites/exteriors_48x48/animated/sheets/Beach_Seagull_Idle_Right_48x48.png",
-		_tile_base(Vector2i(58, 100)), Vector2i(48, 48), 0, 12, 6.5, 1.0, true)
+		_tile_base(Vector2i(58, 100)), Vector2i(96, 48), 0, 6, 6.5, 1.0, true)
 
 
 func _build_camp() -> void:
@@ -759,7 +890,7 @@ func _build_camp() -> void:
 		"res://sprites/exteriors_48x48/singles/11_Camping/ME_Singles_Camping_48x48_Sleeping_Bag_1.png",
 		_tile_base(center + Vector2i(0, -2)), 1.0)
 	_decor.add_campfire(_world, _tile_base(center + Vector2i(1, 0)), 1.0)
-	_decor.add_smoke(_world, _tile_base(center + Vector2i(1, -1)))
+	_decor.add_smoke(_world, _tile_base(center + Vector2i(1, 0)))
 	_decor.add_lantern(_world, _tile_base(center + Vector2i(-2, 1)), 1.0)
 	for offset: Vector2i in [Vector2i(-1, 2), Vector2i(2, 2), Vector2i(-3, 2)]:
 		_decor.add_prop(_world, DECOR.WOOD[_rng.randi_range(0, 2)],
@@ -786,7 +917,7 @@ func _build_refuge() -> void:
 		Vector2(CABIN_TILE.x * TILE + TILE / 2.0, (CABIN_TILE.y + 1) * TILE),
 		1.0, Vector2(250, 90))
 	_decor.add_campfire(_world, _tile_base(REFUGE_TILE + Vector2i(-3, 1)), 1.0)
-	_decor.add_smoke(_world, _tile_base(REFUGE_TILE + Vector2i(-3, 0)))
+	_decor.add_smoke(_world, _tile_base(REFUGE_TILE + Vector2i(-3, 1)))
 	_decor.add_lantern(_world, _tile_base(REFUGE_TILE + Vector2i(-1, 2)), 1.0)
 	_decor.add_lantern(_world, _tile_base(REFUGE_TILE + Vector2i(3, 2)), 1.0)
 	_add_fence_line(REFUGE_TILE + Vector2i(-7, 4), 5, true)
@@ -961,11 +1092,11 @@ func _scatter_wildlife() -> void:
 		_tile_center(Vector2i(44, 96)), Rect2(40 * TILE, 92 * TILE, 8 * TILE, 6 * TILE), 22.0,
 		Vector2i(96, 96))
 	_decor.add_sheet(_world,
-		"res://sprites/exteriors_48x48/animated/sheets/Fishes_1_48x48gif.png",
+		"res://sprites/custom/fishes_1.png",
 		_tile_center(Vector2i(int(_river_center[44]), 44)), Vector2i(48, 48), 0, 12, 7.0,
 		1.0, true, Color.WHITE, false)
 	_decor.add_sheet(_world,
-		"res://sprites/exteriors_48x48/animated/sheets/Fishes_3_48x48.png",
+		"res://sprites/custom/fishes_3.png",
 		_tile_center(Vector2i(int(_river_center[62]), 62)), Vector2i(48, 48), 0, 14, 7.0,
 		1.0, true, Color.WHITE, false)
 	_add_crow(Vector2(20, 18), 620.0, false)
@@ -975,12 +1106,13 @@ func _scatter_wildlife() -> void:
 func _add_crow(tile: Vector2, travel: float, flip: bool) -> void:
 	var crow := _decor.add_sheet(_world,
 		"res://sprites/exteriors_48x48/animated/sheets/Crow_Flap_Right_48x48.png",
-		_tile_center(Vector2i(int(tile.x), int(tile.y))), Vector2i(48, 48), 0, 12, 9.0,
+		_tile_center(Vector2i(int(tile.x), int(tile.y))), Vector2i(96, 96), 0, 6, 9.0,
 		1.0, false, Color.WHITE, false)
 	crow.flip_h = flip
 	var start_x := crow.position.x
+	var target_x := start_x - travel if flip else start_x + travel
 	var tween := crow.create_tween().set_loops()
-	tween.tween_property(crow, "position:x", start_x + travel, 18.0)
+	tween.tween_property(crow, "position:x", target_x, 18.0)
 	tween.tween_callback(func() -> void: crow.position.x = start_x)
 
 
@@ -989,6 +1121,9 @@ func _add_zone_signs() -> void:
 	_add_sign(Vector2i(49, 86), "L'estuaire")
 	_add_sign(Vector2i(38, 66), "La forêt")
 	_add_sign(Vector2i(20, 46), "Les gorges")
+	_add_sign(Vector2i(16, 52), "La grotte")
+	_add_sign(Vector2i(41, 53), "La crête")
+	_add_sign(Vector2i(25, 41), "La cascade")
 	_add_sign(Vector2i(40, 22), "Le col")
 	_add_sign(Vector2i(49, 22), "Refuge")
 
@@ -1012,6 +1147,34 @@ func _tiles_to_points(tiles: Array[Vector2i]) -> Array[Vector2]:
 	for tile: Vector2i in tiles:
 		points.append(_tile_center(tile))
 	return points
+
+
+func _climb_specs() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for spec: Dictionary in CLIMB_POINTS:
+		var tile: Vector2i = spec["tile"]
+		var destination: Vector2i = spec["destination"]
+		result.append({
+			"position": _tile_center(tile),
+			"destination": _tile_center(destination),
+			"label": String(spec["label"]),
+		})
+	return result
+
+
+func _stealth_specs() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for spec: Dictionary in STEALTH_ZONES:
+		var tile: Vector2i = spec["tile"]
+		var tiles: Vector2i = spec["tiles"]
+		result.append({
+			"position": _tile_center(tile),
+			"size": Vector2(tiles.x * TILE, tiles.y * TILE),
+			"name": String(spec["name"]),
+			"conceal": bool(spec["conceal"]),
+			"mute": bool(spec["mute"]),
+		})
+	return result
 
 
 func _tile_center(tile: Vector2i) -> Vector2:

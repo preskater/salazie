@@ -191,7 +191,7 @@ func add_animal(parent: Node2D, path: String, position: Vector2,
 	animal.set("roam_rect", roam_rect)
 	animal.set("cell_size", cell)
 	animal.set("walk_row", 2)
-	animal.set("graze_row", 1)
+	animal.set("graze_row", 3)
 	animal.set("graze_time", Vector2(2.5, 6.0))
 	animal.set("walk_time", Vector2(1.5, 3.5))
 	parent.add_child(animal)
@@ -209,10 +209,11 @@ func add_leaves(parent: Node2D, position: Vector2, frames_path: String,
 	return leaves
 
 
-func add_mist(parent: Node2D, position: Vector2, scale := 2.5) -> AnimatedSprite2D:
+func add_mist(parent: Node2D, position: Vector2, scale := 1.0) -> AnimatedSprite2D:
+	# The fog sheet is 6 frames of 288 x 48, not 36 cells of 48 x 48.
 	return add_sheet(parent,
 		"res://sprites/exteriors_48x48/animated/sheets/Beach_Stage_Fog_Machine_Fog_Only_Loop_48x48.png",
-		position, Vector2i(48, 48), 1, 36, 10.0, scale, true,
+		position, Vector2i(288, 48), 1, 6, 5.0, scale, true,
 		Color(1.0, 1.0, 1.0, 0.35), false)
 
 
@@ -230,6 +231,6 @@ func add_lantern(parent: Node2D, position: Vector2, scale := 1.0) -> Sprite2D:
 
 func add_smoke(parent: Node2D, position: Vector2) -> AnimatedSprite2D:
 	return add_sheet(parent,
-		"res://sprites/exteriors_48x48/animated/sheets/Beach_Stage_Fog_Machine_Fog_Only_Loop_48x48.png",
-		position, Vector2i(48, 48), 1, 36, 6.0, 1.0, true,
-		Color(0.85, 0.85, 0.82, 0.28), false)
+		"res://sprites/farm_48x48/animated/Stone_Oven_Smoke_Effect_48x48.png",
+		position, Vector2i(144, 192), 0, 8, 6.0, 1.0, true,
+		Color(0.85, 0.85, 0.82, 0.45))
