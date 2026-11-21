@@ -27,8 +27,8 @@ func test_task_list_starts_with_every_task_pending() -> void:
 
 	assert_str(list.get_compact_text()).contains("0 faites")
 	var rows := list.get_row_texts()
-	assert_int(rows.size()).is_equal(5)
-	assert_str(rows[0]).starts_with("○ Trouver de la nourriture")
+	assert_int(rows.size()).is_equal(6)
+	assert_str(rows[0]).starts_with("○ Trouver la rivière")
 
 
 func test_progress_and_done_rows_are_refreshed_by_signals() -> void:
@@ -37,11 +37,19 @@ func test_progress_and_done_rows_are_refreshed_by_signals() -> void:
 
 	Campaign.add_task_progress("find_food", 1)
 	var rows := list.get_row_texts()
-	assert_str(rows[0]).contains("(1/3)")
+	var food_row := ""
+	for row: String in rows:
+		if row.contains("Rassembler des vivres"):
+			food_row = row
+	assert_str(food_row).contains("(1/3)")
 
 	Campaign.add_task_progress("find_food", 2)
 	rows = list.get_row_texts()
-	assert_str(rows[0]).starts_with("✓ Trouver de la nourriture")
+	food_row = ""
+	for row: String in rows:
+		if row.contains("Rassembler des vivres"):
+			food_row = row
+	assert_str(food_row).starts_with("✓ Rassembler des vivres")
 
 
 func test_failed_row_shows_reason_and_retry_hint() -> void:
@@ -52,7 +60,7 @@ func test_failed_row_shows_reason_and_retry_hint() -> void:
 	var rows := list.get_row_texts()
 	var found := false
 	for row: String in rows:
-		if row.begins_with("✗ Traverser la zone patrouillée"):
+		if row.begins_with("✗ Franchir la patrouille"):
 			found = true
 			assert_str(row).contains("Repéré par une patrouille")
 			assert_str(row).contains("[Réessayer]")

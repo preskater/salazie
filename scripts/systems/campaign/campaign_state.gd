@@ -43,37 +43,44 @@ const MAPS := {
 const TASKS := {
 	1: [
 		{
-			"id": "find_food",
-			"label": "Trouver de la nourriture",
-			"hint": "Ramassez 3 fruits sauvages dans la forêt.",
-			"target": 3,
+			"id": "follow_river",
+			"label": "Trouver la rivière",
+			"hint": "Quittez la plage et remontez l'estuaire jusqu'au premier pont.",
+			"target": 1,
 			"retryable": false,
 		},
 		{
 			"id": "find_water",
-			"label": "Trouver de l'eau",
-			"hint": "Buvez à la rivière.",
+			"label": "Boire à la rivière",
+			"hint": "Buvez au bassin, sous la cascade.",
 			"target": 1,
+			"retryable": false,
+		},
+		{
+			"id": "find_food",
+			"label": "Rassembler des vivres",
+			"hint": "Ramassez 3 coquillages, baies ou champignons sauvages.",
+			"target": 3,
 			"retryable": false,
 		},
 		{
 			"id": "hide_from_patrol",
 			"label": "Se cacher d'une patrouille",
-			"hint": "Entrez dans un fourré et restez caché.",
+			"hint": "Entrez dans un fourré et restez caché 1,5 s.",
 			"target": 1,
 			"retryable": true,
 		},
 		{
 			"id": "cross_patrol",
-			"label": "Traverser la zone patrouillée",
-			"hint": "Rejoignez le checkpoint au nord sans être repéré.",
+			"label": "Franchir la patrouille",
+			"hint": "Rejoignez le checkpoint au-delà des gorges sans être repéré.",
 			"target": 1,
 			"retryable": true,
 		},
 		{
 			"id": "reach_refuge",
-			"label": "Rejoindre le refuge",
-			"hint": "Atteignez la cabane du refuge au nord-est.",
+			"label": "Rejoindre le refuge du col",
+			"hint": "Atteignez la cabane au sommet du sentier.",
 			"target": 1,
 			"retryable": false,
 		},
@@ -518,6 +525,13 @@ func from_dict(data: Dictionary) -> bool:
 			next_tasks[2]["earn_100"] = earn_state
 	tasks = next_tasks
 	current_map = next_current
+	# A save written before the river task existed is already past Map 1.
+	if current_map > 1:
+		var river_state: Dictionary = tasks[1].get("follow_river", {})
+		if int(river_state.get("status", TaskStatus.PENDING)) == TaskStatus.PENDING:
+			river_state["status"] = TaskStatus.DONE
+			river_state["progress"] = maxi(1, int(river_state.get("progress", 0)))
+			tasks[1]["follow_river"] = river_state
 	var raw_results: Variant = data.get("results", {})
 	results = (raw_results as Dictionary).duplicate(true) if raw_results is Dictionary else {}
 	var raw_choices: Variant = data.get("choices", {})

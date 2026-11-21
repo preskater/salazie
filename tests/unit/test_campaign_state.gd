@@ -28,7 +28,8 @@ func test_each_generation_starts_with_pending_tasks() -> void:
 	for map_id: int in Campaign.MAP_ORDER:
 		var summary := Campaign.map_summary(map_id)
 		assert_int(int(summary["pending"])).override_failure_message(
-			"Map %d should start with all tasks pending" % map_id).is_equal(5 if map_id != 3 else 4)
+			"Map %d should start with all tasks pending" % map_id).is_equal(
+				6 if map_id == 1 else (5 if map_id == 2 else 4))
 		assert_int(int(summary["done"])).is_equal(0)
 		assert_int(int(summary["failed"])).is_equal(0)
 
@@ -66,7 +67,7 @@ func test_map_resolves_with_a_mix_of_done_and_failed_tasks() -> void:
 
 	var summary := Campaign.map_summary(1)
 	assert_bool(Campaign.is_map_resolved()).is_true()
-	assert_int(int(summary["done"])).is_equal(4)
+	assert_int(int(summary["done"])).is_equal(5)
 	assert_int(int(summary["failed"])).is_equal(1)
 	assert_int(int(summary["pending"])).is_equal(0)
 	assert_str(String(summary["rank"])).is_equal("partial")
@@ -134,3 +135,22 @@ func test_legacy_v1_save_unlocks_the_farm_without_escape_tasks() -> void:
 	for definition: Dictionary in Campaign.TASKS[1]:
 		assert_int(Campaign.task_status(String(definition["id"]), 1)).is_equal(Campaign.TaskStatus.DONE)
 	assert_int(Campaign.task_status("earn_100", 2)).is_equal(Campaign.TaskStatus.DONE)
+
+
+func test_old_map_two_save_gets_the_river_task_done() -> void:
+	var payload := {
+		"current_map": 2,
+		"tasks": {
+			1: {
+				"find_food": {"status": Campaign.TaskStatus.DONE, "progress": 3},
+				"find_water": {"status": Campaign.TaskStatus.DONE, "progress": 1},
+				"hide_from_patrol": {"status": Campaign.TaskStatus.DONE, "progress": 1},
+				"cross_patrol": {"status": Campaign.TaskStatus.DONE, "progress": 1},
+				"reach_refuge": {"status": Campaign.TaskStatus.DONE, "progress": 1},
+			},
+		},
+	}
+	assert_bool(Campaign.from_dict(payload)).is_true()
+
+	assert_int(Campaign.current_map).is_equal(2)
+	assert_int(Campaign.task_status("follow_river", 1)).is_equal(Campaign.TaskStatus.DONE)
