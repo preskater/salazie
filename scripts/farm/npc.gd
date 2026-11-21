@@ -6,8 +6,11 @@ signal dialogue_requested(speaker: String, text: String)
 @export var speaker := "Habitant"
 @export var lines: PackedStringArray = PackedStringArray()
 @export var tint := Color.WHITE
+@export var talk_prompt := ""
 @export var patrol_radius := 18.0
 @export var walk_speed := 26.0
+@export var sprite_frames: SpriteFrames
+@export var sprite_scale := 1.0
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 
@@ -24,6 +27,12 @@ func _ready() -> void:
 	add_to_group("interactable")
 	add_to_group("npc")
 	sprite.modulate = tint
+	if sprite_frames != null:
+		sprite.sprite_frames = sprite_frames
+		sprite.scale = Vector2(sprite_scale, sprite_scale)
+		var frame := sprite.sprite_frames.get_frame_texture(&"idle_down", 0)
+		if frame != null:
+			sprite.offset = Vector2(0, -frame.get_height() / 2.0)
 	_home = position
 	_idle_timer = randf_range(2.0, 5.0)
 	_play("idle_down")
@@ -58,6 +67,8 @@ func _physics_process(delta: float) -> void:
 	_play("walk_" + _facing)
 
 func get_interaction_prompt() -> String:
+	if not talk_prompt.is_empty():
+		return talk_prompt
 	return "E — Parler à %s" % speaker
 
 func interact(_player: Node2D) -> void:

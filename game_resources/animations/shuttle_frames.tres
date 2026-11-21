@@ -1,0 +1,41 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://sprites/exteriors_48x48/singles/10_Vehicles/ME_Singles_Vehicles_48x48_Bus_Down_1.png" id="1_ow81p"]
+[ext_resource type="Texture2D" path="res://sprites/exteriors_48x48/singles/10_Vehicles/ME_Singles_Vehicles_48x48_Bus_Left_1.png" id="2_o527l"]
+[ext_resource type="Texture2D" path="res://sprites/exteriors_48x48/singles/10_Vehicles/ME_Singles_Vehicles_48x48_Bus_Right_1.png" id="3_o2quo"]
+[ext_resource type="Texture2D" path="res://sprites/exteriors_48x48/singles/10_Vehicles/ME_Singles_Vehicles_48x48_Bus_Up_1.png" id="4_xalf1"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_ow81p")
+}],
+"loop": 1,
+"name": &"bus_down",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_o527l")
+}],
+"loop": 1,
+"name": &"bus_left",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_o2quo")
+}],
+"loop": 1,
+"name": &"bus_right",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("4_xalf1")
+}],
+"loop": 1,
+"name": &"bus_up",
+"speed": 5.0
+}]

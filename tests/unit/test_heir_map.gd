@@ -55,7 +55,7 @@ func test_heritage_is_computed_from_the_farm() -> void:
 	var map := await _spawn_map()
 
 	assert_int(Campaign.heritage).is_equal(100)
-	var label: Label = map.get_node("HeritageLabel")
+	var label: Label = map.get_node("Overlay/HeritageLabel")
 	assert_str(label.text).contains("100 G")
 
 
@@ -98,3 +98,34 @@ func test_plan_choice_is_stored_and_completes_the_task() -> void:
 	assert_str(Campaign.get_choice("map3_plan")).is_equal("forest")
 	assert_int(Campaign.task_status("choose_plan")).is_equal(Campaign.TaskStatus.DONE)
 	assert_bool(panel.visible).is_false()
+
+
+func test_optional_landmarks_and_bus_stops_exist() -> void:
+	var map := await _spawn_map()
+
+	assert_int(get_tree().get_nodes_in_group("landmarks").size()).is_equal(2)
+	assert_int(get_tree().get_nodes_in_group("bus_stops").size()).is_equal(2)
+	assert_object(map.get_node_or_null("Overlay/HeritageLabel")).is_not_null()
+
+
+func test_landmark_marks_the_village_discovered() -> void:
+	var map := await _spawn_map()
+	var player: Node2D = map.get_node("World/Player")
+	var landmark: Area2D = get_tree().get_nodes_in_group("landmarks")[0]
+	var landmark_id := String(landmark.get("landmark_id"))
+
+	landmark.call("interact", player)
+
+	assert_str(Campaign.get_choice("visited_" + landmark_id)).is_equal("1")
+
+
+func test_bus_stop_moves_the_player_to_its_destination() -> void:
+	var map := await _spawn_map()
+	var player: Node2D = map.get_node("World/Player")
+	var stop: Area2D = get_tree().get_nodes_in_group("bus_stops")[0]
+	var destination: Vector2 = stop.get("destination")
+
+	stop.call("interact", player)
+	await map.ride_finished
+
+	assert_float(player.global_position.distance_to(destination)).is_less(1.0)

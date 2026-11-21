@@ -96,15 +96,6 @@
 [ext_resource type="SpriteFrames" path="res://game_resources/animations/Leaves_Brown.tres" id="91_72rhk"]
 [ext_resource type="PackedScene" uid="uid://bqgrdlxcwts1a" path="res://scenes/world/ai/guard/guard.tscn" id="90_guard"]
 
-[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_0ihjh"]
-load_path = "res://.godot/imported/Grass_Tufts_Flowers_48x48_7.png-665486e6692db37089ced1fdc493de7e.ctex"
-
-[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_cujnu"]
-load_path = "res://.godot/imported/Grass_Tufts_Flowers_48x48_8.png-40314f4962f01d162c91da90f9d92978.ctex"
-
-[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_gebd0"]
-load_path = "res://.godot/imported/Grass_Tufts_Flowers_48x48_9.png-d856932857f7bf14b160aba664eecc7e.ctex"
-
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_q8to6"]
 size = Vector2(34, 20)
 
@@ -1254,17 +1245,17 @@ offset = Vector2(0, -24)
 
 [node name="GrassTuft39" type="Sprite2D" parent="World" unique_id=793749612]
 position = Vector2(3384, 1200)
-texture = SubResource("CompressedTexture2D_0ihjh")
+texture = ExtResource("64_kth7x")
 offset = Vector2(0, -24)
 
 [node name="GrassTuft40" type="Sprite2D" parent="World" unique_id=1455827291]
 position = Vector2(600, 2880)
-texture = SubResource("CompressedTexture2D_cujnu")
+texture = ExtResource("65_xh1ax")
 offset = Vector2(0, -24)
 
 [node name="GrassTuft41" type="Sprite2D" parent="World" unique_id=994991310]
 position = Vector2(1128, 2448)
-texture = SubResource("CompressedTexture2D_gebd0")
+texture = ExtResource("66_fsldl")
 offset = Vector2(0, -24)
 
 [node name="GrassTuft42" type="Sprite2D" parent="World" unique_id=143178969]

@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/heir/shuttle.gd" id="1_shuttle"]
+[ext_resource type="SpriteFrames" path="res://game_resources/animations/shuttle_frames.tres" id="2_frames"]
+
+[node name="Shuttle" type="Node2D"]
+script = ExtResource("1_shuttle")
+
+[node name="Sprite" type="AnimatedSprite2D" parent="."]
+sprite_frames = ExtResource("2_frames")
+animation = &"bus_up"
