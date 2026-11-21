@@ -37,6 +37,8 @@ var _anchors: Dictionary
 var _map_size := Vector2.ZERO
 var _notification_label: Label
 var _notification_timer: Timer
+var _clock_label: Label
+var _clock_timer := 0.0
 var _respawn_overlay: ColorRect
 var _respawn_position := Vector2.ZERO
 var _respawning := false
@@ -145,25 +147,61 @@ func _add_ui() -> void:
 	result.name = "GenerationResult"
 	add_child(result)
 
+	# Screen-space UI: a CanvasLayer keeps it fixed while the camera scrolls.
+	var ui := CanvasLayer.new()
+	ui.name = "MaroonUI"
+	ui.layer = 9
+	add_child(ui)
+	var root := Control.new()
+	root.name = "Root"
+	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ui.add_child(root)
+
 	var hint := Label.new()
 	hint.name = "ControlsHint"
 	hint.text = "Déplacez-vous : WASD · Courir : Maj · Tâches : T"
-	hint.position = Vector2(18, _map_size.y - 42)
+	hint.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
+	hint.offset_left = 18.0
+	hint.offset_top = -44.0
+	hint.offset_right = 640.0
+	hint.offset_bottom = -14.0
 	hint.add_theme_color_override("font_color", Color(0.95, 0.92, 0.82))
 	hint.add_theme_color_override("font_outline_color", Color(0.08, 0.06, 0.04))
 	hint.add_theme_constant_override("outline_size", 6)
-	add_child(hint)
+	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(hint)
+
+	_clock_label = Label.new()
+	_clock_label.name = "ClockLabel"
+	_clock_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	_clock_label.offset_left = -280.0
+	_clock_label.offset_top = 14.0
+	_clock_label.offset_right = -18.0
+	_clock_label.offset_bottom = 42.0
+	_clock_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_clock_label.add_theme_color_override("font_color", Color(0.95, 0.92, 0.82))
+	_clock_label.add_theme_color_override("font_outline_color", Color(0.08, 0.06, 0.04))
+	_clock_label.add_theme_constant_override("outline_size", 5)
+	_clock_label.add_theme_font_size_override("font_size", 16)
+	_clock_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(_clock_label)
+	_update_clock()
 
 	_notification_label = Label.new()
 	_notification_label.name = "Notification"
+	_notification_label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	_notification_label.offset_left = 240.0
+	_notification_label.offset_top = -96.0
+	_notification_label.offset_right = -240.0
+	_notification_label.offset_bottom = -52.0
 	_notification_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_notification_label.position = Vector2(240, _map_size.y - 92)
-	_notification_label.size = Vector2(_map_size.x - 480, 44)
 	_notification_label.add_theme_color_override("font_color", Color(0.98, 0.88, 0.66))
 	_notification_label.add_theme_color_override("font_outline_color", Color(0.08, 0.06, 0.04))
 	_notification_label.add_theme_constant_override("outline_size", 7)
 	_notification_label.add_theme_font_size_override("font_size", 22)
-	add_child(_notification_label)
+	_notification_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(_notification_label)
 
 	_notification_timer = Timer.new()
 	_notification_timer.one_shot = true
@@ -181,6 +219,25 @@ func _add_ui() -> void:
 	_respawn_overlay.visible = false
 	_respawn_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	respawn_layer.add_child(_respawn_overlay)
+
+
+func _process(delta: float) -> void:
+	if _clock_label == null:
+		return
+	_clock_timer -= delta
+	if _clock_timer > 0.0:
+		return
+	_clock_timer = 0.5
+	_update_clock()
+
+
+func _update_clock() -> void:
+	if _clock_label == null:
+		return
+	var seconds := int(ceil(DayNightCycle.seconds_until_next_phase()))
+	var phase := "jour" if DayNightCycle.phase == DayNightCycle.Phase.DAY else "nuit"
+	_clock_label.text = "Jour %d · %s %d:%02d" % [
+		DayNightCycle.day_number, phase, seconds / 60, seconds % 60]
 
 
 func _add_guards() -> void:
@@ -335,12 +392,16 @@ func _on_caught(_guard: CharacterBody2D) -> void:
 	if _respawning:
 		return
 	_respawning = true
+	_shake_camera(0.75)
+	await _flash_damage()
 	var was_hidden := bool(_player.get("concealed"))
 	if Campaign.task_status("cross_patrol") == Campaign.TaskStatus.PENDING:
 		Campaign.fail_task("cross_patrol", "Repéré par une patrouille")
 	if not was_hidden and Campaign.task_status("hide_from_patrol") == Campaign.TaskStatus.PENDING:
 		Campaign.fail_task("hide_from_patrol", "Repéré avant d'avoir pu se cacher")
 	_player.call("stun", 1.0)
+	if _respawn_overlay != null:
+		_respawn_overlay.color = Color(0.02, 0.02, 0.03, 0.0)
 	await _fade_respawn(1.0)
 	_player.global_position = _respawn_position
 	_player.call("set_hidden", false)
@@ -357,6 +418,24 @@ func _on_caught(_guard: CharacterBody2D) -> void:
 	_notify("Repéré ! Retour au dernier checkpoint.")
 	await _fade_respawn(0.0)
 	_respawning = false
+
+
+func _shake_camera(amount: float) -> void:
+	var camera := _player.get_node_or_null("Camera2D")
+	if camera != null and camera.has_method("add_trauma"):
+		camera.call("add_trauma", amount)
+
+
+func _flash_damage() -> void:
+	if _respawn_overlay == null:
+		return
+	_respawn_overlay.color = Color(0.55, 0.05, 0.05, 0.0)
+	_respawn_overlay.visible = true
+	var tween := create_tween()
+	tween.tween_property(_respawn_overlay, "color:a", 0.5, 0.08)
+	tween.tween_property(_respawn_overlay, "color:a", 0.0, 0.2)
+	await tween.finished
+	_respawn_overlay.visible = false
 
 
 func _fade_respawn(alpha: float) -> void:

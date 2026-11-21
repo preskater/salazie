@@ -255,11 +255,15 @@ func test_hiding_completes_hide_task_and_conceals_player() -> void:
 
 	hide_spot.call("_on_body_entered", player)
 	assert_bool(bool(player.get("concealed"))).is_true()
+	assert_bool((hide_spot.get_node("Ring") as Sprite2D).visible).is_true()
+	assert_bool((hide_spot.get_node("HiddenLabel") as Label).visible).is_true()
 	hide_spot.call("_process", 2.0)
 
 	assert_int(Campaign.task_status("hide_from_patrol")).is_equal(Campaign.TaskStatus.DONE)
 	hide_spot.call("_on_body_exited", player)
 	assert_bool(bool(player.get("concealed"))).is_false()
+	assert_bool((hide_spot.get_node("Ring") as Sprite2D).visible).is_false()
+	assert_bool((hide_spot.get_node("HiddenLabel") as Label).visible).is_false()
 
 
 func test_upper_checkpoint_completes_cross_patrol() -> void:
@@ -386,3 +390,34 @@ func test_guards_move_after_the_bake() -> void:
 		assert_float(moved) \
 			.override_failure_message("Guard %s stayed frozen" % guard.name) \
 			.is_greater(15.0)
+
+
+func test_forage_pickup_spawns_a_pop() -> void:
+	var map := await _spawn_map()
+	var player: Node2D = map.get_node("World/Player")
+	var spots := get_tree().get_nodes_in_group("forage_spots")
+	assert_bool(spots.is_empty()).is_false()
+	if spots.is_empty():
+		return
+
+	var spot: Area2D = spots[0]
+	var parent := spot.get_parent()
+	var before := parent.get_child_count()
+	spot.call("_on_body_entered", player)
+
+	assert_int(parent.get_child_count()).is_equal(before + 1)
+	assert_object(parent.get_node_or_null("PickupPop")).is_not_null()
+
+
+func test_map_ui_lives_in_a_canvas_layer_and_shows_the_clock() -> void:
+	var map := await _spawn_map()
+	var root := map.get_node_or_null("MaroonUI/Root")
+	assert_object(root).is_not_null()
+	if root == null:
+		return
+
+	assert_object(root.get_node_or_null("ControlsHint")).is_not_null()
+	var clock := root.get_node_or_null("ClockLabel") as Label
+	assert_object(clock).is_not_null()
+	if clock != null:
+		assert_str(clock.text).contains("Jour")

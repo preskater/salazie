@@ -40,6 +40,27 @@ func _on_body_entered(body: Node2D) -> void:
 	picked.emit(kind)
 	set_deferred("monitoring", false)
 	sprite.visible = false
+	_spawn_pop()
+
+
+func _spawn_pop() -> void:
+	var parent := get_parent()
+	if parent == null:
+		return
+	var pop := Sprite2D.new()
+	pop.name = "PickupPop"
+	pop.texture = sprite.texture
+	pop.modulate = sprite.modulate
+	pop.offset = sprite.offset
+	parent.add_child(pop)
+	pop.global_position = global_position
+	pop.scale = sprite.scale
+
+	var tween := pop.create_tween().set_parallel(true)
+	tween.tween_property(pop, "scale", pop.scale * 1.6, 0.28)
+	tween.tween_property(pop, "modulate:a", 0.0, 0.28)
+	tween.tween_property(pop, "position:y", pop.position.y - 30.0, 0.28)
+	tween.chain().tween_callback(pop.queue_free)
 
 
 func is_used() -> bool:

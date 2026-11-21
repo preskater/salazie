@@ -49,6 +49,7 @@ guards, pickups and animals).
 | `SurvivalHUD` | `CanvasLayer` | Food and water bars |
 | `TaskList` | `CanvasLayer` | Generation task list |
 | `GenerationResult` | `CanvasLayer` | Result shown before leaving |
+| `MaroonUI` | `CanvasLayer` | Screen-space hint, day/night clock and notifications |
 | `RefugeExit` | `MapExit` | Final task and transition to Map 2 |
 
 ## Tasks
@@ -192,6 +193,43 @@ the crest shader, while the land/water edge uses the static pack variants.
   flowers are placed manually near the tents and cabin, not randomly.
 - **Water and sand props** are reserved around task anchors so a rock or barrel
   cannot cover the player or a checkpoint.
+
+## Navigation
+
+Map 1 bakes its navigation polygon at load time because the static world is a
+`TileMapLayer` plus runtime props.
+
+- Every obstacle `StaticBody2D` joins the `navigation_obstacles` group
+  (`maroon_decor.add_collision`, `maroon_layout._build_collision`).
+- `maroon_map._build_navigation()` creates the `Navigation` region, sets an
+  outline inset by 24 px and `agent_radius = 20`, waits one physics frame, then
+  bakes.
+- `navigation/2d/default_cell_size = 8` in `project.godot` keeps the bake at
+  432 × 672 cells and matches the polygon cell size, so the navigation map does
+  not warn about a mismatch.
+- Guards use the path (`use_navigation = true`) and fall back to a straight line
+  only when no navigation map exists. A patrol point is kept only when
+  `NavigationServer2D.map_get_path` finds a route to it; a 1.5 s no-progress
+  watchdog picks another point otherwise.
+
+Bridges stay walkable because the river collision is built row by row and skips
+the bridge rows.
+
+## Feedback and UI
+
+- The gameplay UI lives in the `MaroonUI` `CanvasLayer`: controls hint bottom-left,
+  day/night clock top-right, notifications bottom-centre. It stays fixed while the
+  camera scrolls.
+- The clock reads `DayNightCycle.day_number`, `phase` and
+  `seconds_until_next_phase()` and refreshes twice per second.
+- The player camera is a `ShakeCamera2D`. `add_trauma()` drives a trauma² shake
+  sampled from summed sines, decaying in real time and restoring the base offset.
+- Being caught adds 0.75 trauma, flashes the respawn overlay red, then fades to
+  black for the respawn.
+- Picking up food or water spawns a `PickupPop` sprite that rises, scales up and
+  fades.
+- A hide spot shows a soft green ring at its base and a `Caché` label while the
+  player is concealed; the label switches to `Caché !` once the task completes.
 
 ## Result and carry-over
 

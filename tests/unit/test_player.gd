@@ -58,3 +58,12 @@ func test_idle_animation_follows_direction() -> void:
 	for direction_name in DIRECTIONS:
 		player.call("play_idle_animation", DIRECTIONS[direction_name])
 		assert_str(String(sprite.animation)).is_equal("idle_%s" % direction_name)
+
+
+func test_player_camera_supports_shake() -> void:
+	var player := _spawn_player()
+	var camera: Camera2D = player.get_node("Camera2D")
+
+	assert_bool(camera.has_method("add_trauma")).is_true()
+	camera.call("add_trauma", 0.6)
+	assert_float(float(camera.get("trauma"))).is_greater(0.0)
