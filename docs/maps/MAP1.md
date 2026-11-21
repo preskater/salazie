@@ -54,18 +54,21 @@ guards, pickups and animals).
 
 ## Tasks
 
-| ID | Success | Failure | Retry |
-|---|---|---|---|
-| `follow_river` | Reach the estuary checkpoint | — | — |
-| `find_water` | Drink at the waterfall pool | — | — |
-| `find_food` | Collect 3 wild foods | — | — |
-| `hide_from_patrol` | Stay hidden for 1.5 s | Spotted while trying to hide | Yes |
-| `cross_patrol` | Reach the upper checkpoint | Caught by a guard | Yes |
-| `reach_refuge` | Enter the cabin | — | — |
+Four required tasks and one optional. The map resolves once every required task is
+done or failed; an optional task never blocks the exit.
 
-Being caught records a failure for `cross_patrol` and, if not already hidden, for
-`hide_from_patrol`. The player respawns at the last checkpoint, the failed tasks return to
-`PENDING`, and the failure history stays in the generation result.
+| ID | Success | Required |
+|---|---|---|
+| `follow_river` | Reach the estuary checkpoint | yes |
+| `find_water` | Press E at the waterfall pool | yes |
+| `find_food` | Collect 3 wild foods on contact | yes |
+| `reach_refuge` | Enter the cabin | yes |
+| `gather_seeds` | Gather 3 wild seeds with E | **no** |
+
+Being caught no longer fails a task: the player respawns at the last checkpoint and keeps
+playing, and the failure history stays in the generation result. Seeds collected by
+`gather_seeds` are stored in `Campaign.bonus_seeds` and granted on top of the starting
+seeds when Map 2 loads.
 
 Saves written before `follow_river` existed are migrated: when the saved game is already
 past Map 1, the river task is marked done.
@@ -73,9 +76,10 @@ past Map 1, the river task is marked done.
 ## Survival and stealth
 
 - `SurvivalComponent`: food drains at 0.35/s, water at 0.55/s.
-- Forage restores 28 food; the waterfall pool restores 60 water and the estuary
-  refill restores 40 water.
-- A concealed player is ignored by guards beyond 32 px.
+- Food is collected on contact and restores 28; water is deliberate: the waterfall
+  pool (`E`, +60) and the estuary refill (`E`, +40) show a `E — Boire` prompt.
+- Hiding is a tool, not a task: seven hide spots conceal the player with a soft green
+  ring and a `Caché` label, and guards ignore a concealed player beyond 32 px.
 - Running still emits noise and raises suspicion.
 - Guards use the existing vision cone, chase and catch logic with `pause_on_catch = false`
   so the map can respawn the player.
@@ -243,7 +247,7 @@ the bridge rows.
 |---|---|---|
 | `move_*` | WASD / arrows | Move |
 | `run` | Shift | Run, emits noise |
-| `interact` | E | Not used for pickups; kept for consistency |
+| `interact` | E | Drink at water, gather seeds |
 | `toggle_tasks` | T / Select | Open the task list |
 | `pause` | Esc / Start | Pause menu |
 

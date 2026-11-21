@@ -27,7 +27,7 @@ func test_result_lists_every_task_and_pauses_the_game() -> void:
 	assert_bool(result.visible).is_true()
 	assert_bool(get_tree().paused).is_true()
 	assert_str(result.get_title_text()).contains("Le marron")
-	assert_int(result.get_row_texts().size()).is_equal(6)
+	assert_int(result.get_row_texts().size()).is_equal(5)
 	assert_str(result.get_row_texts()[0]).starts_with("✓")
 
 	result.close()

@@ -149,6 +149,8 @@ func _prepare_map_entry(map_id: int) -> void:
 	GameState.farm_active = map_id == 2
 	if map_id == 2:
 		GameState.reset(Campaign.starting_money_for_map(2))
+		for crop: String in Campaign.bonus_seeds:
+			GameState.add_seeds(crop, int(Campaign.bonus_seeds[crop]))
 	elif map_id == 3:
 		Campaign.heritage = Campaign.heritage_for_map3()
 	_set_day_night_active(true, true)

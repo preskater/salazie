@@ -64,25 +64,19 @@ const TASKS := {
 			"retryable": false,
 		},
 		{
-			"id": "hide_from_patrol",
-			"label": "Se cacher d'une patrouille",
-			"hint": "Entrez dans un fourré et restez caché 1,5 s.",
-			"target": 1,
-			"retryable": true,
-		},
-		{
-			"id": "cross_patrol",
-			"label": "Franchir la patrouille",
-			"hint": "Rejoignez le checkpoint au-delà des gorges sans être repéré.",
-			"target": 1,
-			"retryable": true,
-		},
-		{
 			"id": "reach_refuge",
 			"label": "Rejoindre le refuge du col",
 			"hint": "Atteignez la cabane au sommet du sentier.",
 			"target": 1,
 			"retryable": false,
+		},
+		{
+			"id": "gather_seeds",
+			"label": "Ramasser des graines sauvages",
+			"hint": "Ramassez 3 graines pour la prochaine génération (optionnel).",
+			"target": 3,
+			"retryable": false,
+			"optional": true,
 		},
 	],
 	2: [
@@ -160,6 +154,7 @@ var current_map := 1
 var tasks: Dictionary = {}
 var results: Dictionary = {}
 var choices: Dictionary = {}
+var bonus_seeds: Dictionary = {}
 var heritage := 0
 var finished := false
 
@@ -177,6 +172,7 @@ func reset() -> void:
 	finished = false
 	choices = {}
 	results = {}
+	bonus_seeds = {}
 	_resolved_announced = {}
 	tasks = {}
 	for map_id: int in MAP_ORDER:
@@ -352,11 +348,13 @@ func map_summary(map_id: int = -1) -> Dictionary:
 	var done := 0
 	var failed := 0
 	var pending := 0
+	var optional_pending := 0
 	var failure_events := 0
 	var critical_failed := false
 	var details: Dictionary = {}
 	for definition: Dictionary in TASKS.get(id, []):
 		var task_id := String(definition.get("id", ""))
+		var is_optional := bool(definition.get("optional", false))
 		var state := _task_state(task_id, id)
 		var status := int(state.get("status", TaskStatus.PENDING))
 		var failures: Array = state.get("failures", [])
@@ -369,7 +367,10 @@ func map_summary(map_id: int = -1) -> Dictionary:
 				if bool(definition.get("critical", false)):
 					critical_failed = true
 			_:
-				pending += 1
+				if is_optional:
+					optional_pending += 1
+				else:
+					pending += 1
 		details[task_id] = {
 			"id": task_id,
 			"label": String(definition.get("label", task_id)),
@@ -380,6 +381,7 @@ func map_summary(map_id: int = -1) -> Dictionary:
 			"failures": failures.duplicate(true),
 			"retryable": bool(definition.get("retryable", false)),
 			"critical": bool(definition.get("critical", false)),
+			"optional": is_optional,
 		}
 	var rank := "pending"
 	if pending == 0:
@@ -395,6 +397,7 @@ func map_summary(map_id: int = -1) -> Dictionary:
 		"done": done,
 		"failed": failed,
 		"pending": pending,
+		"optional_pending": optional_pending,
 		"failure_events": failure_events,
 		"rank": rank,
 		"tasks": details,
@@ -430,6 +433,26 @@ func advance_to_next_map() -> bool:
 func set_choice(key: String, value: String) -> void:
 	choices[key] = value
 	choices_changed.emit()
+
+
+## Stores seeds collected on Map 1 so the farmer starts with them.
+func add_bonus_seed(crop: String, amount := 1) -> void:
+	if not GameState.CROPS.has(crop) or amount <= 0:
+		return
+	bonus_seeds[crop] = int(bonus_seeds.get(crop, 0)) + amount
+
+
+func _read_bonus_seeds(raw: Variant) -> Dictionary:
+	var result := {}
+	if not (raw is Dictionary):
+		return result
+	var source := raw as Dictionary
+	for crop_key: Variant in source:
+		var crop := String(crop_key)
+		if not GameState.CROPS.has(crop):
+			continue
+		result[crop] = maxi(0, int(source[crop_key]))
+	return result
 
 
 func get_choice(key: String, fallback: String = "") -> String:
@@ -485,6 +508,7 @@ func to_dict() -> Dictionary:
 		"tasks": tasks.duplicate(true),
 		"results": results.duplicate(true),
 		"choices": choices.duplicate(true),
+		"bonus_seeds": bonus_seeds.duplicate(true),
 		"heritage": heritage,
 		"finished": finished,
 	}
@@ -536,6 +560,7 @@ func from_dict(data: Dictionary) -> bool:
 	results = (raw_results as Dictionary).duplicate(true) if raw_results is Dictionary else {}
 	var raw_choices: Variant = data.get("choices", {})
 	choices = (raw_choices as Dictionary).duplicate(true) if raw_choices is Dictionary else {}
+	bonus_seeds = _read_bonus_seeds(data.get("bonus_seeds", {}))
 	heritage = maxi(0, int(data.get("heritage", 0)))
 	finished = bool(data.get("finished", false))
 	_resolved_announced = {}

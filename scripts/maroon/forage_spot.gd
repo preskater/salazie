@@ -1,8 +1,9 @@
 extends Area2D
-## A wild food or water pickup. It restores the player's survival bars and can
-## advance a multi-step campaign task on first contact.
+## A wild food, water or seed pickup. Food is collected on contact; water and
+## seeds wait for `interact` (E) so drinking and gathering stay deliberate.
+## It can advance a multi-step campaign task and store seed bonuses for Map 2.
 
-signal picked(kind: String)
+signal picked(kind: String, message: String)
 
 @export var texture: Texture2D
 @export var tint := Color.WHITE
@@ -11,6 +12,14 @@ signal picked(kind: String)
 @export var task_id := ""
 @export var task_progress := 1
 @export var kind := "food"
+## Message shown after the pickup. `%d` is replaced by the task progress and
+## `%d/%d` by progress and target.
+@export var pickup_message := ""
+## When false the pickup waits for `interact` (E) instead of body contact.
+@export var auto_pickup := true
+## When set, the pickup also stores a seed bonus for the next generation.
+@export var seed_crop := ""
+@export var seed_amount := 1
 
 @onready var sprite: Sprite2D = $Sprite2D
 
@@ -18,15 +27,37 @@ var _used := false
 
 
 func _ready() -> void:
-	body_entered.connect(_on_body_entered)
+	if auto_pickup:
+		body_entered.connect(_on_body_entered)
 	if texture != null:
 		sprite.texture = texture
 	sprite.modulate = tint
 	add_to_group("forage_spots")
+	add_to_group("interactable")
+
+
+func get_interaction_prompt() -> String:
+	if _used:
+		return ""
+	if water_amount > 0.0:
+		return "E — Boire"
+	if not seed_crop.is_empty():
+		return "E — Ramasser des graines"
+	return "E — Ramasser"
+
+
+func interact(player: Node2D) -> void:
+	_pick_up(player)
 
 
 func _on_body_entered(body: Node2D) -> void:
-	if _used or not body.is_in_group("player"):
+	if not auto_pickup or not body.is_in_group("player"):
+		return
+	_pick_up(body)
+
+
+func _pick_up(body: Node2D) -> void:
+	if _used:
 		return
 	_used = true
 	var survival := body.get_node_or_null("Survival")
@@ -37,10 +68,33 @@ func _on_body_entered(body: Node2D) -> void:
 			survival.call("add_water", water_amount)
 	if not task_id.is_empty():
 		Campaign.add_task_progress(task_id, task_progress)
-	picked.emit(kind)
+	if not seed_crop.is_empty():
+		Campaign.add_bonus_seed(seed_crop, seed_amount)
+	picked.emit(kind, _compose_message())
 	set_deferred("monitoring", false)
 	sprite.visible = false
 	_spawn_pop()
+
+
+func _compose_message() -> String:
+	var text := pickup_message
+	if text.is_empty():
+		if water_amount > 0.0:
+			return "Vous buvez."
+		if not seed_crop.is_empty():
+			return "Graines ramassées."
+		return "Vivres trouvés."
+	if task_id.is_empty():
+		return text
+	if text.contains("%d/%d"):
+		return text % [Campaign.task_progress(task_id), Campaign.task_target(task_id)]
+	if text.contains("%d"):
+		return text % Campaign.task_progress(task_id)
+	return text
+
+
+func is_used() -> bool:
+	return _used
 
 
 func _spawn_pop() -> void:
@@ -61,7 +115,3 @@ func _spawn_pop() -> void:
 	tween.tween_property(pop, "modulate:a", 0.0, 0.28)
 	tween.tween_property(pop, "position:y", pop.position.y - 30.0, 0.28)
 	tween.chain().tween_callback(pop.queue_free)
-
-
-func is_used() -> bool:
-	return _used

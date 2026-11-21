@@ -15,6 +15,7 @@ const HIDE_SCENE := preload("res://scenes/maroon/hide_spot.tscn")
 const CHECKPOINT_SCENE := preload("res://scenes/maroon/checkpoint.tscn")
 const MAP_EXIT_SCENE := preload("res://scenes/world/map_exit.tscn")
 const LAYOUT := preload("res://scripts/maroon/maroon_layout.gd")
+const INTERACT_RANGE := 72.0
 
 const FOOD_TEXTURES := [
 	"res://sprites/exteriors_48x48/singles/21_Beach/21_Beach_48x48_Brown_Shell_1_Vers_1.png",
@@ -23,6 +24,11 @@ const FOOD_TEXTURES := [
 	"res://sprites/farm_48x48/singles/Crops/Crop_Berry_Small_Basket_48x48.png",
 ]
 const WATER_TEXTURE := "res://sprites/exteriors_48x48/singles/1_Terrains_and_Fences/ME_Singles_Terrains_and_Fences_48x48_Props_Water_1.png"
+const SEED_TEXTURES := {
+	"corn": "res://sprites/farm_48x48/singles/Crops/Seed_Corn_48x48.png",
+	"tomato": "res://sprites/farm_48x48/singles/Crops/Seed_Tomato_48x48.png",
+	"carrot": "res://sprites/farm_48x48/singles/Crops/Seed_Carrot_48x48.png",
+}
 const HIDE_TEXTURES := [
 	"res://sprites/exteriors_48x48/singles/17_Garden/ME_Singles_Garden_48x48_Bush_1.png",
 	"res://sprites/exteriors_48x48/singles/17_Garden/ME_Singles_Garden_48x48_Bush_3.png",
@@ -39,6 +45,8 @@ var _notification_label: Label
 var _notification_timer: Timer
 var _clock_label: Label
 var _clock_timer := 0.0
+var _prompt_label: Label
+var _interact_target: Node = null
 var _respawn_overlay: ColorRect
 var _respawn_position := Vector2.ZERO
 var _respawning := false
@@ -62,6 +70,7 @@ func _ready() -> void:
 	_add_ui()
 	_add_guards()
 	_add_forage_and_water()
+	_add_seed_spots()
 	_add_hide_spots()
 	_add_checkpoints()
 	_add_refuge()
@@ -188,6 +197,21 @@ func _add_ui() -> void:
 	root.add_child(_clock_label)
 	_update_clock()
 
+	_prompt_label = Label.new()
+	_prompt_label.name = "PromptLabel"
+	_prompt_label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	_prompt_label.offset_left = 240.0
+	_prompt_label.offset_top = -142.0
+	_prompt_label.offset_right = -240.0
+	_prompt_label.offset_bottom = -104.0
+	_prompt_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_prompt_label.add_theme_color_override("font_color", Color(0.85, 1, 0.85))
+	_prompt_label.add_theme_color_override("font_outline_color", Color(0.05, 0.08, 0.05))
+	_prompt_label.add_theme_constant_override("outline_size", 6)
+	_prompt_label.add_theme_font_size_override("font_size", 18)
+	_prompt_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(_prompt_label)
+
 	_notification_label = Label.new()
 	_notification_label.name = "Notification"
 	_notification_label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
@@ -222,6 +246,7 @@ func _add_ui() -> void:
 
 
 func _process(delta: float) -> void:
+	_update_interaction_target()
 	if _clock_label == null:
 		return
 	_clock_timer -= delta
@@ -229,6 +254,40 @@ func _process(delta: float) -> void:
 		return
 	_clock_timer = 0.5
 	_update_clock()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not event.is_action_pressed("interact"):
+		return
+	if _interact_target == null or not is_instance_valid(_interact_target):
+		return
+	_interact_target.call("interact", _player)
+	get_viewport().set_input_as_handled()
+
+
+func _update_interaction_target() -> void:
+	_interact_target = null
+	if _player == null:
+		return
+	var best_distance := INTERACT_RANGE
+	for node: Node in get_tree().get_nodes_in_group("interactable"):
+		var node2d := node as Node2D
+		if node2d == null or not node2d.is_inside_tree():
+			continue
+		if not node.has_method("get_interaction_prompt"):
+			continue
+		var distance := _player.global_position.distance_to(node2d.global_position)
+		if distance >= best_distance:
+			continue
+		var prompt := String(node.call("get_interaction_prompt"))
+		if prompt.is_empty():
+			continue
+		best_distance = distance
+		_interact_target = node
+
+	if _prompt_label != null:
+		_prompt_label.text = "" if _interact_target == null \
+			else String(_interact_target.call("get_interaction_prompt"))
 
 
 func _update_clock() -> void:
@@ -264,16 +323,29 @@ func _add_forage_and_water() -> void:
 	for index in food_points.size():
 		var texture: Texture2D = load(FOOD_TEXTURES[index % FOOD_TEXTURES.size()])
 		_spawn_forage(food_points[index], texture, 28.0, 0.0,
-			"find_food", 1, Color(1.0, 0.9, 0.75))
+			"find_food", 1, Color(1.0, 0.9, 0.75), true, "", "Vivres trouvés (%d/%d).")
 	var water_texture: Texture2D = load(WATER_TEXTURE)
 	_spawn_forage(_anchors["water_spot"], water_texture, 0.0, 60.0,
-		"find_water", 1, Color(0.55, 0.78, 1.0))
+		"find_water", 1, Color(0.55, 0.78, 1.0), false, "",
+		"Vous buvez au bassin de la cascade.")
 	_spawn_forage(_anchors["extra_water"], water_texture, 0.0, 40.0,
-		"", 1, Color(0.55, 0.78, 1.0))
+		"", 1, Color(0.55, 0.78, 1.0), false, "",
+		"Vous buvez au refill de l'estuaire.")
+
+
+func _add_seed_spots() -> void:
+	var points: Array = _anchors["seed_spots"]
+	var crops := ["corn", "tomato", "carrot"]
+	for index in points.size():
+		var crop: String = crops[index % crops.size()]
+		_spawn_forage(points[index], load(SEED_TEXTURES[crop]), 0.0, 0.0,
+			"gather_seeds", 1, Color(1.0, 0.96, 0.82), false, crop,
+			"Graines sauvages (%d/%d).")
 
 
 func _spawn_forage(point: Vector2, texture: Texture2D, food: float, water: float,
-		task_id: String, progress: int, tint: Color) -> void:
+		task_id: String, progress: int, tint: Color,
+		auto_pickup := true, seed_crop := "", message := "") -> void:
 	var spot: Area2D = FORAGE_SCENE.instantiate()
 	spot.name = "Forage_%d_%d" % [int(point.x), int(point.y)]
 	spot.position = point
@@ -283,7 +355,15 @@ func _spawn_forage(point: Vector2, texture: Texture2D, food: float, water: float
 	spot.set("task_id", task_id)
 	spot.set("task_progress", progress)
 	spot.set("tint", tint)
-	spot.set("kind", "water" if water > 0.0 else "food")
+	spot.set("auto_pickup", auto_pickup)
+	spot.set("seed_crop", seed_crop)
+	spot.set("pickup_message", message)
+	var kind := "food"
+	if not seed_crop.is_empty():
+		kind = "seed"
+	elif water > 0.0:
+		kind = "water"
+	spot.set("kind", kind)
 	spot.picked.connect(_on_forage_picked)
 	_world.add_child(spot)
 
@@ -326,7 +406,6 @@ func _add_checkpoints() -> void:
 	var upper: Area2D = CHECKPOINT_SCENE.instantiate()
 	upper.name = "UpperCheckpoint"
 	upper.position = _anchors["upper_checkpoint"]
-	upper.set("task_id", "cross_patrol")
 	upper.set("checkpoint_name", "Passage nord")
 	upper.reached.connect(_on_checkpoint_reached)
 	_world.add_child(upper)
@@ -359,11 +438,8 @@ func _add_shape(body: StaticBody2D, rect: Rect2) -> void:
 	body.add_child(collision)
 
 
-func _on_forage_picked(kind: String) -> void:
-	if kind == "water":
-		_notify("Vous buvez au bassin de la cascade.")
-	else:
-		_notify("Vivres trouvés (%d/3)." % Campaign.task_progress("find_food"))
+func _on_forage_picked(_kind: String, message: String) -> void:
+	_notify(message)
 
 
 func _on_hidden_completed() -> void:
@@ -394,11 +470,6 @@ func _on_caught(_guard: CharacterBody2D) -> void:
 	_respawning = true
 	_shake_camera(0.75)
 	await _flash_damage()
-	var was_hidden := bool(_player.get("concealed"))
-	if Campaign.task_status("cross_patrol") == Campaign.TaskStatus.PENDING:
-		Campaign.fail_task("cross_patrol", "Repéré par une patrouille")
-	if not was_hidden and Campaign.task_status("hide_from_patrol") == Campaign.TaskStatus.PENDING:
-		Campaign.fail_task("hide_from_patrol", "Repéré avant d'avoir pu se cacher")
 	_player.call("stun", 1.0)
 	if _respawn_overlay != null:
 		_respawn_overlay.color = Color(0.02, 0.02, 0.03, 0.0)
@@ -413,8 +484,6 @@ func _on_caught(_guard: CharacterBody2D) -> void:
 		var other: CharacterBody2D = entry["guard"]
 		if is_instance_valid(other):
 			other.call("reset_after_catch", entry["spawn"])
-	Campaign.retry_task("cross_patrol")
-	Campaign.retry_task("hide_from_patrol")
 	_notify("Repéré ! Retour au dernier checkpoint.")
 	await _fade_respawn(0.0)
 	_respawning = false

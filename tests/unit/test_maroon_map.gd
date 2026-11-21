@@ -222,8 +222,8 @@ func test_map_places_guards_forage_hides_and_checkpoints() -> void:
 	var map := await _spawn_map()
 
 	assert_int(get_tree().get_nodes_in_group("guards").size()).is_equal(5)
-	assert_int(get_tree().get_nodes_in_group("forage_spots").size()).is_equal(6)
-	assert_int(get_tree().get_nodes_in_group("hide_spots").size()).is_equal(3)
+	assert_int(get_tree().get_nodes_in_group("forage_spots").size()).is_equal(9)
+	assert_int(get_tree().get_nodes_in_group("hide_spots").size()).is_equal(7)
 	assert_object(map.get_node_or_null("World/UpperCheckpoint")).is_not_null()
 
 
@@ -247,7 +247,7 @@ func test_forage_restores_food_and_advances_find_food() -> void:
 	assert_bool(food_spot.call("is_used")).is_true()
 
 
-func test_hiding_completes_hide_task_and_conceals_player() -> void:
+func test_hiding_conceals_the_player_without_a_task() -> void:
 	var map := await _spawn_map()
 	var player: Node2D = map.get_node("World/Player")
 	var spots := get_tree().get_nodes_in_group("hide_spots")
@@ -258,22 +258,25 @@ func test_hiding_completes_hide_task_and_conceals_player() -> void:
 	assert_bool((hide_spot.get_node("Ring") as Sprite2D).visible).is_true()
 	assert_bool((hide_spot.get_node("HiddenLabel") as Label).visible).is_true()
 	hide_spot.call("_process", 2.0)
+	assert_bool(Campaign.task_definition("hide_from_patrol").is_empty()).is_true()
 
-	assert_int(Campaign.task_status("hide_from_patrol")).is_equal(Campaign.TaskStatus.DONE)
 	hide_spot.call("_on_body_exited", player)
 	assert_bool(bool(player.get("concealed"))).is_false()
 	assert_bool((hide_spot.get_node("Ring") as Sprite2D).visible).is_false()
 	assert_bool((hide_spot.get_node("HiddenLabel") as Label).visible).is_false()
 
 
-func test_upper_checkpoint_completes_cross_patrol() -> void:
+func test_stealth_checklist_tasks_are_gone() -> void:
 	var map := await _spawn_map()
 	var player: Node2D = map.get_node("World/Player")
 	var checkpoint: Area2D = map.get_node("World/UpperCheckpoint")
 
-	checkpoint.call("_on_body_entered", player)
+	assert_bool(Campaign.task_definition("cross_patrol").is_empty()).is_true()
+	assert_bool(Campaign.task_definition("hide_from_patrol").is_empty()).is_true()
+	assert_bool(Campaign.task_definition("gather_seeds").is_empty()).is_false()
 
-	assert_int(Campaign.task_status("cross_patrol")).is_equal(Campaign.TaskStatus.DONE)
+	checkpoint.call("_on_body_entered", player)
+	assert_int(Campaign.task_status("follow_river")).is_equal(Campaign.TaskStatus.PENDING)
 
 
 func test_refuge_waits_for_the_generation_tasks() -> void:
@@ -421,3 +424,78 @@ func test_map_ui_lives_in_a_canvas_layer_and_shows_the_clock() -> void:
 	assert_object(clock).is_not_null()
 	if clock != null:
 		assert_str(clock.text).contains("Jour")
+
+
+func test_water_requires_interact() -> void:
+	var map := await _spawn_map()
+	var player: Node2D = map.get_node("World/Player")
+	var survival := player.get_node("Survival")
+	survival.set("water", 10.0)
+
+	var water_spot: Area2D = null
+	for spot: Node in get_tree().get_nodes_in_group("forage_spots"):
+		if String(spot.get("kind")) == "water":
+			water_spot = spot
+			break
+	assert_object(water_spot).is_not_null()
+	if water_spot == null:
+		return
+
+	assert_bool(bool(water_spot.get("auto_pickup"))).is_false()
+	var before := float(survival.get("water"))
+	water_spot.call("_on_body_entered", player)
+	assert_bool(water_spot.call("is_used")).is_false()
+	assert_float(float(survival.get("water"))).is_less_equal(before + 0.001)
+
+	water_spot.call("interact", player)
+	assert_bool(water_spot.call("is_used")).is_true()
+	assert_float(float(survival.get("water"))).is_greater(before)
+	assert_bool(String(water_spot.call("get_interaction_prompt")).is_empty()).is_true()
+
+
+func test_seed_pickup_stores_bonus_seeds() -> void:
+	var map := await _spawn_map()
+	var player: Node2D = map.get_node("World/Player")
+
+	var seed_spot: Area2D = null
+	for spot: Node in get_tree().get_nodes_in_group("forage_spots"):
+		if String(spot.get("kind")) == "seed":
+			seed_spot = spot
+			break
+	assert_object(seed_spot).is_not_null()
+	if seed_spot == null:
+		return
+
+	seed_spot.call("interact", player)
+
+	assert_int(Campaign.task_progress("gather_seeds")).is_equal(1)
+	assert_bool(Campaign.bonus_seeds.is_empty()).is_false()
+
+
+func test_pickup_messages_match_the_pickup_kind() -> void:
+	var map := await _spawn_map()
+	var player: Node2D = map.get_node("World/Player")
+	var notification := map.get_node("MaroonUI/Root/Notification") as Label
+
+	var food_spot: Area2D = null
+	var seed_spot: Area2D = null
+	var water_spot: Area2D = null
+	for spot: Node in get_tree().get_nodes_in_group("forage_spots"):
+		var kind := String(spot.get("kind"))
+		if kind == "food" and food_spot == null:
+			food_spot = spot as Area2D
+		elif kind == "seed" and seed_spot == null:
+			seed_spot = spot as Area2D
+		elif kind == "water" and water_spot == null:
+			water_spot = spot as Area2D
+
+	assert_object(food_spot).is_not_null()
+	if food_spot != null:
+		food_spot.call("_on_body_entered", player)
+		assert_str(notification.text).contains("Vivres")
+	if seed_spot != null:
+		seed_spot.call("interact", player)
+		assert_str(notification.text).contains("Graines")
+	if water_spot != null:
+		water_spot.call("interact", player)
+		assert_str(notification.text).contains("buvez")

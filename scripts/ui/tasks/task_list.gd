@@ -153,6 +153,7 @@ func _rebuild_rows(summary: Dictionary) -> void:
 		row.add_theme_font_size_override("font_size", 15)
 		var status := int(details.get("status", Campaign.TaskStatus.PENDING))
 		var label := String(details.get("label", task_id))
+		var optional := bool(details.get("optional", false))
 		var failures := int((details.get("failures", []) as Array).size())
 		match status:
 			Campaign.TaskStatus.DONE:
@@ -178,6 +179,8 @@ func _rebuild_rows(summary: Dictionary) -> void:
 				if target > 1:
 					row.text += " (%d/%d)" % [progress, target]
 				row.add_theme_color_override("font_color", TEXT_DARK)
+		if optional:
+			row.text += " (optionnel)"
 		_rows_box.add_child(row)
 
 
