@@ -95,7 +95,7 @@ func test_unknown_resolution_is_ignored() -> void:
 
 
 func test_settings_slider_updates_the_audio_value() -> void:
-	var screen: Control = load("res://game/ui/menus/screens/settings_screen.tscn").instantiate()
+	var screen: Control = load("res://scenes/ui/menus/screens/settings_screen.tscn").instantiate()
 	add_child(screen)
 	auto_free(screen)
 	await get_tree().process_frame

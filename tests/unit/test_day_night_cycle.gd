@@ -1,6 +1,6 @@
 extends GdUnitTestSuite
 
-const CYCLE_SCRIPT := preload("res://game/world/day_night_cycle.gd")
+const CYCLE_SCRIPT := preload("res://scripts/world/day_night_cycle.gd")
 
 const DAY_SECONDS := 10.0
 const NIGHT_SECONDS := 4.0

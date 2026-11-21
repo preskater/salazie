@@ -1,0 +1,267 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/menus/main_menu.gd" id="1_script"]
+[ext_resource type="Theme" path="res://themes/salazie/salazie_theme.tres" id="2_theme"]
+[ext_resource type="Script" path="res://scripts/ui/menus/menu_stack.gd" id="3_stack"]
+[ext_resource type="PackedScene" path="res://scenes/ui/menus/screens/settings_screen.tscn" id="4_settings"]
+[ext_resource type="PackedScene" path="res://scenes/ui/menus/screens/credits_screen.tscn" id="5_credits"]
+[ext_resource type="PackedScene" path="res://scenes/ui/menus/screens/confirm_screen.tscn" id="6_confirm"]
+[ext_resource type="PackedScene" path="res://scenes/ui/menus/family_portrait.tscn" id="7_portrait"]
+[ext_resource type="Texture2D" path="res://sprites/ui_48x48/portrait_generator/skins/PG_Skin_48x48_1.png" id="8_skin1"]
+[ext_resource type="Texture2D" path="res://sprites/ui_48x48/portrait_generator/eyes/PG_Eyes_48x48_01.png" id="9_eyes1"]
+[ext_resource type="Texture2D" path="res://sprites/ui_48x48/portrait_generator/hairstyles/PG_Hairstyle_05_48x48_4.png" id="10_hair05"]
+[ext_resource type="Texture2D" path="res://sprites/ui_48x48/portrait_generator/skins/PG_Skin_48x48_7.png" id="11_skin7"]
+[ext_resource type="Texture2D" path="res://sprites/ui_48x48/portrait_generator/eyes/PG_Eyes_48x48_02.png" id="12_eyes2"]
+[ext_resource type="Texture2D" path="res://sprites/ui_48x48/portrait_generator/hairstyles/PG_Hairstyle_03_48x48_2.png" id="13_hair03"]
+[ext_resource type="Texture2D" path="res://sprites/ui_48x48/portrait_generator/accessories/PG_Accessory_13_Beard_48x48_1.png" id="14_beard"]
+[ext_resource type="Texture2D" path="res://sprites/ui_48x48/portrait_generator/skins/PG_Skin_48x48_2.png" id="15_skin2"]
+[ext_resource type="Texture2D" path="res://sprites/ui_48x48/portrait_generator/eyes/PG_Eyes_48x48_06.png" id="16_eyes6"]
+[ext_resource type="Texture2D" path="res://sprites/ui_48x48/portrait_generator/hairstyles/PG_Hairstyle_02_48x48_1.png" id="17_hair02"]
+[ext_resource type="Texture2D" path="res://sprites/ui_48x48/portrait_generator/accessories/PG_Accessory_15_Glasses_48x48_1.png" id="18_glasses"]
+[ext_resource type="Texture2D" path="res://themes/salazie/icons/icon_new_game.tres" id="19_icon_new"]
+[ext_resource type="Texture2D" path="res://themes/salazie/icons/icon_continue.tres" id="20_icon_continue"]
+[ext_resource type="Texture2D" path="res://themes/salazie/icons/icon_options.tres" id="21_icon_options"]
+[ext_resource type="Texture2D" path="res://themes/salazie/icons/icon_credits.tres" id="22_icon_credits"]
+[ext_resource type="Texture2D" path="res://themes/salazie/icons/icon_quit.tres" id="23_icon_quit"]
+
+[sub_resource type="Gradient" id="Gradient_bg"]
+offsets = PackedFloat32Array(0, 0.5, 1)
+colors = PackedColorArray(0.035, 0.06, 0.075, 1, 0.065, 0.11, 0.09, 1, 0.09, 0.14, 0.1, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_bg"]
+gradient = SubResource("Gradient_bg")
+width = 1280
+height = 720
+fill_from = Vector2(0.5, 0)
+fill_to = Vector2(0.5, 1)
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_script")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("GradientTexture2D_bg")
+expand_mode = 1
+stretch_mode = 0
+
+[node name="MenuStack" type="Control" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("3_stack")
+
+[node name="HomeScreen" type="Control" parent="MenuStack"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Center" type="CenterContainer" parent="MenuStack/HomeScreen"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Layout" type="HBoxContainer" parent="MenuStack/HomeScreen/Center"]
+layout_mode = 2
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="MenuColumn" type="VBoxContainer" parent="MenuStack/HomeScreen/Center/Layout"]
+custom_minimum_size = Vector2(440, 0)
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="Title" type="Label" parent="MenuStack/HomeScreen/Center/Layout/MenuColumn"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.79, 0.4, 1)
+theme_override_colors/font_outline_color = Color(0.02, 0.04, 0.03, 1)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 76
+text = "SALAZIE"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="MenuStack/HomeScreen/Center/Layout/MenuColumn"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.88, 0.78, 1)
+theme_override_font_sizes/font_size = 22
+text = "Trois générations"
+horizontal_alignment = 1
+
+[node name="TitleSpacer" type="Control" parent="MenuStack/HomeScreen/Center/Layout/MenuColumn"]
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="MenuStack/HomeScreen/Center/Layout/MenuColumn"]
+layout_mode = 2
+
+[node name="Buttons" type="VBoxContainer" parent="MenuStack/HomeScreen/Center/Layout/MenuColumn/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="NewGameButton" type="Button" parent="MenuStack/HomeScreen/Center/Layout/MenuColumn/Panel/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Nouvelle partie"
+icon = ExtResource("19_icon_new")
+
+[node name="ContinueButton" type="Button" parent="MenuStack/HomeScreen/Center/Layout/MenuColumn/Panel/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Continuer"
+icon = ExtResource("20_icon_continue")
+
+[node name="ContinueInfo" type="Label" parent="MenuStack/HomeScreen/Center/Layout/MenuColumn/Panel/Buttons"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.44, 0.36, 0.28, 1)
+theme_override_font_sizes/font_size = 14
+text = "Aucune sauvegarde"
+horizontal_alignment = 1
+
+[node name="OptionsButton" type="Button" parent="MenuStack/HomeScreen/Center/Layout/MenuColumn/Panel/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Options"
+icon = ExtResource("21_icon_options")
+
+[node name="CreditsButton" type="Button" parent="MenuStack/HomeScreen/Center/Layout/MenuColumn/Panel/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Crédits"
+icon = ExtResource("22_icon_credits")
+
+[node name="QuitButton" type="Button" parent="MenuStack/HomeScreen/Center/Layout/MenuColumn/Panel/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Quitter"
+icon = ExtResource("23_icon_quit")
+
+[node name="FooterSpacer" type="Control" parent="MenuStack/HomeScreen/Center/Layout/MenuColumn"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="VersionLabel" type="Label" parent="MenuStack/HomeScreen/Center/Layout/MenuColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.76, 0.68, 1)
+theme_override_font_sizes/font_size = 13
+text = "v0.1.0"
+horizontal_alignment = 1
+
+[node name="FamilyPanel" type="PanelContainer" parent="MenuStack/HomeScreen/Center/Layout"]
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"FamilyPanel"
+
+[node name="Portraits" type="HBoxContainer" parent="MenuStack/HomeScreen/Center/Layout/FamilyPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="MarronSlot" type="VBoxContainer" parent="MenuStack/HomeScreen/Center/Layout/FamilyPanel/Portraits"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Frame" type="PanelContainer" parent="MenuStack/HomeScreen/Center/Layout/FamilyPanel/Portraits/MarronSlot"]
+custom_minimum_size = Vector2(184, 184)
+layout_mode = 2
+theme_type_variation = &"PortraitFrame"
+
+[node name="Portrait" parent="MenuStack/HomeScreen/Center/Layout/FamilyPanel/Portraits/MarronSlot/Frame" instance=ExtResource("7_portrait")]
+skin = ExtResource("8_skin1")
+eyes = ExtResource("9_eyes1")
+hair = ExtResource("10_hair05")
+
+[node name="Caption" type="Label" parent="MenuStack/HomeScreen/Center/Layout/FamilyPanel/Portraits/MarronSlot"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.24, 0.15, 0.09, 1)
+theme_override_font_sizes/font_size = 15
+text = "Le marron"
+horizontal_alignment = 1
+
+[node name="CultivateurSlot" type="VBoxContainer" parent="MenuStack/HomeScreen/Center/Layout/FamilyPanel/Portraits"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Frame" type="PanelContainer" parent="MenuStack/HomeScreen/Center/Layout/FamilyPanel/Portraits/CultivateurSlot"]
+custom_minimum_size = Vector2(184, 184)
+layout_mode = 2
+theme_type_variation = &"PortraitFrame"
+
+[node name="Portrait" parent="MenuStack/HomeScreen/Center/Layout/FamilyPanel/Portraits/CultivateurSlot/Frame" instance=ExtResource("7_portrait")]
+skin = ExtResource("11_skin7")
+eyes = ExtResource("12_eyes2")
+hair = ExtResource("13_hair03")
+accessory = ExtResource("14_beard")
+
+[node name="Caption" type="Label" parent="MenuStack/HomeScreen/Center/Layout/FamilyPanel/Portraits/CultivateurSlot"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.24, 0.15, 0.09, 1)
+theme_override_font_sizes/font_size = 15
+text = "Le cultivateur"
+horizontal_alignment = 1
+
+[node name="HeritierSlot" type="VBoxContainer" parent="MenuStack/HomeScreen/Center/Layout/FamilyPanel/Portraits"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Frame" type="PanelContainer" parent="MenuStack/HomeScreen/Center/Layout/FamilyPanel/Portraits/HeritierSlot"]
+custom_minimum_size = Vector2(184, 184)
+layout_mode = 2
+theme_type_variation = &"PortraitFrame"
+
+[node name="Portrait" parent="MenuStack/HomeScreen/Center/Layout/FamilyPanel/Portraits/HeritierSlot/Frame" instance=ExtResource("7_portrait")]
+skin = ExtResource("15_skin2")
+eyes = ExtResource("16_eyes6")
+hair = ExtResource("17_hair02")
+accessory = ExtResource("18_glasses")
+
+[node name="Caption" type="Label" parent="MenuStack/HomeScreen/Center/Layout/FamilyPanel/Portraits/HeritierSlot"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.24, 0.15, 0.09, 1)
+theme_override_font_sizes/font_size = 15
+text = "L'héritier"
+horizontal_alignment = 1
+
+[node name="SettingsScreen" parent="MenuStack" instance=ExtResource("4_settings")]
+unique_name_in_owner = true
+
+[node name="CreditsScreen" parent="MenuStack" instance=ExtResource("5_credits")]
+unique_name_in_owner = true
+
+[node name="ConfirmScreen" parent="MenuStack" instance=ExtResource("6_confirm")]
+unique_name_in_owner = true

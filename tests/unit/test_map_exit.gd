@@ -1,8 +1,8 @@
 extends GdUnitTestSuite
 
-const MAP_EXIT_SCENE := preload("res://game/world/MapExit.tscn")
-const PLAYER_SCENE := preload("res://game/player/player.tscn")
-const FARM_SCENE_PATH := "res://game/world/maps/Farm.tscn"
+const MAP_EXIT_SCENE := preload("res://scenes/world/map_exit.tscn")
+const PLAYER_SCENE := preload("res://scenes/player/player.tscn")
+const FARM_SCENE_PATH := "res://scenes/maps/farm.tscn"
 
 
 class FakeTransition:

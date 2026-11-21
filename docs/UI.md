@@ -3,32 +3,32 @@
 Technical reference for the title screen, options, pause overlay and the single-slot save.
 Narrative text lives in [LORE.md](../LORE.md); this note records what is built and where.
 
-- Boot scene: `game/ui/menus/main_menu.tscn`
-- Game scene opened by **Nouvelle partie**: `game/world/maps/Maroon.tscn`
+- Boot scene: `scenes/ui/menus/main_menu.tscn`
+- Game scene opened by **Nouvelle partie**: `scenes/maps/maroon.tscn`
 - **Continuer** opens the generation stored in `Campaign.current_map`
-- Pause overlay: autoload `game/ui/menus/pause_menu.tscn`
+- Pause overlay: autoload `scenes/preloads/pause_menu.tscn`
 - Save file: `user://savegame.json` (plus `savegame.json.bak`)
 - Settings file: `user://settings.cfg`
-- UI art: **only** `assets/ui_48x48` (LimeZu Modern UI, Style 1) for menus and HUD
+- UI art: **only** `sprites/ui_48x48` (LimeZu Modern UI, Style 1) for menus and HUD
 
 ## Screen flow
 
 ```text
 main_menu.tscn
-  Home ── Nouvelle partie ──> Maroon.tscn (Map 1)
-    │    └─ (existing save) ─> Confirm ─> Maroon.tscn
+  Home ── Nouvelle partie ──> maroon.tscn (Map 1)
+    │    └─ (existing save) ─> Confirm ─> maroon.tscn
     ├── Continuer ───────────> saved generation
     ├── Options ─────────────> Settings
     ├── Crédits ─────────────> Credits
     └── Quitter ─────────────> Confirm ─> quit
 
-Maroon.tscn
-  Refuge exit ──────────────> Farm.tscn (Map 2)
+maroon.tscn
+  Refuge exit ──────────────> farm.tscn (Map 2)
 
-Farm.tscn
-  Road exit ────────────────> Heir.tscn (Map 3)
+farm.tscn
+  Road exit ────────────────> heir.tscn (Map 3)
 
-Heir.tscn
+heir.tscn
   Town hall ────────────────> EndingScreen
 
 Pause (Échap / Start)
@@ -40,14 +40,14 @@ Pause (Échap / Start)
   └── Quitter ─────────────> Confirm ─> quit
 ```
 
-Each menu uses `game/ui/menus/menu_stack.gd`: one screen is visible at a time, the
+Each menu uses `scripts/ui/menus/menu_stack.gd`: one screen is visible at a time, the
 first focusable control receives focus, and returning restores the focus of the previous
 screen. Hidden screens cannot receive focus or mouse input.
 
 ## UI direction
 
-All menu and HUD textures come from `assets/ui_48x48`. The shared theme is
-`game/ui/theme/salazie_theme.tres` and is also the project-wide `gui/theme/custom`.
+All menu and HUD textures come from `sprites/ui_48x48`. The shared theme is
+`themes/salazie/salazie_theme.tres` and is also the project-wide `gui/theme/custom`.
 
 | Element | Source |
 |---|---|
@@ -56,7 +56,7 @@ All menu and HUD textures come from `assets/ui_48x48`. The shared theme is
 | Button normal / hover / focus | `(36, 753, 72, 75)` and `(180, 753, 72, 75)` |
 | Slider track / fill | `(30, 432, 84, 48)` and `(1008, 447, 51, 24)` |
 | Progress bar track / fill | `(1008, 399, 48, 24)` and `(1008, 1023, 51, 24)` |
-| Settings icons | `game/ui/theme/icons/*.tres` (`AtlasTexture`) |
+| Settings icons | `themes/salazie/icons/*.tres` (`AtlasTexture`) |
 | Controls illustration | `Modern_UI_Gamepad.png`, `(444, 39, 648, 435)` at 1/3 scale |
 
 Text is dark brown on beige panels; titles and labels over the dark background use
@@ -76,7 +76,7 @@ enforces this. The engine default font is kept because the UI pack does not ship
 
 ## Task list and generation result
 
-`game/ui/tasks/task_list.tscn` is instanced by every map. It reads `Campaign` and never
+`scenes/ui/tasks/task_list.tscn` is instanced by every map. It reads `Campaign` and never
 polls:
 
 - compact row: `Tâches — X faites · Y échouées · Z en cours`;
@@ -85,7 +85,7 @@ polls:
 - result footer once the map is resolved: rank and next-generation label;
 - `T` or gamepad Select toggles the panel.
 
-`game/ui/tasks/generation_result.tscn` is the modal shown by a `MapExit` or the town hall.
+`scenes/ui/tasks/generation_result.tscn` is the modal shown by a `MapExit` or the town hall.
 It pauses the tree, lists every task and its failure count, and resumes when **Continuer**
 is pressed.
 
@@ -93,15 +93,15 @@ is pressed.
 
 | Autoload | Script | Responsibility |
 |---|---|---|
-| `Settings` | `game/systems/settings/settings.gd` | Load/apply/save audio, window and VSync settings |
-| `DayNightCycle` | `game/world/DayNightCycle.tscn` | Day/night phases and tint |
-| `SceneTransition` | `game/ui/SceneTransition.tscn` | Chapter fade used by map exits |
-| `Economy` | `game/systems/economy/economy.gd` | Per-generation wallets, offers, trading, ownership |
-| `GameState` | `game/farm/game_state.gd` | Farm economy, day timer, `playing`/`farm_active`, serialisation |
-| `Campaign` | `game/systems/campaign/campaign_state.gd` | Generation tasks, failures, results, choices and carry-over |
-| `SaveGame` | `game/systems/save/save_game.gd` | Single-slot JSON save, autosave, `.bak` fallback |
-| `SceneRouter` | `game/systems/scene_router.gd` | New game, continue, generation transitions, menu/quit, fade |
-| `PauseMenu` | `game/ui/menus/pause_menu.tscn` | Global pause overlay, process mode `ALWAYS` |
+| `Settings` | `scripts/systems/settings/settings.gd` | Load/apply/save audio, window and VSync settings |
+| `DayNightCycle` | `scenes/preloads/day_night_cycle.tscn` | Day/night phases and tint |
+| `SceneTransition` | `scenes/preloads/scene_transition.tscn` | Chapter fade used by map exits |
+| `Economy` | `scripts/systems/economy/economy.gd` | Per-generation wallets, offers, trading, ownership |
+| `GameState` | `scripts/systems/game_state.gd` | Farm economy, day timer, `playing`/`farm_active`, serialisation |
+| `Campaign` | `scripts/systems/campaign/campaign_state.gd` | Generation tasks, failures, results, choices and carry-over |
+| `SaveGame` | `scripts/systems/save/save_game.gd` | Single-slot JSON save, autosave, `.bak` fallback |
+| `SceneRouter` | `scripts/systems/scene_router.gd` | New game, continue, generation transitions, menu/quit, fade |
+| `PauseMenu` | `scenes/preloads/pause_menu.tscn` | Global pause overlay, process mode `ALWAYS` |
 
 Autoload order matters: `Settings`, `DayNightCycle`, `SceneTransition`, `Economy`,
 `GameState`, `Campaign`, `SaveGame`, `SceneRouter`, `PauseMenu`.
@@ -124,7 +124,7 @@ running. Day/night remains decorative: the next generation is unlocked by the ta
 | `display` | `resolution` | `[width, height]` | `[1280, 720]` |
 | `display` | `vsync` | bool | `true` |
 
-Audio is applied to the `Master`, `Music` and `SFX` buses in `default_bus_layout.tres`.
+Audio is applied to the `Master`, `Music` and `SFX` buses in `audio/default_bus_layout.tres`.
 There are no audio assets yet, so the sliders are wired for future music and sound effects.
 Display changes are skipped when `DisplayServer.get_name() == "headless"`, which keeps
 CI and the gdUnit4 runner safe.
@@ -248,34 +248,34 @@ Rebinding is not implemented; `Commandes` is a read-only screen.
 
 | Path | Purpose |
 |---|---|
-| `game/ui/menus/main_menu.tscn` / `.gd` | Title screen and game entry |
-| `game/ui/menus/pause_menu.tscn` / `.gd` | Global pause overlay |
-| `game/ui/menus/menu_stack.gd` | Screen stack, focus, back navigation |
-| `game/ui/menus/screens/settings_screen.tscn` / `.gd` | Audio and display options |
-| `game/ui/menus/screens/controls_screen.tscn` / `.gd` | Read-only controls reference |
-| `game/ui/menus/screens/credits_screen.tscn` / `.gd` | Credits |
-| `game/ui/menus/screens/confirm_screen.tscn` / `.gd` | Confirmation panel |
-| `game/ui/menus/family_portrait.tscn` / `.gd` | Four-layer portrait from the portrait generator |
-| `game/ui/theme/salazie_theme.tres` | Shared UI-pack theme (menus + HUD, project default) |
-| `game/ui/theme/icons/*.tres` | `AtlasTexture` icons cropped from the UI pack |
-| `game/ui/hud/hud.tscn` / `.gd` | Survival bars and pack icons |
-| `game/farm/farm_hud.tscn` / `.gd` | Farm HUD, market and inventory |
-| `game/systems/campaign/campaign_state.gd` | Generation tasks, failures, results and choices |
-| `game/ui/tasks/task_list.tscn` / `.gd` | Per-generation task list |
-| `game/ui/tasks/generation_result.tscn` / `.gd` | Generation result overlay |
-| `game/world/maps/Maroon.tscn` + `game/maroon/` | Map 1 |
-| `game/world/maps/Heir.tscn` + `game/heir/` | Map 3 |
-| `game/ui/dialogue/dialogue_box.tscn` / `.gd` | Map 3 NPC/site dialogue |
-| `game/ui/decision/decision_panel.tscn` / `.gd` | Map 3 plan decision |
-| `game/ui/ending/ending_screen.tscn` / `.gd` | Choice-driven epilogue |
-| `game/systems/settings/settings.gd` | Persistent settings |
-| `game/systems/economy/economy.gd` | Per-generation wallets, offers and ownership |
-| `game/systems/economy/config/economy.tres` | Shipped currency, generation and offer data |
-| `game/systems/save/save_game.gd` | Save/load and autosave |
-| `game/systems/scene_router.gd` | Scene transitions and game lifecycle |
-| `default_bus_layout.tres` | Master / Music / SFX buses |
-| `game/farm/game_state.gd` | `reset()`, `to_dict()`, `from_dict()`, `playing` |
-| `game/farm/farm_hud.gd` | Input guard while another system owns the pause |
+| `scenes/ui/menus/main_menu.tscn` / `scripts/ui/menus/main_menu.gd` | Title screen and game entry |
+| `scenes/preloads/pause_menu.tscn` / `scripts/ui/menus/pause_menu.gd` | Global pause overlay |
+| `scripts/ui/menus/menu_stack.gd` | Screen stack, focus, back navigation |
+| `scenes/ui/menus/screens/settings_screen.tscn` / `scripts/ui/menus/screens/settings_screen.gd` | Audio and display options |
+| `scenes/ui/menus/screens/controls_screen.tscn` / `scripts/ui/menus/screens/controls_screen.gd` | Read-only controls reference |
+| `scenes/ui/menus/screens/credits_screen.tscn` / `scripts/ui/menus/screens/credits_screen.gd` | Credits |
+| `scenes/ui/menus/screens/confirm_screen.tscn` / `scripts/ui/menus/screens/confirm_screen.gd` | Confirmation panel |
+| `scenes/ui/menus/family_portrait.tscn` / `scripts/ui/menus/family_portrait.gd` | Four-layer portrait from the portrait generator |
+| `themes/salazie/salazie_theme.tres` | Shared UI-pack theme (menus + HUD, project default) |
+| `themes/salazie/icons/*.tres` | `AtlasTexture` icons cropped from the UI pack |
+| `scenes/ui/hud/hud.tscn` / `scripts/ui/hud/hud.gd` | Survival bars and pack icons |
+| `scenes/farm/farm_hud.tscn` / `scripts/farm/farm_hud.gd` | Farm HUD, market and inventory |
+| `scripts/systems/campaign/campaign_state.gd` | Generation tasks, failures, results and choices |
+| `scenes/ui/tasks/task_list.tscn` / `scripts/ui/tasks/task_list.gd` | Per-generation task list |
+| `scenes/ui/tasks/generation_result.tscn` / `scripts/ui/tasks/generation_result.gd` | Generation result overlay |
+| `scenes/maps/maroon.tscn` + `scripts/maroon/` | Map 1 |
+| `scenes/maps/heir.tscn` + `scripts/heir/` | Map 3 |
+| `scenes/ui/dialogue/dialogue_box.tscn` / `scripts/ui/dialogue/dialogue_box.gd` | Map 3 NPC/site dialogue |
+| `scenes/ui/decision/decision_panel.tscn` / `scripts/ui/decision/decision_panel.gd` | Map 3 plan decision |
+| `scenes/ui/ending/ending_screen.tscn` / `scripts/ui/ending/ending_screen.gd` | Choice-driven epilogue |
+| `scripts/systems/settings/settings.gd` | Persistent settings |
+| `scripts/systems/economy/economy.gd` | Per-generation wallets, offers and ownership |
+| `game_resources/economy/economy.tres` | Shipped currency, generation and offer data |
+| `scripts/systems/save/save_game.gd` | Save/load and autosave |
+| `scripts/systems/scene_router.gd` | Scene transitions and game lifecycle |
+| `audio/default_bus_layout.tres` | Master / Music / SFX buses |
+| `scripts/systems/game_state.gd` | `reset()`, `to_dict()`, `from_dict()`, `playing` |
+| `scripts/farm/farm_hud.gd` | Input guard while another system owns the pause |
 
 ## Tests
 
@@ -287,7 +287,7 @@ GODOT_BIN="$GODOT_BIN" bash addons/gdUnit4/runtest.sh \
   --continue --add res://tests
 "$GODOT_BIN" --headless --quit-after 5 --audio-driver Dummy
 "$GODOT_BIN" --headless --audio-driver Dummy --quit-after 30 \
-  --scene res://game/world/maps/Farm.tscn
+  --scene res://scenes/maps/farm.tscn
 ```
 
 Focused suites:
@@ -322,6 +322,6 @@ Current status: **155/155 gdUnit4 tests pass**.
 - Display options are ignored in headless mode and may behave differently in a browser.
 - The title screen uses the engine default font because the UI pack has no font asset; there
   is no dedicated logo.
-- Menu/HUD art is limited to `assets/ui_48x48`; the game world keeps the farm packs.
+- Menu/HUD art is limited to `sprites/ui_48x48`; the game world keeps the farm packs.
 - Map 1 and Map 3 build their props at runtime from the existing packs, so their `.tscn`
   files are thin and most layout changes live in `maroon_map.gd` / `heir_map.gd`.

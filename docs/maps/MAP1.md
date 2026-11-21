@@ -3,10 +3,10 @@
 Technical reference for the first generation of Salazie. Narrative intent lives in
 [LORE.md](../../LORE.md#map-1--le-marron); this note records what is built and where.
 
-- Scene: `game/world/maps/Maroon.tscn`, root script `game/maroon/maroon_map.gd`
+- Scene: `scenes/maps/maroon.tscn`, root script `scripts/maroon/maroon_map.gd`
 - Size: 60 × 45 tiles at 48 px → 2880 × 2160 px
 - Player spawn: `(360, 1900)`
-- New game starts here; the chapter fade leads to `Farm.tscn` once the refuge is reached.
+- New game starts here; the chapter fade leads to `farm.tscn` once the refuge is reached.
 
 ## Scene structure
 
@@ -67,7 +67,7 @@ exit is blocked and the player can go back.
 
 - Map result: done / failed / failure events / rank.
 - Each Map 1 failure event removes 5 G from the farmer's starting money, down to 15 G.
-- The generation result is shown before the chapter fade to `Farm.tscn`.
+- The generation result is shown before the chapter fade to `farm.tscn`.
 
 ## Controls
 
@@ -83,14 +83,14 @@ exit is blocked and the player can go back.
 
 | Path | Purpose |
 |---|---|
-| `game/world/maps/Maroon.tscn` | Minimal map scene |
-| `game/maroon/maroon_map.gd` | Runtime layout and game loop |
-| `game/maroon/forage_spot.gd` / `.tscn` | Food and water pickups |
-| `game/maroon/hide_spot.gd` / `.tscn` | Concealment and hide task |
-| `game/maroon/checkpoint.gd` / `.tscn` | Respawn point and patrol crossing task |
-| `game/systems/campaign/campaign_state.gd` | Task states, failures and generation result |
-| `game/ui/tasks/task_list.tscn` / `.gd` | Task list UI |
-| `game/ui/tasks/generation_result.tscn` / `.gd` | Generation result overlay |
+| `scenes/maps/maroon.tscn` | Minimal map scene |
+| `scripts/maroon/maroon_map.gd` | Runtime layout and game loop |
+| `scripts/maroon/forage_spot.gd` / `scenes/maroon/forage_spot.tscn` | Food and water pickups |
+| `scripts/maroon/hide_spot.gd` / `scenes/maroon/hide_spot.tscn` | Concealment and hide task |
+| `scripts/maroon/checkpoint.gd` / `scenes/maroon/checkpoint.tscn` | Respawn point and patrol crossing task |
+| `scripts/systems/campaign/campaign_state.gd` | Task states, failures and generation result |
+| `scenes/ui/tasks/task_list.tscn` / `scripts/ui/tasks/task_list.gd` | Task list UI |
+| `scenes/ui/tasks/generation_result.tscn` / `scripts/ui/tasks/generation_result.gd` | Generation result overlay |
 
 ## Verification
 
@@ -98,7 +98,7 @@ exit is blocked and the player can go back.
 GODOT_BIN=/Applications/Godot.app/Contents/MacOS/Godot
 "$GODOT_BIN" --headless --import
 "$GODOT_BIN" --headless --audio-driver Dummy --quit-after 5 \
-  --scene res://game/world/maps/Maroon.tscn
+  --scene res://scenes/maps/maroon.tscn
 GODOT_BIN="$GODOT_BIN" bash addons/gdUnit4/runtest.sh \
   --headless --audio-driver Dummy --ignoreHeadlessMode \
   --continue --add res://tests

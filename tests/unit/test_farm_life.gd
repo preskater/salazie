@@ -1,8 +1,8 @@
 extends GdUnitTestSuite
 
-const ANIMAL_SCENE := "res://game/farm/animals/animal.tscn"
-const NPC_SCENE := "res://game/farm/npc.tscn"
-const CHICKEN_SHEET := "res://assets/farm_48x48/animals/Chickens_and_Roosters_48x48/Chicken_White_48x48.png"
+const ANIMAL_SCENE := "res://scenes/farm/animals/animal.tscn"
+const NPC_SCENE := "res://scenes/farm/npc.tscn"
+const CHICKEN_SHEET := "res://sprites/farm_48x48/animals/Chickens_and_Roosters_48x48/Chicken_White_48x48.png"
 
 const DIRECTIONS := ["right", "up", "left", "down"]
 
@@ -55,7 +55,7 @@ func test_animal_roams_and_stays_inside_roam_rect() -> void:
 
 
 func test_tree_shake_resource_has_three_frames() -> void:
-	var frames: SpriteFrames = load("res://game/world/animations/Tree_Oak_Green_Big_Shake.tres")
+	var frames: SpriteFrames = load("res://game_resources/animations/Tree_Oak_Green_Big_Shake.tres")
 
 	assert_object(frames).is_not_null()
 	assert_bool(frames.has_animation(&"shake")).is_true()
@@ -73,7 +73,7 @@ func test_fruit_tree_shake_slices_match_their_sheets() -> void:
 		var frame_h: float = cell[1]
 		var sheet_w: float = cell[2]
 		var frames: SpriteFrames = load(
-			"res://game/world/animations/Fruit_Tree_%s_Ripe_Shake.tres" % fruit)
+			"res://game_resources/animations/Fruit_Tree_%s_Ripe_Shake.tres" % fruit)
 		assert_object(frames).is_not_null()
 		assert_int(frames.get_frame_count(&"shake")).is_equal(3)
 		for i in 3:
@@ -89,7 +89,7 @@ func test_fruit_tree_shake_slices_match_their_sheets() -> void:
 
 
 func test_leaf_frames_loop_over_24_frames() -> void:
-	var frames: SpriteFrames = load("res://game/world/animations/Leaves_Green.tres")
+	var frames: SpriteFrames = load("res://game_resources/animations/Leaves_Green.tres")
 
 	assert_object(frames).is_not_null()
 	assert_bool(frames.has_animation(&"fall")).is_true()
@@ -136,7 +136,7 @@ func test_chicken_graze_row_uses_two_frames_per_direction() -> void:
 
 func test_cow_graze_keeps_six_frames_per_direction() -> void:
 	var sheet: Texture2D = load(
-		"res://assets/farm_48x48/animals/Cows_48x48/Cow_Big_White_48x48.png")
+		"res://sprites/farm_48x48/animals/Cows_48x48/Cow_Big_White_48x48.png")
 	var animal: Node2D = auto_free(load(ANIMAL_SCENE).instantiate())
 	animal.set("sheet", sheet)
 	animal.set("cell_size", Vector2i(144, 144))

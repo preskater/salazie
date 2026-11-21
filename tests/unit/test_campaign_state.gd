@@ -78,7 +78,7 @@ func test_advancing_changes_the_scene_to_the_next_generation() -> void:
 	_complete_map_one()
 	assert_bool(Campaign.advance_to_next_map()).is_true()
 	assert_int(Campaign.current_map).is_equal(2)
-	assert_str(Campaign.current_scene_path()).is_equal("res://game/world/maps/Farm.tscn")
+	assert_str(Campaign.current_scene_path()).is_equal("res://scenes/maps/farm.tscn")
 	assert_str(Campaign.map_title()).is_equal("Le cultivateur")
 
 

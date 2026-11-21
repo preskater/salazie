@@ -1,0 +1,32 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://cl8ogcvh8m52k"]
+
+[ext_resource type="Texture2D" uid="uid://dejd7kjale3sm" path="res://sprites/farm_48x48/animated/Trees_Birch_Yellow_Small_Shake_48x48.png" id="1_djhyg"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_a21q7"]
+atlas = ExtResource("1_djhyg")
+region = Rect2(0, 0, 144, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_slm43"]
+atlas = ExtResource("1_djhyg")
+region = Rect2(144, 0, 144, 192)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jnfdg"]
+atlas = ExtResource("1_djhyg")
+region = Rect2(288, 0, 144, 192)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_a21q7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_slm43")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_jnfdg")
+}],
+"loop": 1,
+"name": &"shake",
+"speed": 3.0
+}]

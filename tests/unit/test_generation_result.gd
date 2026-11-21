@@ -1,6 +1,6 @@
 extends GdUnitTestSuite
 
-const RESULT_SCENE := preload("res://game/ui/tasks/generation_result.tscn")
+const RESULT_SCENE := preload("res://scenes/ui/tasks/generation_result.tscn")
 
 
 func before_test() -> void:

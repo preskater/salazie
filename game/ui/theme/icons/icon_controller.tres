@@ -1,7 +1,0 @@
-[gd_resource type="AtlasTexture" format=3]
-
-[ext_resource type="Texture2D" path="res://assets/ui_48x48/gamepad/Modern_UI_Gamepad.png" id="1_atlas"]
-
-[resource]
-atlas = ExtResource("1_atlas")
-region = Rect2(444, 39, 648, 435)

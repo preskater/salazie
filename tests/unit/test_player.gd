@@ -1,6 +1,6 @@
 extends GdUnitTestSuite
 
-const PLAYER_SCENE_PATH := "res://game/player/player.tscn"
+const PLAYER_SCENE_PATH := "res://scenes/player/player.tscn"
 
 const DIRECTIONS := {
 	"right": Vector2.RIGHT,

@@ -1,6 +1,6 @@
 extends GdUnitTestSuite
 
-const SURVIVAL_SCRIPT := preload("res://game/systems/survival/survival_component.gd")
+const SURVIVAL_SCRIPT := preload("res://scripts/systems/survival/survival_component.gd")
 
 
 func _spawn(active := true) -> Node:

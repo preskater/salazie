@@ -28,7 +28,7 @@ Rules:
 - Do not rewrite lore to fit code. When code and lore disagree, flag the
   decision instead of silently choosing one.
 - Keep docs short and current; edit in place instead of adding a parallel doc.
-- Do not edit gameplay code, scenes, tests, assets, workflows, or export
+- Do not edit gameplay code, scenes, tests, sprites, workflows, or export
   presets.
 - Verify every referenced path exists and every command matches
   `AGENTS.md`/`.agent/skills/salazie-verify/SKILL.md`.

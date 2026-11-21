@@ -1,6 +1,6 @@
 extends GdUnitTestSuite
 
-const MAROON_SCENE := preload("res://game/world/maps/Maroon.tscn")
+const MAROON_SCENE := preload("res://scenes/maps/maroon.tscn")
 const TEST_SAVE_PATH := "user://test_maroon_save.json"
 
 var _original_save_path := ""

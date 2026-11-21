@@ -6,8 +6,8 @@ This file is the single source of project instructions for **OpenCode**, **Claud
 
 Salazie is a 2D pixel-art narrative RPG made with **Godot 4.7.2** and GDScript. The story follows one family across three generations: survival, farming, then protecting the future of Salazie.
 
-- Main scene: `game/main.tscn`
-- Player: `game/player/player.tscn`, `game/player/player.gd`
+- Boot scene: `scenes/ui/menus/main_menu.tscn`; `scenes/samples/main.tscn` is the sandbox scene
+- Player: `scenes/player/player.tscn`, `scripts/player/player.gd`
 - Engine config: `project.godot` (features `4.7`, Jolt Physics, Forward+)
 - Platform: desktop first, Web export also supported
 - Language rule: **code, identifiers and technical docs in English; `README.md`, `LORE.md` and narrative docs in French.** Reply in the user's language.
@@ -16,14 +16,18 @@ Salazie is a 2D pixel-art narrative RPG made with **Godot 4.7.2** and GDScript. 
 
 | Path | Purpose |
 |---|---|
-| `game/` | Gameplay scenes and GDScript |
+| `scenes/` | Gameplay, UI, map and autoload scenes |
+| `scripts/` | GDScript, grouped by subsystem |
+| `game_resources/` | Project-authored `.tres` data: tilesets, animations, economy |
+| `themes/` | UI theme and icon resources |
+| `sprites/` | Pixel-art packs, `.import` files, licenses |
+| `shaders/` | Shader files |
+| `audio/` | Audio bus layout and future audio assets |
 | `tests/unit/` | gdUnit4 test suites (`test_*.gd`) |
-| `assets/` | Pixel-art packs, `.import` files, licenses |
 | `docs/` | Design notes, lore, third-party notices |
 | `export_presets.cfg` | Linux, Windows, macOS, Web presets |
 | `.github/workflows/godot-ci.yml` | CI: gdUnit4 tests + four exports |
 | `.agent/` | Canonical agent and skill definitions |
-| `scripts/` | Maintenance scripts |
 | `opencode.json` | OpenCode config: Godot MCP server |
 | `.mcp.json` | Claude Code project-scope MCP servers |
 | `.vscode/mcp.json` | VS Code / Copilot workspace MCP servers |
@@ -48,7 +52,7 @@ Links expose the same files to each tool:
 .github/agents/*.agent.md -> ../../.agent/agents/*.md
 ```
 
-If links are missing after a Windows checkout, run `scripts/link-agent-config.sh`. Windows needs Developer Mode or `core.symlinks=true` for Git symlinks.
+If links are missing after a Windows checkout, recreate them from `.agent/`. Windows needs Developer Mode or `core.symlinks=true` for Git symlinks.
 
 Agent files use a combined frontmatter. OpenCode reads the V2 fields and ignores `name`/`tools` with a log warning; Claude Code and Copilot use `name`/`description`/`tools` and ignore the rest. That warning is expected.
 
@@ -58,6 +62,7 @@ Skills live in `.agent/skills/`. Load the relevant one before specialised work.
 
 | Area | Skills |
 |---|---|
+| Structure | `salazie-structure` |
 | GDScript / scenes | `godot-gdscript`, `godot-nodes-scenes`, `godot-signals-groups` |
 | Player / animation | `godot-2d-movement`, `godot-animation` |
 | Data / levels / UI | `godot-resources`, `godot-tilemap`, `godot-ui-control` |
@@ -68,6 +73,7 @@ Skills live in `.agent/skills/`. Load the relevant one before specialised work.
 Rules:
 
 - Only the skills listed above are installed. Ignore references to other skill IDs.
+- `salazie-structure` is the folder contract: load it before adding, moving or reviewing files.
 - This project uses **gdUnit4**. Do not replace it with the custom SceneTree runner described by generic Godot testing skills.
 - `godot-export` examples may use `build/`; this project uses **`export/`**.
 - `salazie-verify` is the canonical verification procedure.
@@ -159,6 +165,7 @@ GODOT_BIN="$GODOT_BIN" bash addons/gdUnit4/runtest.sh \
 
 ## GDScript conventions
 
+- Layout: scenes in `scenes/`, scripts in `scripts/`, project `.tres` data in `game_resources/`, UI theme in `themes/`, shaders in `shaders/`, art in `sprites/`. See `salazie-structure`.
 - Use typed members, parameters and returns. Use `:=` only when the right side has a static type.
 - `snake_case` for variables/functions, `PascalCase` for nodes/classes, `SCREAMING_SNAKE_CASE` for constants.
 - Prefer `@onready` and `get_node_or_null()` at scene boundaries; avoid deep hardcoded paths.
@@ -180,8 +187,9 @@ GODOT_BIN="$GODOT_BIN" bash addons/gdUnit4/runtest.sh \
 
 ## Assets
 
+- Vendored packs live in `sprites/<pack>/`; project-authored art lives in `sprites/custom/`. There is no `assets/` root.
 - Preserve pixel dimensions and transparency; never upscale pixel art implicitly.
-- Commit the `.import` file next to each image. Do not edit `.import` by hand unless the import change is intentional.
+- Commit the `.import` file next to each image. Moving an image requires updating `source_file`, `path` and `dest_files` (see `salazie-structure`); do not edit `.import` by hand otherwise.
 - Keep pack licenses/readmes with the assets and record new packs in `docs/`.
 - Do not delete or re-encode assets without explicit approval.
 - Load `create-game-assets` for art direction, sprite QA, provenance or licensing.

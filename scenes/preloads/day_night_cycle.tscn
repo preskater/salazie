@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/day_night_cycle.gd" id="1_day_night"]
+
+[node name="DayNightCycle" type="Node"]
+script = ExtResource("1_day_night")
+nights_required_for_next_map = 2

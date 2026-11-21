@@ -5,7 +5,7 @@ extends Control
 
 const TEST_SAVE_PATH := "user://feature_sandbox_save.json"
 const TEST_SETTINGS_PATH := "user://feature_sandbox_settings.cfg"
-const GUARD_SCRIPT := preload("res://game/world/ai/guard/guard.gd")
+const GUARD_SCRIPT := preload("res://scripts/world/ai/guard/guard.gd")
 
 
 class Checker extends RefCounted:
@@ -419,7 +419,7 @@ func _dispose_temp_nodes() -> void:
 
 
 func _spawn_player() -> Node:
-	var player := _spawn_scene("res://game/player/player.tscn")
+	var player := _spawn_scene("res://scenes/player/player.tscn")
 	player.set_physics_process(false)
 	var camera := player.get_node_or_null("Camera2D") as Camera2D
 	if camera != null:
@@ -428,7 +428,7 @@ func _spawn_player() -> Node:
 
 
 func _spawn_guard() -> Node:
-	var guard := _spawn_scene("res://game/world/ai/guard/guard.tscn")
+	var guard := _spawn_scene("res://scenes/world/ai/guard/guard.tscn")
 	guard.set_physics_process(false)
 	guard.set("collision_layer", 0)
 	guard.set("collision_mask", 0)
@@ -447,7 +447,7 @@ func _spawn_target(position: Vector2) -> Node2D:
 
 
 func _spawn_cycle() -> Node:
-	var cycle := _spawn_script("res://game/world/day_night_cycle.gd")
+	var cycle := _spawn_script("res://scripts/world/day_night_cycle.gd")
 	cycle.set_process(false)
 	cycle.set("day_duration", 10.0)
 	cycle.set("night_duration", 4.0)
@@ -563,7 +563,7 @@ func _test_player_run_noise(check: Checker) -> void:
 # --- Survival ---------------------------------------------------------------
 
 func _test_survival_start(check: Checker) -> void:
-	var survival := _spawn_script("res://game/systems/survival/survival_component.gd")
+	var survival := _spawn_script("res://scripts/systems/survival/survival_component.gd")
 	check.equal_float(float(survival.get("food")), 100.0, "nourriture initiale")
 	check.equal_float(float(survival.get("water")), 100.0, "eau initiale")
 	survival.call("tick", 1.0)
@@ -572,7 +572,7 @@ func _test_survival_start(check: Checker) -> void:
 
 
 func _test_survival_bounds(check: Checker) -> void:
-	var survival := _spawn_script("res://game/systems/survival/survival_component.gd")
+	var survival := _spawn_script("res://scripts/systems/survival/survival_component.gd")
 	survival.call("add_food", 500.0)
 	check.equal_float(float(survival.get("food")), 100.0, "plafond nourriture")
 	survival.call("tick", 1000.0)
@@ -583,7 +583,7 @@ func _test_survival_bounds(check: Checker) -> void:
 
 
 func _test_survival_signal(check: Checker) -> void:
-	var survival := _spawn_script("res://game/systems/survival/survival_component.gd")
+	var survival := _spawn_script("res://scripts/systems/survival/survival_component.gd")
 	var kinds: Array[StringName] = []
 	survival.connect("depleted", func(kind: StringName) -> void: kinds.append(kind))
 	survival.call("tick", 1000.0)
@@ -653,7 +653,7 @@ func _test_game_state(check: Checker) -> void:
 
 func _test_crop_plot(check: Checker) -> void:
 	GameState.reset()
-	var plot := _spawn_scene("res://game/farm/crop_plot.tscn")
+	var plot := _spawn_scene("res://scenes/farm/crop_plot.tscn")
 	check.equal_int(int(plot.get("state")), 0, "parcelle vide")
 	plot.call("interact", null)
 	check.equal_int(int(plot.get("state")), 1, "parcelle labourée")
@@ -685,7 +685,7 @@ func _test_day_advance(check: Checker) -> void:
 
 func _test_inventory_slots(check: Checker) -> void:
 	GameState.reset()
-	var hud := _spawn_scene("res://game/farm/farm_hud.tscn")
+	var hud := _spawn_scene("res://scenes/farm/farm_hud.tscn")
 	var seed_grid := hud.get_node_or_null("%SeedGrid") as GridContainer
 	var produce_grid := hud.get_node_or_null("%ProduceGrid") as GridContainer
 	check.check(seed_grid != null, "grille de graines")
@@ -711,7 +711,7 @@ func _test_inventory_slots(check: Checker) -> void:
 
 func _test_market_overlay(check: Checker) -> void:
 	GameState.reset()
-	var hud := _spawn_scene("res://game/farm/farm_hud.tscn")
+	var hud := _spawn_scene("res://scenes/farm/farm_hud.tscn")
 	hud.call("open_market")
 	var overlay := hud.get_node_or_null("%MarketOverlay") as Control
 	check.check(overlay != null and overlay.visible, "marché visible")
@@ -728,7 +728,7 @@ func _test_market_overlay(check: Checker) -> void:
 
 func _test_inventory_overlay(check: Checker) -> void:
 	GameState.reset()
-	var hud := _spawn_scene("res://game/farm/farm_hud.tscn")
+	var hud := _spawn_scene("res://scenes/farm/farm_hud.tscn")
 	hud.call("open_inventory")
 	var overlay := hud.get_node_or_null("%InventoryOverlay") as Control
 	check.check(overlay != null and overlay.visible, "inventaire visible")
@@ -810,7 +810,7 @@ func _test_settings(check: Checker) -> void:
 
 func _test_main_menu(check: Checker) -> void:
 	SaveGame.delete_save()
-	var menu := _spawn_scene("res://game/ui/menus/main_menu.tscn")
+	var menu := _spawn_scene("res://scenes/ui/menus/main_menu.tscn")
 	for node_name: String in [
 		"%NewGameButton", "%ContinueButton", "%OptionsButton",
 		"%CreditsButton", "%QuitButton", "%VersionLabel",
@@ -838,7 +838,7 @@ func _test_main_menu(check: Checker) -> void:
 
 
 func _test_pause_menu(check: Checker) -> void:
-	var pause := _spawn_scene("res://game/ui/menus/pause_menu.tscn")
+	var pause := _spawn_scene("res://scenes/preloads/pause_menu.tscn")
 	GameState.playing = true
 	SceneRouter.is_gameplay = true
 	GameState.reset()
@@ -851,7 +851,7 @@ func _test_pause_menu(check: Checker) -> void:
 
 
 func _test_pause_options(check: Checker) -> void:
-	var pause := _spawn_scene("res://game/ui/menus/pause_menu.tscn")
+	var pause := _spawn_scene("res://scenes/preloads/pause_menu.tscn")
 	GameState.playing = true
 	SceneRouter.is_gameplay = true
 	GameState.reset()
@@ -914,7 +914,7 @@ func _test_guard_catch(check: Checker) -> void:
 # --- Transition / map exit --------------------------------------------------
 
 func _test_transition(check: Checker) -> void:
-	var transition := _spawn_scene("res://game/ui/SceneTransition.tscn")
+	var transition := _spawn_scene("res://scenes/preloads/scene_transition.tscn")
 	check.check(transition.get_node_or_null("Backdrop") != null, "fond")
 	check.check(transition.get_node_or_null("Text/Layout/Title") != null, "titre")
 	check.check(not bool(transition.get("is_transitioning")), "hors transition")
@@ -925,8 +925,8 @@ func _test_transition(check: Checker) -> void:
 
 
 func _test_map_exit(check: Checker) -> void:
-	var exit := _spawn_scene("res://game/world/MapExit.tscn")
-	exit.set("next_scene_path", "res://game/world/maps/Farm.tscn")
+	var exit := _spawn_scene("res://scenes/world/map_exit.tscn")
+	exit.set("next_scene_path", "res://scenes/maps/farm.tscn")
 	exit.set("requires_map_ready", true)
 	DayNightCycle.nights_required_for_next_map = 2
 	DayNightCycle.nights_spent = 0

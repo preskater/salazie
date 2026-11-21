@@ -1,0 +1,32 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://bfuhi3b7j5jee"]
+
+[ext_resource type="Texture2D" uid="uid://b4ypn8tq1ge1d" path="res://sprites/farm_48x48/animated/Trees_Oak_Brown_Big_Shake_48x48.png" id="1_fj7k3"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bjax1"]
+atlas = ExtResource("1_fj7k3")
+region = Rect2(0, 0, 240, 288)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_u8g8c"]
+atlas = ExtResource("1_fj7k3")
+region = Rect2(240, 0, 240, 288)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_368ph"]
+atlas = ExtResource("1_fj7k3")
+region = Rect2(480, 0, 240, 288)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bjax1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_u8g8c")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_368ph")
+}],
+"loop": 1,
+"name": &"shake",
+"speed": 3.0
+}]

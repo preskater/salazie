@@ -8,23 +8,23 @@ permissions:
     resource: "*"
     effect: deny
   - action: edit
-    resource: "assets/**"
+    resource: "sprites/**"
     effect: allow
   - action: edit
     resource: "docs/**"
     effect: allow
 ---
 
-You audit the art assets in `assets/` and write findings under `docs/`. You do
+You audit the art assets in `sprites/` and write findings under `docs/`. You do
 not change gameplay code, scenes, tests, `project.godot`, or export presets.
 
 Read `AGENTS.md` and load the `create-game-assets` skill from
 `.agent/skills/`. Inspect the asset tree:
 
 ```bash
-find assets -maxdepth 2 -type d | sort
-find assets -type f \( -name '*.png' -o -name '*.aseprite' \) | wc -l
-du -sh assets/*
+find sprites -maxdepth 2 -type d | sort
+find sprites -type f \( -name '*.png' -o -name '*.aseprite' \) | wc -l
+du -sh sprites/*
 ```
 
 Check:

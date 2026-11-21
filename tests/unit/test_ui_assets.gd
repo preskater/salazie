@@ -1,19 +1,19 @@
 extends GdUnitTestSuite
 
 const UI_SCENES := [
-	"res://game/ui/menus/main_menu.tscn",
-	"res://game/ui/menus/pause_menu.tscn",
-	"res://game/ui/menus/family_portrait.tscn",
-	"res://game/ui/menus/screens/settings_screen.tscn",
-	"res://game/ui/menus/screens/controls_screen.tscn",
-	"res://game/ui/menus/screens/credits_screen.tscn",
-	"res://game/ui/menus/screens/confirm_screen.tscn",
-	"res://game/ui/hud/hud.tscn",
-	"res://game/farm/farm_hud.tscn",
-	"res://game/ui/theme/salazie_theme.tres",
+	"res://scenes/ui/menus/main_menu.tscn",
+	"res://scenes/preloads/pause_menu.tscn",
+	"res://scenes/ui/menus/family_portrait.tscn",
+	"res://scenes/ui/menus/screens/settings_screen.tscn",
+	"res://scenes/ui/menus/screens/controls_screen.tscn",
+	"res://scenes/ui/menus/screens/credits_screen.tscn",
+	"res://scenes/ui/menus/screens/confirm_screen.tscn",
+	"res://scenes/ui/hud/hud.tscn",
+	"res://scenes/farm/farm_hud.tscn",
+	"res://themes/salazie/salazie_theme.tres",
 ]
 
-const ICON_DIR := "res://game/ui/theme/icons"
+const ICON_DIR := "res://themes/salazie/icons"
 
 
 func test_ui_scenes_only_reference_the_ui_pack() -> void:
@@ -25,19 +25,19 @@ func test_ui_scenes_only_reference_the_ui_pack() -> void:
 	for path: String in files:
 		var text := FileAccess.get_file_as_string(path)
 		assert_bool(text.is_empty()).override_failure_message("Could not read %s" % path).is_false()
-		assert_bool(text.contains("res://assets/farm_48x48")).override_failure_message(
+		assert_bool(text.contains("res://sprites/farm_48x48")).override_failure_message(
 			"%s references a farm texture; menus and HUD must stay on the UI pack" % path).is_false()
 		for line: String in text.split("\n"):
-			if not line.contains('type="Texture2D"') or not line.contains('path="res://assets/'):
+			if not line.contains('type="Texture2D"') or not line.contains('path="res://sprites/'):
 				continue
 			var texture_path := line.get_slice('path="', 1).get_slice('"', 0)
-			assert_bool(texture_path.begins_with("res://assets/ui_48x48/")).override_failure_message(
-				"%s references %s outside assets/ui_48x48" % [path, texture_path]).is_true()
+			assert_bool(texture_path.begins_with("res://sprites/ui_48x48/")).override_failure_message(
+				"%s references %s outside sprites/ui_48x48" % [path, texture_path]).is_true()
 
 
 func test_family_portrait_stacks_four_layers() -> void:
-	var portrait: Control = load("res://game/ui/menus/family_portrait.tscn").instantiate()
-	var skin_texture: Texture2D = load("res://assets/ui_48x48/portrait_generator/skins/PG_Skin_48x48_1.png")
+	var portrait: Control = load("res://scenes/ui/menus/family_portrait.tscn").instantiate()
+	var skin_texture: Texture2D = load("res://sprites/ui_48x48/portrait_generator/skins/PG_Skin_48x48_1.png")
 	portrait.set("skin", skin_texture)
 	portrait.set("eyes", skin_texture)
 	portrait.set("hair", skin_texture)
@@ -60,13 +60,13 @@ func test_family_portrait_stacks_four_layers() -> void:
 
 
 func test_survival_hud_uses_ui_pack_icons_and_bars() -> void:
-	var survival: Node = preload("res://game/systems/survival/survival_component.gd").new()
+	var survival: Node = preload("res://scripts/systems/survival/survival_component.gd").new()
 	survival.active = true
 	add_child(survival)
 	auto_free(survival)
 	await get_tree().process_frame
 
-	var hud: CanvasLayer = load("res://game/ui/hud/hud.tscn").instantiate()
+	var hud: CanvasLayer = load("res://scenes/ui/hud/hud.tscn").instantiate()
 	add_child(hud)
 	auto_free(hud)
 	await get_tree().process_frame
@@ -86,7 +86,7 @@ func test_survival_hud_uses_ui_pack_icons_and_bars() -> void:
 
 
 func test_main_menu_has_the_family_trio() -> void:
-	var menu: Control = load("res://game/ui/menus/main_menu.tscn").instantiate()
+	var menu: Control = load("res://scenes/ui/menus/main_menu.tscn").instantiate()
 	add_child(menu)
 	auto_free(menu)
 	await get_tree().process_frame

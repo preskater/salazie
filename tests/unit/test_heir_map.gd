@@ -1,6 +1,6 @@
 extends GdUnitTestSuite
 
-const HEIR_SCENE := preload("res://game/world/maps/Heir.tscn")
+const HEIR_SCENE := preload("res://scenes/maps/heir.tscn")
 const TEST_SAVE_PATH := "user://test_heir_save.json"
 
 var _original_save_path := ""
