@@ -3,15 +3,25 @@ extends Node2D
 
 const INTERACT_RANGE := 84.0
 const PROSPERITY_DEADLINE_DAY := 6
+const CYCLONE_EVERY_DAYS := 3
+const CYCLONE_STEAL_RADIUS := 220.0
+const FARM_SIZE := Vector2(4608.0, 3264.0)
+const CYCLONE_MARGIN := 300.0
 const MAP_EXIT_SCENE := preload("res://scenes/world/map_exit.tscn")
 const TASK_LIST_SCENE := preload("res://scenes/ui/tasks/task_list.tscn")
 const SIGN_TEXTURE := "res://sprites/farm_48x48/singles/Props_and_Buildings/Sign_1_48x48.png"
 
 @export var economy_generation: StringName = &"cultivateur"
+## One leg of the storm path: 6 legs × 5 s = a 30 s crossing at 200 px/s.
+@export var cyclone_leg_time := 5.0
+@export var cyclone_legs := 6
+@export var cyclone_speed := 200.0
+@export var cyclone_turn_deg := 60.0
 
 @onready var player: Node2D = _find_player()
 @onready var hud: FarmHUD = $HUD
 @onready var market_stand: MarketStand = $World/MarketStand
+@onready var cyclone: Node2D = $World/Cyclone
 
 var _target: Node = null
 
@@ -168,6 +178,83 @@ func _on_money_changed(value: int) -> void:
 func _on_day_changed(day: int) -> void:
 	_check_prosperity_deadline(day)
 	_refresh_objective()
+
+	# Warn the day before so the player can harvest ripe crops in time.
+	if (day + 1) % CYCLONE_EVERY_DAYS == 0:
+		GameState.announce("Un cyclone approche demain — rentrez vos récoltes mûres.")
+	if day % CYCLONE_EVERY_DAYS == 0:
+		_strike_cyclone()
+
+
+func _strike_cyclone() -> void:
+	if cyclone == null:
+		return
+	var path := _cyclone_path(cyclone.global_position)
+	GameState.announce("Le cyclone traverse la ferme !")
+	var destroyed := 0
+	for index in range(1, path.size()):
+		var tween := create_tween()
+		tween.tween_property(cyclone, "global_position", path[index], cyclone_leg_time)
+		await tween.finished
+		destroyed += _destroy_ripe_crops_on_path(path[index - 1], path[index])
+	if destroyed > 0:
+		GameState.announce(
+			"Le cyclone a détruit %d récolte(s) mûre(s)." % destroyed)
+	else:
+		GameState.announce("Le cyclone est passé sans toucher les cultures mûres.")
+
+
+## Builds a slow polyline whose heading changes at every leg, bouncing off the
+## farm margins so the storm never leaves the playable area.
+func _cyclone_path(from: Vector2) -> PackedVector2Array:
+	var points := PackedVector2Array([from])
+	var pos := from
+	var heading := randf() * TAU
+	var step_length := cyclone_speed * cyclone_leg_time
+	for _leg in cyclone_legs:
+		heading = _next_heading(heading)
+		var next := pos + Vector2.RIGHT.rotated(heading) * step_length
+		var bounced := false
+		if next.x < CYCLONE_MARGIN or next.x > FARM_SIZE.x - CYCLONE_MARGIN:
+			heading = PI - heading
+			bounced = true
+		if next.y < CYCLONE_MARGIN or next.y > FARM_SIZE.y - CYCLONE_MARGIN:
+			heading = -heading
+			bounced = true
+		if bounced:
+			next = pos + Vector2.RIGHT.rotated(heading) * step_length
+		next.x = clampf(next.x, CYCLONE_MARGIN, FARM_SIZE.x - CYCLONE_MARGIN)
+		next.y = clampf(next.y, CYCLONE_MARGIN, FARM_SIZE.y - CYCLONE_MARGIN)
+		points.append(next)
+		pos = next
+	return points
+
+
+func _next_heading(heading: float) -> float:
+	return heading + deg_to_rad(randf_range(-cyclone_turn_deg, cyclone_turn_deg))
+
+
+## Destroys every READY crop within `CYCLONE_STEAL_RADIUS` of the storm path.
+func _destroy_ripe_crops_on_path(from: Vector2, to: Vector2) -> int:
+	var destroyed := 0
+	for node: Node in get_tree().get_nodes_in_group("crops"):
+		var plot := node as CropPlot
+		if plot == null:
+			continue
+		if _distance_to_segment(plot.global_position, from, to) > CYCLONE_STEAL_RADIUS:
+			continue
+		if plot.destroy_crop():
+			destroyed += 1
+	return destroyed
+
+
+func _distance_to_segment(point: Vector2, from: Vector2, to: Vector2) -> float:
+	var segment := to - from
+	var length_squared := segment.length_squared()
+	if length_squared < 0.0001:
+		return point.distance_to(from)
+	var t := clampf((point - from).dot(segment) / length_squared, 0.0, 1.0)
+	return point.distance_to(from + segment * t)
 
 
 func _check_prosperity_deadline(day: int) -> void:

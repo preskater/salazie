@@ -8,9 +8,10 @@ signal hidden_cancelled()
 @export var texture: Texture2D
 @export var tint := Color.WHITE
 @export var required_time := 1.5
-@export var task_id := "hide_from_patrol"
 
 @onready var sprite: Sprite2D = $Sprite2D
+@onready var ring: Sprite2D = $Ring
+@onready var label: Label = $HiddenLabel
 
 var _player: Node2D
 var _inside := false
@@ -24,6 +25,8 @@ func _ready() -> void:
 	if texture != null:
 		sprite.texture = texture
 	sprite.modulate = tint
+	ring.visible = false
+	label.visible = false
 	add_to_group("hide_spots")
 
 
@@ -33,8 +36,7 @@ func _process(delta: float) -> void:
 	_timer += delta
 	if _timer >= required_time:
 		_completed = true
-		if not task_id.is_empty():
-			Campaign.complete_task(task_id)
+		label.text = "Caché !"
 		hidden_completed.emit()
 
 
@@ -44,6 +46,9 @@ func _on_body_entered(body: Node2D) -> void:
 	_player = body
 	_inside = true
 	_timer = 0.0
+	label.text = "Caché"
+	ring.visible = true
+	label.visible = true
 	body.call("set_hidden", true)
 
 
@@ -51,6 +56,8 @@ func _on_body_exited(body: Node2D) -> void:
 	if body != _player:
 		return
 	_inside = false
+	ring.visible = false
+	label.visible = false
 	body.call("set_hidden", false)
 	if not _completed:
 		_timer = 0.0

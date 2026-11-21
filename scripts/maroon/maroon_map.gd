@@ -19,6 +19,7 @@ const CLIMB_SCENE := preload("res://scenes/maroon/climb_point.tscn")
 const STEALTH_SCENE := preload("res://scenes/maroon/stealth_zone.tscn")
 const MAP_EXIT_SCENE := preload("res://scenes/world/map_exit.tscn")
 const LAYOUT := preload("res://scripts/maroon/maroon_layout.gd")
+const INTERACT_RANGE := 72.0
 
 const FOOD_TEXTURES := [
 	"res://sprites/exteriors_48x48/singles/21_Beach/21_Beach_48x48_Brown_Shell_1_Vers_1.png",
@@ -26,6 +27,11 @@ const FOOD_TEXTURES := [
 	"res://sprites/exteriors_48x48/singles/11_Camping/ME_Singles_Camping_48x48_Mushrooms_1.png",
 	"res://sprites/farm_48x48/singles/Crops/Crop_Berry_Small_Basket_48x48.png",
 ]
+const SEED_TEXTURES := {
+	"corn": "res://sprites/farm_48x48/singles/Crops/Seed_Corn_48x48.png",
+	"tomato": "res://sprites/farm_48x48/singles/Crops/Seed_Tomato_48x48.png",
+	"carrot": "res://sprites/farm_48x48/singles/Crops/Seed_Carrot_48x48.png",
+}
 const HIDE_TEXTURES := [
 	"res://sprites/exteriors_48x48/singles/17_Garden/ME_Singles_Garden_48x48_Bush_1.png",
 	"res://sprites/exteriors_48x48/singles/17_Garden/ME_Singles_Garden_48x48_Bush_3.png",
@@ -34,7 +40,7 @@ const HIDE_TEXTURES := [
 ## A gourd of river water is worth one sip, and the volcanic silt needs ten
 ## seconds to settle before the next one.
 const DRINK_WATER := 10.0
-const DRINK_COOLDOWN := 0.0
+const DRINK_COOLDOWN := 3.0
 const DRINK_REACH_TILES := 2
 const WATERFALL_TASK_RADIUS := 12.0 * 48.0
 
@@ -47,20 +53,20 @@ var _map_size := Vector2.ZERO
 var _water_layer: TileMapLayer
 var _notification_label: Label
 var _prompt_label: Label
-var _hint_label: Label
 var _objective_bar: Node2D
 var _objective_arrow: Node2D
 var _objective_label: Label
 var _notification_timer: Timer
+var _clock_label: Label
+var _clock_timer := 0.0
+var _interact_target: Node = null
 var _respawn_overlay: ColorRect
 var _respawn_position := Vector2.ZERO
 var _respawning := false
 var _climbing := false
-var _target: Node = null
 var _near_fresh_water := false
 var _drink_cooldown := 0.0
 var _food_spots: Array[Area2D] = []
-var _hide_spots: Array[Area2D] = []
 var _guards: Array[Dictionary] = []
 
 
@@ -81,6 +87,7 @@ func _ready() -> void:
 	_add_ui()
 	_add_guards()
 	_add_forage()
+	_add_seed_spots()
 	_add_hide_spots()
 	_add_climb_points()
 	_add_stealth_zones()
@@ -169,40 +176,80 @@ func _add_ui() -> void:
 	result.name = "GenerationResult"
 	add_child(result)
 
-	var overlay := CanvasLayer.new()
-	overlay.name = "Overlay"
-	overlay.layer = 5
-	add_child(overlay)
+	# Screen-space UI: a CanvasLayer keeps it fixed while the camera scrolls.
+	var ui := CanvasLayer.new()
+	ui.name = "MaroonUI"
+	ui.layer = 9
+	add_child(ui)
+	var root := Control.new()
+	root.name = "Root"
+	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ui.add_child(root)
 
-	_hint_label = Label.new()
-	_hint_label.name = "ControlsHint"
-	_hint_label.text = "WASD · Maj courir · E grimper · T tâches"
-	_hint_label.add_theme_color_override("font_color", Color(0.95, 0.92, 0.82))
-	_hint_label.add_theme_color_override("font_outline_color", Color(0.08, 0.06, 0.04))
-	_hint_label.add_theme_constant_override("outline_size", 6)
-	overlay.add_child(_hint_label)
+	var hint := Label.new()
+	hint.name = "ControlsHint"
+	hint.text = "WASD · Maj courir · E interagir · T tâches"
+	hint.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
+	hint.offset_left = 18.0
+	hint.offset_top = -44.0
+	hint.offset_right = 640.0
+	hint.offset_bottom = -14.0
+	hint.add_theme_color_override("font_color", Color(0.95, 0.92, 0.82))
+	hint.add_theme_color_override("font_outline_color", Color(0.08, 0.06, 0.04))
+	hint.add_theme_constant_override("outline_size", 6)
+	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(hint)
+
+	_clock_label = Label.new()
+	_clock_label.name = "ClockLabel"
+	_clock_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	_clock_label.offset_left = -280.0
+	_clock_label.offset_top = 14.0
+	_clock_label.offset_right = -18.0
+	_clock_label.offset_bottom = 42.0
+	_clock_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_clock_label.add_theme_color_override("font_color", Color(0.95, 0.92, 0.82))
+	_clock_label.add_theme_color_override("font_outline_color", Color(0.08, 0.06, 0.04))
+	_clock_label.add_theme_constant_override("outline_size", 5)
+	_clock_label.add_theme_font_size_override("font_size", 16)
+	_clock_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(_clock_label)
+	_update_clock()
+
+	_prompt_label = Label.new()
+	_prompt_label.name = "PromptLabel"
+	_prompt_label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	_prompt_label.offset_left = 240.0
+	_prompt_label.offset_top = -142.0
+	_prompt_label.offset_right = -240.0
+	_prompt_label.offset_bottom = -104.0
+	_prompt_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_prompt_label.add_theme_color_override("font_color", Color(0.85, 1, 0.85))
+	_prompt_label.add_theme_color_override("font_outline_color", Color(0.05, 0.08, 0.05))
+	_prompt_label.add_theme_constant_override("outline_size", 6)
+	_prompt_label.add_theme_font_size_override("font_size", 18)
+	_prompt_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(_prompt_label)
 
 	_notification_label = Label.new()
 	_notification_label.name = "Notification"
+	_notification_label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	_notification_label.offset_left = 240.0
+	_notification_label.offset_top = -96.0
+	_notification_label.offset_right = -240.0
+	_notification_label.offset_bottom = -52.0
 	_notification_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_notification_label.add_theme_color_override("font_color", Color(0.98, 0.88, 0.66))
 	_notification_label.add_theme_color_override("font_outline_color", Color(0.08, 0.06, 0.04))
 	_notification_label.add_theme_constant_override("outline_size", 7)
 	_notification_label.add_theme_font_size_override("font_size", 22)
-	overlay.add_child(_notification_label)
-
-	_prompt_label = Label.new()
-	_prompt_label.name = "PromptLabel"
-	_prompt_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_prompt_label.add_theme_color_override("font_color", Color(0.95, 0.90, 0.74))
-	_prompt_label.add_theme_color_override("font_outline_color", Color(0.08, 0.06, 0.04))
-	_prompt_label.add_theme_constant_override("outline_size", 6)
-	_prompt_label.add_theme_font_size_override("font_size", 19)
-	overlay.add_child(_prompt_label)
+	_notification_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(_notification_label)
 
 	_objective_bar = Node2D.new()
 	_objective_bar.name = "ObjectiveBar"
-	overlay.add_child(_objective_bar)
+	root.add_child(_objective_bar)
 
 	_objective_arrow = Node2D.new()
 	_objective_arrow.name = "Arrow"
@@ -233,7 +280,7 @@ func _add_ui() -> void:
 	_notification_timer.one_shot = true
 	_notification_timer.wait_time = 4.0
 	_notification_timer.timeout.connect(_hide_notification)
-	overlay.add_child(_notification_timer)
+	add_child(_notification_timer)
 
 	get_viewport().size_changed.connect(_layout_hud)
 	_layout_hud()
@@ -252,33 +299,44 @@ func _add_ui() -> void:
 
 func _layout_hud() -> void:
 	var screen := get_viewport_rect().size
-	_hint_label.position = Vector2(18, screen.y - 42)
-	_notification_label.position = Vector2(240, screen.y - 92)
-	_notification_label.size = Vector2(screen.x - 480, 44)
-	_prompt_label.position = Vector2(240, screen.y - 144)
-	_prompt_label.size = Vector2(screen.x - 480, 40)
 	_objective_bar.position = Vector2(screen.x * 0.5, 26)
 
 
 func _process(delta: float) -> void:
 	_drink_cooldown = maxf(0.0, _drink_cooldown - delta)
-	_update_objective_bar()
-	if _respawning or _climbing:
-		return
 	_near_fresh_water = _is_near_fresh_water()
-	var best: Node = null
-	var best_distance := 92.0
+	_update_interaction_target()
+	_update_objective_bar()
+	if _clock_label != null:
+		_clock_timer -= delta
+		if _clock_timer <= 0.0:
+			_clock_timer = 0.5
+			_update_clock()
+	if _respawning or _climbing:
+		_set_prompt("")
+
+
+func _update_interaction_target() -> void:
+	_interact_target = null
+	if _player == null:
+		return
+	var best_distance := INTERACT_RANGE
 	for node: Node in get_tree().get_nodes_in_group("interactable"):
 		var node2d := node as Node2D
 		if node2d == null or not node2d.is_inside_tree():
 			continue
+		if not node.has_method("get_interaction_prompt"):
+			continue
+		var prompt := String(node.call("get_interaction_prompt"))
+		if prompt.is_empty():
+			continue
 		var distance := _player.global_position.distance_to(node2d.global_position)
-		if distance < best_distance:
-			best_distance = distance
-			best = node
-	_target = best
-	if _target:
-		_set_prompt(String(_target.call("get_interaction_prompt")))
+		if distance >= best_distance:
+			continue
+		best_distance = distance
+		_interact_target = node
+	if _interact_target != null:
+		_set_prompt(String(_interact_target.call("get_interaction_prompt")))
 	elif _near_fresh_water:
 		if _drink_cooldown > 0.0:
 			_set_prompt("L'eau se décante — %d s" % ceili(_drink_cooldown))
@@ -291,13 +349,14 @@ func _process(delta: float) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if get_tree().paused or _respawning or _climbing:
 		return
-	if event.is_action_pressed("interact"):
-		if _target != null and _target.has_method("interact"):
-			_target.call("interact", _player)
-			get_viewport().set_input_as_handled()
-		elif _near_fresh_water:
-			_drink()
-			get_viewport().set_input_as_handled()
+	if not event.is_action_pressed("interact"):
+		return
+	if _interact_target != null and is_instance_valid(_interact_target):
+		_interact_target.call("interact", _player)
+		get_viewport().set_input_as_handled()
+	elif _near_fresh_water:
+		_drink()
+		get_viewport().set_input_as_handled()
 
 
 func _is_near_fresh_water() -> bool:
@@ -354,6 +413,8 @@ func _update_objective_bar() -> void:
 
 func _current_task() -> Dictionary:
 	for definition: Dictionary in Campaign.TASKS[1]:
+		if bool(definition.get("optional", false)):
+			continue
 		if Campaign.task_status(String(definition["id"])) != Campaign.TaskStatus.DONE:
 			return definition
 	return {}
@@ -369,11 +430,6 @@ func _objective_target(task_id: String) -> Vector2:
 			return water
 		"find_food":
 			return _nearest_spot(_food_spots)
-		"hide_from_patrol":
-			return _nearest_spot(_hide_spots)
-		"cross_patrol":
-			var upper: Vector2 = _anchors["upper_checkpoint"]
-			return upper
 		"reach_refuge":
 			var refuge: Vector2 = _anchors["refuge"]
 			return refuge
@@ -402,6 +458,14 @@ func _set_prompt(text: String) -> void:
 	_prompt_label.visible = not text.is_empty()
 
 
+func _update_clock() -> void:
+	if _clock_label == null:
+		return
+	var seconds := int(ceil(DayNightCycle.seconds_until_next_phase()))
+	var phase := "jour" if DayNightCycle.phase == DayNightCycle.Phase.DAY else "nuit"
+	_clock_label.text = "Jour %d · %s %d:%02d" % [
+		DayNightCycle.day_number, phase, seconds / 60, seconds % 60]
+
 func _add_guards() -> void:
 	var positions: Array = _anchors["guards"]
 	for index in positions.size():
@@ -426,11 +490,23 @@ func _add_forage() -> void:
 	for index in food_points.size():
 		var texture: Texture2D = load(FOOD_TEXTURES[index % FOOD_TEXTURES.size()])
 		_food_spots.append(_spawn_forage(food_points[index], texture, 28.0, 0.0,
-			"find_food", 1, Color(1.0, 0.9, 0.75)))
+			"find_food", 1, Color(1.0, 0.9, 0.75), true, "",
+			"Vivres trouvés (%d/%d)."))
+
+
+func _add_seed_spots() -> void:
+	var points: Array = _anchors["seed_spots"]
+	var crops := ["corn", "tomato", "carrot"]
+	for index in points.size():
+		var crop: String = crops[index % crops.size()]
+		_spawn_forage(points[index], load(SEED_TEXTURES[crop]), 0.0, 0.0,
+			"gather_seeds", 1, Color(1.0, 0.96, 0.82), false, crop,
+			"Graines sauvages (%d/%d).")
 
 
 func _spawn_forage(point: Vector2, texture: Texture2D, food: float, water: float,
-		task_id: String, progress: int, tint: Color) -> Area2D:
+		task_id: String, progress: int, tint: Color,
+		auto_pickup := true, seed_crop := "", message := "") -> Area2D:
 	var spot: Area2D = FORAGE_SCENE.instantiate()
 	spot.name = "Forage_%d_%d" % [int(point.x), int(point.y)]
 	spot.position = point
@@ -440,7 +516,15 @@ func _spawn_forage(point: Vector2, texture: Texture2D, food: float, water: float
 	spot.set("task_id", task_id)
 	spot.set("task_progress", progress)
 	spot.set("tint", tint)
-	spot.set("kind", "water" if water > 0.0 else "food")
+	spot.set("auto_pickup", auto_pickup)
+	spot.set("seed_crop", seed_crop)
+	spot.set("pickup_message", message)
+	var kind := "food"
+	if not seed_crop.is_empty():
+		kind = "seed"
+	elif water > 0.0:
+		kind = "water"
+	spot.set("kind", kind)
 	spot.picked.connect(_on_forage_picked)
 	_world.add_child(spot)
 	return spot
@@ -456,7 +540,6 @@ func _add_hide_spots() -> void:
 		spot.set("tint", Color(0.72, 0.95, 0.70))
 		spot.hidden_completed.connect(_on_hidden_completed)
 		_world.add_child(spot)
-		_hide_spots.append(spot)
 
 
 func _add_climb_points() -> void:
@@ -515,7 +598,6 @@ func _add_checkpoints() -> void:
 	var upper: Area2D = CHECKPOINT_SCENE.instantiate()
 	upper.name = "UpperCheckpoint"
 	upper.position = _anchors["upper_checkpoint"]
-	upper.set("task_id", "cross_patrol")
 	upper.set("checkpoint_name", "Passage nord")
 	upper.reached.connect(_on_checkpoint_reached)
 	_world.add_child(upper)
@@ -548,12 +630,12 @@ func _add_shape(body: StaticBody2D, rect: Rect2) -> void:
 	body.add_child(collision)
 
 
-func _on_forage_picked(_kind: String) -> void:
-	_notify("Vivres trouvés (%d/3)." % Campaign.task_progress("find_food"))
+func _on_forage_picked(_kind: String, message: String) -> void:
+	_notify(message)
 
 
 func _on_hidden_completed() -> void:
-	_notify("La patrouille est passée sans vous voir.")
+	_notify("Vous restez caché dans le fourré.")
 
 
 func _on_climb_requested(destination: Vector2) -> void:
@@ -602,12 +684,11 @@ func _on_caught(_guard: CharacterBody2D) -> void:
 	if _respawning or _climbing:
 		return
 	_respawning = true
-	var was_hidden := bool(_player.get("concealed"))
-	if Campaign.task_status("cross_patrol") == Campaign.TaskStatus.PENDING:
-		Campaign.fail_task("cross_patrol", "Repéré par une patrouille")
-	if not was_hidden and Campaign.task_status("hide_from_patrol") == Campaign.TaskStatus.PENDING:
-		Campaign.fail_task("hide_from_patrol", "Repéré avant d'avoir pu se cacher")
+	_shake_camera(0.75)
+	await _flash_damage()
 	_player.call("stun", 1.0)
+	if _respawn_overlay != null:
+		_respawn_overlay.color = Color(0.02, 0.02, 0.03, 0.0)
 	await _fade_respawn(1.0)
 	_player.global_position = _respawn_position
 	_player.call("set_hidden", false)
@@ -619,11 +700,27 @@ func _on_caught(_guard: CharacterBody2D) -> void:
 		var other: CharacterBody2D = entry["guard"]
 		if is_instance_valid(other):
 			other.call("reset_after_catch", entry["spawn"])
-	Campaign.retry_task("cross_patrol")
-	Campaign.retry_task("hide_from_patrol")
 	_notify("Repéré ! Retour au dernier checkpoint.")
 	await _fade_respawn(0.0)
 	_respawning = false
+
+
+func _shake_camera(amount: float) -> void:
+	var camera := _player.get_node_or_null("Camera2D")
+	if camera != null and camera.has_method("add_trauma"):
+		camera.call("add_trauma", amount)
+
+
+func _flash_damage() -> void:
+	if _respawn_overlay == null:
+		return
+	_respawn_overlay.color = Color(0.55, 0.05, 0.05, 0.0)
+	_respawn_overlay.visible = true
+	var tween := create_tween()
+	tween.tween_property(_respawn_overlay, "color:a", 0.5, 0.08)
+	tween.tween_property(_respawn_overlay, "color:a", 0.0, 0.2)
+	await tween.finished
+	_respawn_overlay.visible = false
 
 
 func _fade_respawn(alpha: float) -> void:

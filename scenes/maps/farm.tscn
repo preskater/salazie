@@ -1,100 +1,91 @@
-[gd_scene format=4]
+[gd_scene format=4 uid="uid://dubspf8iq5oxv"]
 
-[ext_resource type="Script" path="res://scripts/farm/farm_map.gd" id="1_2vfb2"]
-[ext_resource type="TileSet" path="res://game_resources/tilesets/terrains.tres" id="1_ranji"]
-[ext_resource type="TileSet" path="res://game_resources/tilesets/fences.tres" id="2_0ihjh"]
-[ext_resource type="PackedScene" path="res://scenes/world/world_object.tscn" id="3_cujnu"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Farmer_House_1_48x48.png" id="4_gebd0"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Barn_Small_48x48.png" id="5_coxoy"]
-[ext_resource type="Script" path="res://scripts/world/world_object.gd" id="5_jw0le"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Silos_1_48x48.png" id="6_jym8x"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Well_Usable_48x48.png" id="7_tlclc"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Doghouse_48x48.png" id="8_exhw5"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Tractor_Left_Side_48x48.png" id="9_qysi6"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Chicken_Coop_48x48.png" id="10_ru6vq"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Henhouse_48x48.png" id="11_2f3d6"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Scarecrow_48x48.png" id="12_2ldvt"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Fruit_Trees/Crate_Brown_Apples_48x48.png" id="13_jw0le"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Fruit_Trees/Crate_Brown_Oranges_48x48.png" id="14_2vfb2"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Fruit_Trees/Basket_Apple_48x48.png" id="15_8n7ji"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Egg_Box_48x48.png" id="16_25qi1"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Sign_1_48x48.png" id="17_bhb0f"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/animals/Cows_48x48/Cow_Big_White_48x48.png" id="18_cmeft"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/animals/Cows_48x48/Cow_Big_Black_48x48.png" id="19_pwcqq"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/animals/Cows_48x48/Cow_Caramel_48x48.png" id="20_gs04t"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/animals/Chickens_and_Roosters_48x48/Chicken_White_48x48.png" id="21_c8psk"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/animals/Chickens_and_Roosters_48x48/Chicken_Brown_48x48.png" id="22_67j2y"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/animals/Chickens_and_Roosters_48x48/Chicken_Golden_48x48.png" id="23_mq0d2"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/animals/Chickens_and_Roosters_48x48/Rooster_Brown_48x48.png" id="24_v6go6"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/animals/Chickens_and_Roosters_48x48/Chick_48x48.png" id="25_lxh7p"]
-[ext_resource type="Texture2D" path="res://sprites/custom/waterfall_144x432.png" id="26_beh21"]
-[ext_resource type="Script" path="res://scripts/world/crop_sway.gd" id="26_lxh7p"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Rock_Big_48x48.png" id="27_aihtc"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Rock_Medium_48x48.png" id="28_yj0od"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Rock_Small_48x48.png" id="29_6tmgh"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Crops/Crop_Grain_Ripe_48x48.png" id="34_npf88"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Crops/Crop_Corn_Ripe_48x48.png" id="35_h01bu"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Crops/Crop_Pumpkin_Ripe_48x48.png" id="36_afqp4"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Crops/Crop_Tomato_Ripe_48x48.png" id="37_6huka"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Crops/Crop_Cabbage_Ripe_48x48.png" id="38_r3xjy"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Crops/Crop_Carrot_Ripe_1_48x48.png" id="39_pptwd"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Crops/Crop_Strawberry_Ripe_48x48.png" id="40_lh8rh"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Crops/Crop_Cauliflower_Ripe_48x48.png" id="41_umxkn"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Trees/Tree_Pine_Green_Medium_48x48.png" id="47_efbwu"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Trees/Tree_Oak_Green_Medium_48x48.png" id="52_72rhk"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Trees/Tree_Oak_Brown_Medium_48x48.png" id="53_q8to6"]
-[ext_resource type="SpriteFrames" path="res://game_resources/animations/Fruit_Tree_Orange_Ripe_Shake.tres" id="58_beh21"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Grass_Tufts_Flowers_48x48_1.png" id="58_v2iap"]
-[ext_resource type="Script" path="res://scripts/world/tree_sway.gd" id="59_aihtc"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Grass_Tufts_Flowers_48x48_2.png" id="59_hdtya"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Grass_Tufts_Flowers_48x48_3.png" id="60_xvoue"]
-[ext_resource type="SpriteFrames" path="res://game_resources/animations/Fruit_Tree_Apple_Ripe_Shake.tres" id="60_yj0od"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Grass_Tufts_Flowers_48x48_4.png" id="61_2e16b"]
-[ext_resource type="SpriteFrames" path="res://game_resources/animations/Fruit_Tree_Peach_Ripe_Shake.tres" id="61_6tmgh"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Grass_Tufts_Flowers_48x48_5.png" id="62_fj6wy"]
-[ext_resource type="SpriteFrames" path="res://game_resources/animations/Fruit_Tree_Lemon_Ripe_Shake.tres" id="62_gekgr"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Grass_Tufts_Flowers_48x48_6.png" id="63_3ktey"]
-[ext_resource type="SpriteFrames" path="res://game_resources/animations/Tree_Oak_Green_Big_Shake.tres" id="63_mkbs2"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Grass_Tufts_Flowers_48x48_7.png" id="64_kth7x"]
-[ext_resource type="SpriteFrames" path="res://game_resources/animations/Tree_Pine_Green_Big_Shake.tres" id="64_wbski"]
-[ext_resource type="SpriteFrames" path="res://game_resources/animations/Tree_Birch_Yellow_Medium_Shake.tres" id="65_dceov"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Grass_Tufts_Flowers_48x48_8.png" id="65_xh1ax"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Grass_Tufts_Flowers_48x48_9.png" id="66_fsldl"]
-[ext_resource type="SpriteFrames" path="res://game_resources/animations/Tree_Oak_Brown_Big_Shake.tres" id="66_npf88"]
-[ext_resource type="SpriteFrames" path="res://game_resources/animations/Tree_Birch_Green_Medium_Shake.tres" id="67_h01bu"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Grass_Tufts_Flowers_48x48_10.png" id="67_jlpwn"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Grass_Tufts_Flowers_48x48_11.png" id="68_7neas"]
-[ext_resource type="SpriteFrames" path="res://game_resources/animations/Tree_Pine_Green_Medium_Shake.tres" id="68_afqp4"]
-[ext_resource type="SpriteFrames" path="res://game_resources/animations/Tree_Birch_Brown_Medium_Shake.tres" id="69_6huka"]
-[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="69_ranji"]
-[ext_resource type="PackedScene" path="res://scenes/world/fx/cyclone.tscn" id="70_0ihjh"]
-[ext_resource type="SpriteFrames" path="res://game_resources/animations/Tree_Pine_Dark_Green_Medium_Shake.tres" id="70_r3xjy"]
-[ext_resource type="Script" path="res://scripts/player/player.gd" id="71_2vfb2"]
-[ext_resource type="SpriteFrames" path="res://game_resources/animations/Tree_Birch_Green_Small_Shake.tres" id="71_pptwd"]
-[ext_resource type="SpriteFrames" path="res://game_resources/animations/Tree_Oak_Green_Medium_Shake.tres" id="72_lh8rh"]
-[ext_resource type="Script" path="res://scripts/farm/crop_plot.gd" id="73_8n7ji"]
-[ext_resource type="PackedScene" path="res://scenes/farm/crop_plot.tscn" id="73_bhb0f"]
-[ext_resource type="SpriteFrames" path="res://game_resources/animations/Tree_Oak_Brown_Medium_Shake.tres" id="73_umxkn"]
-[ext_resource type="SpriteFrames" path="res://game_resources/animations/Tree_Birch_Yellow_Small_Shake.tres" id="74_tfad7"]
-[ext_resource type="SpriteFrames" path="res://game_resources/animations/Tree_Pine_Green_Small_Shake.tres" id="75_57ijn"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Farmer_House_2_48x48.png" id="75_pwcqq"]
-[ext_resource type="SpriteFrames" path="res://game_resources/animations/Tree_Oak_Green_Small_Shake.tres" id="76_dfj4k"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/animals/Donkeys_48x48/Donkey_Light_Brown_48x48.png" id="76_gs04t"]
-[ext_resource type="Script" path="res://scripts/farm/market_stand.gd" id="77_25qi1"]
+[ext_resource type="Script" uid="uid://drpb8rpawt880" path="res://scripts/farm/farm_map.gd" id="1_2vfb2"]
+[ext_resource type="TileSet" uid="uid://brvhcdcucikaa" path="res://game_resources/tilesets/terrains.tres" id="1_ranji"]
+[ext_resource type="TileSet" uid="uid://dyquhhmvkcmmx" path="res://game_resources/tilesets/fences.tres" id="2_0ihjh"]
+[ext_resource type="PackedScene" uid="uid://d25s4rxgww0we" path="res://scenes/world/world_object.tscn" id="3_cujnu"]
+[ext_resource type="Texture2D" uid="uid://8n73oc3iv80j" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Farmer_House_1_48x48.png" id="4_gebd0"]
+[ext_resource type="Texture2D" uid="uid://b6pm5b0jpyfln" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Barn_Small_48x48.png" id="5_coxoy"]
+[ext_resource type="Texture2D" uid="uid://c4cpaxvahx3rh" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Silos_1_48x48.png" id="6_jym8x"]
+[ext_resource type="Texture2D" uid="uid://c41mk6gq5gwdl" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Well_Usable_48x48.png" id="7_tlclc"]
+[ext_resource type="Texture2D" uid="uid://b4agbuyfhdg3r" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Doghouse_48x48.png" id="8_exhw5"]
+[ext_resource type="Texture2D" uid="uid://c7x86u3s3j8us" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Tractor_Left_Side_48x48.png" id="9_qysi6"]
+[ext_resource type="Texture2D" uid="uid://nsxujdh6pl6o" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Chicken_Coop_48x48.png" id="10_ru6vq"]
+[ext_resource type="Texture2D" uid="uid://ca170ahwaudnt" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Henhouse_48x48.png" id="11_2f3d6"]
+[ext_resource type="Texture2D" uid="uid://nihei82x8st6" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Scarecrow_48x48.png" id="12_2ldvt"]
+[ext_resource type="Texture2D" uid="uid://do1epfwesmqat" path="res://sprites/farm_48x48/singles/Fruit_Trees/Crate_Brown_Apples_48x48.png" id="13_jw0le"]
+[ext_resource type="Texture2D" uid="uid://c5v1sjtrhpol5" path="res://sprites/farm_48x48/singles/Fruit_Trees/Crate_Brown_Oranges_48x48.png" id="14_2vfb2"]
+[ext_resource type="Texture2D" uid="uid://djpswy8xd23r" path="res://sprites/farm_48x48/singles/Fruit_Trees/Basket_Apple_48x48.png" id="15_8n7ji"]
+[ext_resource type="Texture2D" uid="uid://dqyed721uv05p" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Egg_Box_48x48.png" id="16_25qi1"]
+[ext_resource type="Texture2D" uid="uid://brsx5vum17co5" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Sign_1_48x48.png" id="17_bhb0f"]
+[ext_resource type="Texture2D" uid="uid://ch2at35yosdld" path="res://sprites/farm_48x48/animals/Cows_48x48/Cow_Big_White_48x48.png" id="18_cmeft"]
+[ext_resource type="Texture2D" uid="uid://d3qnwrv8cnmfq" path="res://sprites/farm_48x48/animals/Cows_48x48/Cow_Big_Black_48x48.png" id="19_pwcqq"]
+[ext_resource type="Texture2D" uid="uid://ipd7d0c31gui" path="res://sprites/farm_48x48/animals/Cows_48x48/Cow_Caramel_48x48.png" id="20_gs04t"]
+[ext_resource type="Texture2D" uid="uid://dcqqj1o1myfq3" path="res://sprites/farm_48x48/animals/Chickens_and_Roosters_48x48/Chicken_White_48x48.png" id="21_c8psk"]
+[ext_resource type="Texture2D" uid="uid://c2h3xqbnp4geq" path="res://sprites/farm_48x48/animals/Chickens_and_Roosters_48x48/Chicken_Brown_48x48.png" id="22_67j2y"]
+[ext_resource type="Texture2D" uid="uid://cqyc0sdaotats" path="res://sprites/farm_48x48/animals/Chickens_and_Roosters_48x48/Chicken_Golden_48x48.png" id="23_mq0d2"]
+[ext_resource type="Texture2D" uid="uid://cr6y3gosxq5o8" path="res://sprites/farm_48x48/animals/Chickens_and_Roosters_48x48/Rooster_Brown_48x48.png" id="24_v6go6"]
+[ext_resource type="Texture2D" uid="uid://bg7jgm4p5s0w6" path="res://sprites/farm_48x48/animals/Chickens_and_Roosters_48x48/Chick_48x48.png" id="25_lxh7p"]
+[ext_resource type="Texture2D" uid="uid://b6cv5048egkae" path="res://sprites/custom/waterfall_144x432.png" id="26_beh21"]
+[ext_resource type="Script" uid="uid://ceox7t2uigmnp" path="res://scripts/world/crop_sway.gd" id="26_lxh7p"]
+[ext_resource type="Texture2D" uid="uid://bf1dcl4j6hap" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Rock_Big_48x48.png" id="27_aihtc"]
+[ext_resource type="Texture2D" uid="uid://305i8ijrqf1j" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Rock_Medium_48x48.png" id="28_yj0od"]
+[ext_resource type="Texture2D" uid="uid://dwlbjrcakskfh" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Rock_Small_48x48.png" id="29_6tmgh"]
+[ext_resource type="Texture2D" uid="uid://cp1yiyvevlk5c" path="res://sprites/farm_48x48/singles/Crops/Crop_Grain_Ripe_48x48.png" id="34_npf88"]
+[ext_resource type="Texture2D" uid="uid://nompw0r6wpbq" path="res://sprites/farm_48x48/singles/Crops/Crop_Corn_Ripe_48x48.png" id="35_h01bu"]
+[ext_resource type="Texture2D" uid="uid://cjb216lkc3i5b" path="res://sprites/farm_48x48/singles/Crops/Crop_Pumpkin_Ripe_48x48.png" id="36_afqp4"]
+[ext_resource type="Texture2D" uid="uid://bw6oiybvka2f2" path="res://sprites/farm_48x48/singles/Crops/Crop_Tomato_Ripe_48x48.png" id="37_6huka"]
+[ext_resource type="Texture2D" uid="uid://c117l8a7afgad" path="res://sprites/farm_48x48/singles/Crops/Crop_Cabbage_Ripe_48x48.png" id="38_r3xjy"]
+[ext_resource type="Texture2D" uid="uid://bhowgeinhii26" path="res://sprites/farm_48x48/singles/Crops/Crop_Carrot_Ripe_1_48x48.png" id="39_pptwd"]
+[ext_resource type="Texture2D" uid="uid://bn72xpm3qr5cq" path="res://sprites/farm_48x48/singles/Crops/Crop_Strawberry_Ripe_48x48.png" id="40_lh8rh"]
+[ext_resource type="Texture2D" uid="uid://cphmpo6qqiiq5" path="res://sprites/farm_48x48/singles/Crops/Crop_Cauliflower_Ripe_48x48.png" id="41_umxkn"]
+[ext_resource type="Texture2D" uid="uid://ufq836nvoo8h" path="res://sprites/farm_48x48/singles/Trees/Tree_Pine_Green_Medium_48x48.png" id="47_efbwu"]
+[ext_resource type="Texture2D" uid="uid://kimxfvso3p17" path="res://sprites/farm_48x48/singles/Trees/Tree_Oak_Green_Medium_48x48.png" id="52_72rhk"]
+[ext_resource type="Texture2D" uid="uid://b3mth8sepmcgk" path="res://sprites/farm_48x48/singles/Trees/Tree_Oak_Brown_Medium_48x48.png" id="53_q8to6"]
+[ext_resource type="SpriteFrames" uid="uid://bw1hytyuhires" path="res://game_resources/animations/Fruit_Tree_Orange_Ripe_Shake.tres" id="58_beh21"]
+[ext_resource type="Texture2D" uid="uid://c4wqji23d0xg6" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Grass_Tufts_Flowers_48x48_1.png" id="58_v2iap"]
+[ext_resource type="Script" uid="uid://3xtrqrth2ftx" path="res://scripts/world/tree_sway.gd" id="59_aihtc"]
+[ext_resource type="Texture2D" uid="uid://d1l1ilpjpbxgj" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Grass_Tufts_Flowers_48x48_2.png" id="59_hdtya"]
+[ext_resource type="Texture2D" uid="uid://letm34vdpo8t" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Grass_Tufts_Flowers_48x48_3.png" id="60_xvoue"]
+[ext_resource type="SpriteFrames" uid="uid://byhgeiu3qgjsh" path="res://game_resources/animations/Fruit_Tree_Apple_Ripe_Shake.tres" id="60_yj0od"]
+[ext_resource type="Texture2D" uid="uid://dm3ki16sx5dc3" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Grass_Tufts_Flowers_48x48_4.png" id="61_2e16b"]
+[ext_resource type="SpriteFrames" uid="uid://brg7ty4kbkj5" path="res://game_resources/animations/Fruit_Tree_Peach_Ripe_Shake.tres" id="61_6tmgh"]
+[ext_resource type="Texture2D" uid="uid://btmcurrbohpso" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Grass_Tufts_Flowers_48x48_5.png" id="62_fj6wy"]
+[ext_resource type="SpriteFrames" uid="uid://dn3kww4q00jwa" path="res://game_resources/animations/Fruit_Tree_Lemon_Ripe_Shake.tres" id="62_gekgr"]
+[ext_resource type="Texture2D" uid="uid://3rfa1c5n4axv" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Grass_Tufts_Flowers_48x48_6.png" id="63_3ktey"]
+[ext_resource type="SpriteFrames" uid="uid://bs0g5pn44bm71" path="res://game_resources/animations/Tree_Oak_Green_Big_Shake.tres" id="63_mkbs2"]
+[ext_resource type="Texture2D" uid="uid://cugfcqu1p6vba" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Grass_Tufts_Flowers_48x48_7.png" id="64_kth7x"]
+[ext_resource type="SpriteFrames" uid="uid://cl8okl8ny8ljn" path="res://game_resources/animations/Tree_Pine_Green_Big_Shake.tres" id="64_wbski"]
+[ext_resource type="SpriteFrames" uid="uid://cdclkwefofash" path="res://game_resources/animations/Tree_Birch_Yellow_Medium_Shake.tres" id="65_dceov"]
+[ext_resource type="Texture2D" uid="uid://elo1vfqsud8d" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Grass_Tufts_Flowers_48x48_8.png" id="65_xh1ax"]
+[ext_resource type="Texture2D" uid="uid://ctex68r3xswh3" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Grass_Tufts_Flowers_48x48_9.png" id="66_fsldl"]
+[ext_resource type="SpriteFrames" uid="uid://bfuhi3b7j5jee" path="res://game_resources/animations/Tree_Oak_Brown_Big_Shake.tres" id="66_npf88"]
+[ext_resource type="SpriteFrames" uid="uid://sj4cgw6lj5j7" path="res://game_resources/animations/Tree_Birch_Green_Medium_Shake.tres" id="67_h01bu"]
+[ext_resource type="Texture2D" uid="uid://cmxricrkrck7s" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Grass_Tufts_Flowers_48x48_10.png" id="67_jlpwn"]
+[ext_resource type="Texture2D" uid="uid://cf5tm4jngq7b5" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Grass_Tufts_Flowers_48x48_11.png" id="68_7neas"]
+[ext_resource type="SpriteFrames" uid="uid://dq1gg6p4firrp" path="res://game_resources/animations/Tree_Pine_Green_Medium_Shake.tres" id="68_afqp4"]
+[ext_resource type="SpriteFrames" uid="uid://dkpc2cb74s3ko" path="res://game_resources/animations/Tree_Birch_Brown_Medium_Shake.tres" id="69_6huka"]
+[ext_resource type="PackedScene" uid="uid://ua626s0cynio" path="res://scenes/player/player.tscn" id="69_ranji"]
+[ext_resource type="SpriteFrames" uid="uid://dutfnas16mpol" path="res://game_resources/animations/Tree_Pine_Dark_Green_Medium_Shake.tres" id="70_r3xjy"]
+[ext_resource type="SpriteFrames" uid="uid://n1cdi4fhup1v" path="res://game_resources/animations/Tree_Birch_Green_Small_Shake.tres" id="71_pptwd"]
+[ext_resource type="SpriteFrames" uid="uid://cmmp87gienrs3" path="res://game_resources/animations/Tree_Oak_Green_Medium_Shake.tres" id="72_lh8rh"]
+[ext_resource type="PackedScene" uid="uid://2gc055oe57pp" path="res://scenes/farm/crop_plot.tscn" id="73_bhb0f"]
+[ext_resource type="SpriteFrames" uid="uid://d0pek4tlff6tc" path="res://game_resources/animations/Tree_Oak_Brown_Medium_Shake.tres" id="73_umxkn"]
+[ext_resource type="SpriteFrames" uid="uid://cl8ogcvh8m52k" path="res://game_resources/animations/Tree_Birch_Yellow_Small_Shake.tres" id="74_tfad7"]
+[ext_resource type="SpriteFrames" uid="uid://bsrq3be1jclcm" path="res://game_resources/animations/Tree_Pine_Green_Small_Shake.tres" id="75_57ijn"]
+[ext_resource type="Texture2D" uid="uid://ii52q3tojmix" path="res://sprites/farm_48x48/singles/Props_and_Buildings/Farmer_House_2_48x48.png" id="75_pwcqq"]
+[ext_resource type="SpriteFrames" uid="uid://d3hinrmxpalqw" path="res://game_resources/animations/Tree_Oak_Green_Small_Shake.tres" id="76_dfj4k"]
+[ext_resource type="Texture2D" uid="uid://c7uaslv8yb7u1" path="res://sprites/farm_48x48/animals/Donkeys_48x48/Donkey_Light_Brown_48x48.png" id="76_gs04t"]
 [ext_resource type="PackedScene" path="res://scenes/farm/market_stand.tscn" id="77_c8psk"]
-[ext_resource type="SpriteFrames" path="res://game_resources/animations/Tree_Pine_Dark_Green_Big_Shake.tres" id="77_frkgr"]
+[ext_resource type="SpriteFrames" uid="uid://cukd0p0fiyjnj" path="res://game_resources/animations/Tree_Pine_Dark_Green_Big_Shake.tres" id="77_frkgr"]
 [ext_resource type="PackedScene" path="res://scenes/farm/animals/animal.tscn" id="78_6m0ua"]
-[ext_resource type="Script" path="res://scripts/farm/npc.gd" id="79_bhb0f"]
-[ext_resource type="Script" path="res://scripts/farm/animals/animal.gd" id="79_efbwu"]
 [ext_resource type="PackedScene" path="res://scenes/farm/npc.tscn" id="79_mq0d2"]
-[ext_resource type="Script" path="res://scripts/farm/farm_hud.gd" id="81_cmeft"]
+[ext_resource type="PackedScene" uid="uid://dvj4qrlxnbvrl" path="res://scenes/world/fx/cyclone.tscn" id="80_cyclone"]
 [ext_resource type="PackedScene" path="res://scenes/farm/farm_hud.tscn" id="81_lxh7p"]
 [ext_resource type="PackedScene" path="res://scenes/world/ambient_leaves.tscn" id="87_y7o85"]
-[ext_resource type="SpriteFrames" path="res://game_resources/animations/Leaves_Green.tres" id="88_g36yh"]
-[ext_resource type="Script" path="res://scripts/world/ambient_leaves.gd" id="89_lg7yc"]
-[ext_resource type="SpriteFrames" path="res://game_resources/animations/Leaves_Yellow.tres" id="90_kf6ga"]
-[ext_resource type="SpriteFrames" path="res://game_resources/animations/Leaves_Brown.tres" id="91_72rhk"]
-[ext_resource type="PackedScene" uid="uid://bqgrdlxcwts1a" path="res://scenes/world/ai/guard/guard.tscn" id="90_guard"]
+[ext_resource type="SpriteFrames" uid="uid://0lwoayvc4wlh" path="res://game_resources/animations/Leaves_Green.tres" id="88_g36yh"]
+[ext_resource type="SpriteFrames" uid="uid://2s81y4qcen0i" path="res://game_resources/animations/Leaves_Yellow.tres" id="90_kf6ga"]
+[ext_resource type="SpriteFrames" uid="uid://cgojq8h73vwl5" path="res://game_resources/animations/Leaves_Brown.tres" id="91_72rhk"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_q8to6"]
 size = Vector2(34, 20)
@@ -582,7 +573,7 @@ size = Vector2(4672, 32)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_822n0"]
 size = Vector2(4672, 32)
 
-[node name="Farm" type="Node2D" groups=["gameplay"] unique_id=307347657]
+[node name="Farm" type="Node2D" unique_id=307347657 groups=["gameplay"]]
 script = ExtResource("1_2vfb2")
 
 [node name="Ground" type="TileMapLayer" parent="." unique_id=1952102756]
@@ -591,8 +582,11 @@ tile_map_data = PackedByteArray("AAAAAAAAAAAKAB4AAAABAAAAAAAIAB4AAAACAAAAAAAIACA
 tile_set = ExtResource("1_ranji")
 
 [node name="World" type="Node2D" parent="." unique_id=982980734]
-y_sort_enabled = true
 z_index = 1
+y_sort_enabled = true
+
+[node name="Cyclone" parent="World" instance=ExtResource("80_cyclone")]
+position = Vector2(2304, 1632)
 
 [node name="Fences" type="TileMapLayer" parent="World" unique_id=1945920966]
 y_sort_enabled = true
@@ -600,281 +594,235 @@ texture_filter = 1
 tile_map_data = PackedByteArray("AAAeAB4AAAAQAAEAAAAfAB4AAAARAAEAAAAgAB4AAAARAAEAAAAhAB4AAAARAAEAAAAiAB4AAAARAAEAAAAjAB4AAAARAAEAAAAkAB4AAAARAAEAAAAlAB4AAAARAAEAAAAmAB4AAAARAAEAAAAnAB4AAAARAAEAAAAoAB4AAAARAAEAAAApAB4AAAARAAEAAAAqAB4AAAARAAEAAAArAB4AAAARAAEAAAAsAB4AAAASAAEAAAAeAB8AAAAQAAIAAAAsAB8AAAASAAIAAAAeACAAAAAQAAIAAAAsACAAAAASAAIAAAAeACEAAAAQAAIAAAAeACIAAAAQAAIAAAAeACMAAAAQAAIAAAAsACMAAAASAAIAAAAeACQAAAAQAAIAAAAsACQAAAASAAIAAAAeACUAAAAQAAIAAAAsACUAAAASAAIAAAAeACYAAAAQAAMAAAAfACYAAAARAAMAAAAgACYAAAARAAMAAAAhACYAAAARAAMAAAAiACYAAAARAAMAAAAjACYAAAARAAMAAAAkACYAAAARAAMAAAAlACYAAAARAAMAAAAmACYAAAARAAMAAAAnACYAAAARAAMAAAAoACYAAAARAAMAAAApACYAAAARAAMAAAAqACYAAAARAAMAAAArACYAAAARAAMAAAAsACYAAAASAAMAAAAeACgAAAAQAAEAAAAfACgAAAARAAEAAAAgACgAAAARAAEAAAAhACgAAAARAAEAAAAiACgAAAARAAEAAAAjACgAAAARAAEAAAAkACgAAAARAAEAAAAlACgAAAARAAEAAAAmACgAAAARAAEAAAAnACgAAAARAAEAAAAoACgAAAARAAEAAAApACgAAAARAAEAAAAqACgAAAARAAEAAAArACgAAAARAAEAAAAsACgAAAASAAEAAAAeACkAAAAQAAIAAAAsACkAAAASAAIAAAAeACoAAAAQAAIAAAAsACoAAAASAAIAAAAeACsAAAAQAAIAAAAsACsAAAASAAIAAAAeACwAAAAQAAIAAAAeAC0AAAAQAAIAAAAeAC4AAAAQAAIAAAAsAC4AAAASAAIAAAAeAC8AAAAQAAIAAAAsAC8AAAASAAIAAAAeADAAAAAQAAIAAAAsADAAAAASAAIAAAAeADEAAAAQAAMAAAAfADEAAAARAAMAAAAgADEAAAARAAMAAAAhADEAAAARAAMAAAAiADEAAAARAAMAAAAjADEAAAARAAMAAAAkADEAAAARAAMAAAAlADEAAAARAAMAAAAmADEAAAARAAMAAAAnADEAAAARAAMAAAAoADEAAAARAAMAAAApADEAAAARAAMAAAAqADEAAAARAAMAAAArADEAAAARAAMAAAAsADEAAAASAAMAAAAyACIAAAAQAAEAAAAzACIAAAARAAEAAAA0ACIAAAARAAEAAAA1ACIAAAARAAEAAAA2ACIAAAARAAEAAAA3ACIAAAARAAEAAAA4ACIAAAARAAEAAAA5ACIAAAARAAEAAAA6ACIAAAARAAEAAAA7ACIAAAARAAEAAAA8ACIAAAARAAEAAAA9ACIAAAASAAEAAAAyACMAAAAQAAIAAAA9ACMAAAASAAIAAAA9ACQAAAASAAIAAAA9ACUAAAASAAIAAAAyACYAAAAQAAIAAAA9ACYAAAASAAIAAAAyACcAAAAQAAIAAAA9ACcAAAASAAIAAAAyACgAAAAQAAMAAAAzACgAAAARAAMAAAA0ACgAAAARAAMAAAA1ACgAAAARAAMAAAA2ACgAAAARAAMAAAA3ACgAAAARAAMAAAA4ACgAAAARAAMAAAA5ACgAAAARAAMAAAA6ACgAAAARAAMAAAA7ACgAAAARAAMAAAA8ACgAAAARAAMAAAA9ACgAAAASAAMAAAA=")
 tile_set = ExtResource("2_0ihjh")
 
-[node name="FarmerHouse" type="StaticBody2D" parent="World" unique_id=900331317 instance=ExtResource("3_cujnu")]
+[node name="FarmerHouse" parent="World" unique_id=900331317 instance=ExtResource("3_cujnu")]
 position = Vector2(1776, 1200)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("4_gebd0")
 collision_size = Vector2(384, 110)
 
-[node name="Barn" type="StaticBody2D" parent="World" unique_id=150014292 instance=ExtResource("3_cujnu")]
+[node name="Barn" parent="World" unique_id=150014292 instance=ExtResource("3_cujnu")]
 position = Vector2(2256, 1200)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("5_coxoy")
 collision_size = Vector2(384, 110)
 
-[node name="Silo" type="StaticBody2D" parent="World" unique_id=806057397 instance=ExtResource("3_cujnu")]
+[node name="Silo" parent="World" unique_id=806057397 instance=ExtResource("3_cujnu")]
 position = Vector2(2664, 1200)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("6_jym8x")
 collision_size = Vector2(220, 100)
 
-[node name="Well" type="StaticBody2D" parent="World" unique_id=512321808 instance=ExtResource("3_cujnu")]
+[node name="Well" parent="World" unique_id=512321808 instance=ExtResource("3_cujnu")]
 position = Vector2(1416, 1344)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("7_tlclc")
 collision_size = Vector2(120, 60)
 
-[node name="Doghouse" type="StaticBody2D" parent="World" unique_id=1724852072 instance=ExtResource("3_cujnu")]
+[node name="Doghouse" parent="World" unique_id=1724852072 instance=ExtResource("3_cujnu")]
 position = Vector2(2016, 1488)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("8_exhw5")
 collision_size = Vector2(96, 60)
 
-[node name="Tractor" type="StaticBody2D" parent="World" unique_id=1555089026 instance=ExtResource("3_cujnu")]
+[node name="Tractor" parent="World" unique_id=1555089026 instance=ExtResource("3_cujnu")]
 position = Vector2(2952, 1056)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("9_qysi6")
 collision_size = Vector2(210, 90)
 
-[node name="ChickenCoop" type="StaticBody2D" parent="World" unique_id=1528753959 instance=ExtResource("3_cujnu")]
+[node name="ChickenCoop" parent="World" unique_id=1528753959 instance=ExtResource("3_cujnu")]
 position = Vector2(2544, 1632)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("10_ru6vq")
 collision_size = Vector2(180, 70)
 
-[node name="Henhouse" type="StaticBody2D" parent="World" unique_id=986378643 instance=ExtResource("3_cujnu")]
+[node name="Henhouse" parent="World" unique_id=986378643 instance=ExtResource("3_cujnu")]
 position = Vector2(2784, 1632)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("11_2f3d6")
 collision_size = Vector2(180, 70)
 
-[node name="Scarecrow" type="StaticBody2D" parent="World" unique_id=762254518 instance=ExtResource("3_cujnu")]
+[node name="Scarecrow" parent="World" unique_id=762254518 instance=ExtResource("3_cujnu")]
 position = Vector2(1848, 1680)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("12_2ldvt")
 collision_size = Vector2(50, 30)
 
-[node name="CrateApples" type="StaticBody2D" parent="World" unique_id=941909347 instance=ExtResource("3_cujnu")]
+[node name="CrateApples" parent="World" unique_id=941909347 instance=ExtResource("3_cujnu")]
 position = Vector2(2177, 1404)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("13_jw0le")
 collision_size = Vector2(90, 50)
 
-[node name="CrateOranges" type="StaticBody2D" parent="World" unique_id=1647922279 instance=ExtResource("3_cujnu")]
+[node name="CrateOranges" parent="World" unique_id=1647922279 instance=ExtResource("3_cujnu")]
 position = Vector2(2340, 1406)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("14_2vfb2")
 collision_size = Vector2(90, 50)
 
-[node name="BasketApple" type="StaticBody2D" parent="World" unique_id=1690970161 instance=ExtResource("3_cujnu")]
+[node name="BasketApple" parent="World" unique_id=1690970161 instance=ExtResource("3_cujnu")]
 position = Vector2(2431, 1391)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("15_8n7ji")
 collision_size = Vector2(40, 26)
 
-[node name="EggBox" type="StaticBody2D" parent="World" unique_id=1334981449 instance=ExtResource("3_cujnu")]
+[node name="EggBox" parent="World" unique_id=1334981449 instance=ExtResource("3_cujnu")]
 position = Vector2(2544, 1728)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("16_25qi1")
 collision_size = Vector2(90, 36)
 
-[node name="FarmSign" type="StaticBody2D" parent="World" unique_id=593062807 instance=ExtResource("3_cujnu")]
+[node name="FarmSign" parent="World" unique_id=593062807 instance=ExtResource("3_cujnu")]
 position = Vector2(2376, 3168)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("17_bhb0f")
 collision_size = Vector2(32, 22)
 
-[node name="Chick" type="StaticBody2D" parent="World" unique_id=1828929449 instance=ExtResource("3_cujnu")]
+[node name="Chick" parent="World" unique_id=1828929449 instance=ExtResource("3_cujnu")]
 position = Vector2(2520, 1776)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("25_lxh7p")
 collision_size = Vector2(20, 12)
 hframes = 24
 vframes = 4
 
-[node name="Waterfall" type="StaticBody2D" parent="World" unique_id=791354635 instance=ExtResource("3_cujnu")]
+[node name="Waterfall" parent="World" unique_id=791354635 instance=ExtResource("3_cujnu")]
 position = Vector2(3816, 1656)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("26_beh21")
 collision_size = Vector2(144, 360)
 
-[node name="Rock_Big_0" type="StaticBody2D" parent="World" unique_id=438918644 instance=ExtResource("3_cujnu")]
+[node name="Rock_Big_0" parent="World" unique_id=438918644 instance=ExtResource("3_cujnu")]
 position = Vector2(3720, 1344)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("27_aihtc")
 collision_size = Vector2(52, 32)
 
-[node name="Rock_Medium_1" type="StaticBody2D" parent="World" unique_id=1485478117 instance=ExtResource("3_cujnu")]
+[node name="Rock_Medium_1" parent="World" unique_id=1485478117 instance=ExtResource("3_cujnu")]
 position = Vector2(3672, 1440)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("28_yj0od")
 collision_size = Vector2(44, 28)
 
-[node name="Rock_Big_2" type="StaticBody2D" parent="World" unique_id=83727157 instance=ExtResource("3_cujnu")]
+[node name="Rock_Big_2" parent="World" unique_id=83727157 instance=ExtResource("3_cujnu")]
 position = Vector2(3912, 1344)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("27_aihtc")
 collision_size = Vector2(52, 32)
 
-[node name="Rock_Medium_3" type="StaticBody2D" parent="World" unique_id=1608572964 instance=ExtResource("3_cujnu")]
+[node name="Rock_Medium_3" parent="World" unique_id=1608572964 instance=ExtResource("3_cujnu")]
 position = Vector2(3960, 1440)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("28_yj0od")
 collision_size = Vector2(44, 28)
 
-[node name="Rock_Medium_4" type="StaticBody2D" parent="World" unique_id=2127245063 instance=ExtResource("3_cujnu")]
+[node name="Rock_Medium_4" parent="World" unique_id=2127245063 instance=ExtResource("3_cujnu")]
 position = Vector2(3672, 1584)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("28_yj0od")
 collision_size = Vector2(44, 28)
 
-[node name="Rock_Big_5" type="StaticBody2D" parent="World" unique_id=2030198996 instance=ExtResource("3_cujnu")]
+[node name="Rock_Big_5" parent="World" unique_id=2030198996 instance=ExtResource("3_cujnu")]
 position = Vector2(3960, 1584)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("27_aihtc")
 collision_size = Vector2(52, 32)
 
-[node name="Rock_Small_6" type="StaticBody2D" parent="World" unique_id=940022185 instance=ExtResource("3_cujnu")]
+[node name="Rock_Small_6" parent="World" unique_id=940022185 instance=ExtResource("3_cujnu")]
 position = Vector2(3720, 1200)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("29_6tmgh")
 collision_size = Vector2(34, 22)
 
-[node name="Rock_Small_7" type="StaticBody2D" parent="World" unique_id=1542007327 instance=ExtResource("3_cujnu")]
+[node name="Rock_Small_7" parent="World" unique_id=1542007327 instance=ExtResource("3_cujnu")]
 position = Vector2(3912, 1200)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("29_6tmgh")
 collision_size = Vector2(34, 22)
 
-[node name="Rock_Small_8" type="StaticBody2D" parent="World" unique_id=222281559 instance=ExtResource("3_cujnu")]
+[node name="Rock_Small_8" parent="World" unique_id=222281559 instance=ExtResource("3_cujnu")]
 position = Vector2(3192, 1728)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("29_6tmgh")
 collision_size = Vector2(34, 22)
 
-[node name="Rock_Small_9" type="StaticBody2D" parent="World" unique_id=1405424503 instance=ExtResource("3_cujnu")]
+[node name="Rock_Small_9" parent="World" unique_id=1405424503 instance=ExtResource("3_cujnu")]
 position = Vector2(3192, 2400)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("29_6tmgh")
 collision_size = Vector2(34, 22)
 
-[node name="Rock_Medium_10" type="StaticBody2D" parent="World" unique_id=984765286 instance=ExtResource("3_cujnu")]
+[node name="Rock_Medium_10" parent="World" unique_id=984765286 instance=ExtResource("3_cujnu")]
 position = Vector2(3384, 1584)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("28_yj0od")
 collision_size = Vector2(44, 28)
 
-[node name="Rock_Medium_11" type="StaticBody2D" parent="World" unique_id=1266975720 instance=ExtResource("3_cujnu")]
+[node name="Rock_Medium_11" parent="World" unique_id=1266975720 instance=ExtResource("3_cujnu")]
 position = Vector2(3576, 1584)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("28_yj0od")
 collision_size = Vector2(44, 28)
 
-[node name="Rock_Medium_12" type="StaticBody2D" parent="World" unique_id=771696605 instance=ExtResource("3_cujnu")]
+[node name="Rock_Medium_12" parent="World" unique_id=771696605 instance=ExtResource("3_cujnu")]
 position = Vector2(4056, 1584)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("28_yj0od")
 collision_size = Vector2(44, 28)
 
-[node name="Rock_Medium_13" type="StaticBody2D" parent="World" unique_id=1726979487 instance=ExtResource("3_cujnu")]
+[node name="Rock_Medium_13" parent="World" unique_id=1726979487 instance=ExtResource("3_cujnu")]
 position = Vector2(4248, 1584)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("28_yj0od")
 collision_size = Vector2(44, 28)
 
-[node name="Rock_Big_14" type="StaticBody2D" parent="World" unique_id=1909140958 instance=ExtResource("3_cujnu")]
+[node name="Rock_Big_14" parent="World" unique_id=1909140958 instance=ExtResource("3_cujnu")]
 position = Vector2(4392, 1968)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("27_aihtc")
 collision_size = Vector2(52, 32)
 
-[node name="ForestRock0" type="StaticBody2D" parent="World" unique_id=946005483 instance=ExtResource("3_cujnu")]
+[node name="ForestRock0" parent="World" unique_id=946005483 instance=ExtResource("3_cujnu")]
 position = Vector2(216, 1008)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("28_yj0od")
 collision_size = Vector2(44, 28)
 
-[node name="ForestRock1" type="StaticBody2D" parent="World" unique_id=771484998 instance=ExtResource("3_cujnu")]
+[node name="ForestRock1" parent="World" unique_id=771484998 instance=ExtResource("3_cujnu")]
 position = Vector2(504, 720)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("29_6tmgh")
 collision_size = Vector2(34, 22)
 
-[node name="ForestRock2" type="StaticBody2D" parent="World" unique_id=1119669509 instance=ExtResource("3_cujnu")]
+[node name="ForestRock2" parent="World" unique_id=1119669509 instance=ExtResource("3_cujnu")]
 position = Vector2(984, 1392)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("27_aihtc")
 collision_size = Vector2(52, 32)
 
-[node name="ForestRock3" type="StaticBody2D" parent="World" unique_id=1142203919 instance=ExtResource("3_cujnu")]
+[node name="ForestRock3" parent="World" unique_id=1142203919 instance=ExtResource("3_cujnu")]
 position = Vector2(408, 2160)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("28_yj0od")
 collision_size = Vector2(44, 28)
 
-[node name="ForestRock4" type="StaticBody2D" parent="World" unique_id=1302546319 instance=ExtResource("3_cujnu")]
+[node name="ForestRock4" parent="World" unique_id=1302546319 instance=ExtResource("3_cujnu")]
 position = Vector2(1176, 2832)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("27_aihtc")
 collision_size = Vector2(52, 32)
 
-[node name="ForestRock5" type="StaticBody2D" parent="World" unique_id=781682034 instance=ExtResource("3_cujnu")]
+[node name="ForestRock5" parent="World" unique_id=781682034 instance=ExtResource("3_cujnu")]
 position = Vector2(744, 2928)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("29_6tmgh")
 collision_size = Vector2(34, 22)
 
-[node name="ForestRock6" type="StaticBody2D" parent="World" unique_id=1604083431 instance=ExtResource("3_cujnu")]
+[node name="ForestRock6" parent="World" unique_id=1604083431 instance=ExtResource("3_cujnu")]
 position = Vector2(168, 2448)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("28_yj0od")
 collision_size = Vector2(44, 28)
 
-[node name="ForestRock7" type="StaticBody2D" parent="World" unique_id=1584338124 instance=ExtResource("3_cujnu")]
+[node name="ForestRock7" parent="World" unique_id=1584338124 instance=ExtResource("3_cujnu")]
 position = Vector2(1272, 912)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("29_6tmgh")
 collision_size = Vector2(34, 22)
 
-[node name="ForestRock8" type="StaticBody2D" parent="World" unique_id=1985486915 instance=ExtResource("3_cujnu")]
+[node name="ForestRock8" parent="World" unique_id=1985486915 instance=ExtResource("3_cujnu")]
 position = Vector2(888, 432)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("28_yj0od")
 collision_size = Vector2(44, 28)
 
-[node name="ForestRock9" type="StaticBody2D" parent="World" unique_id=1499058953 instance=ExtResource("3_cujnu")]
+[node name="ForestRock9" parent="World" unique_id=1499058953 instance=ExtResource("3_cujnu")]
 position = Vector2(504, 2688)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("29_6tmgh")
 collision_size = Vector2(34, 22)
 
-[node name="ForestRock10" type="StaticBody2D" parent="World" unique_id=1293297361 instance=ExtResource("3_cujnu")]
+[node name="ForestRock10" parent="World" unique_id=1293297361 instance=ExtResource("3_cujnu")]
 position = Vector2(312, 1680)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("28_yj0od")
 collision_size = Vector2(44, 28)
 
-[node name="ForestRock11" type="StaticBody2D" parent="World" unique_id=153405076 instance=ExtResource("3_cujnu")]
+[node name="ForestRock11" parent="World" unique_id=153405076 instance=ExtResource("3_cujnu")]
 position = Vector2(1080, 2064)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("29_6tmgh")
 collision_size = Vector2(34, 22)
 
-[node name="ForestRock12" type="StaticBody2D" parent="World" unique_id=1238658789 instance=ExtResource("3_cujnu")]
+[node name="ForestRock12" parent="World" unique_id=1238658789 instance=ExtResource("3_cujnu")]
 position = Vector2(792, 2400)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("29_6tmgh")
 collision_size = Vector2(34, 22)
 
-[node name="ForestRock13" type="StaticBody2D" parent="World" unique_id=1560448275 instance=ExtResource("3_cujnu")]
+[node name="ForestRock13" parent="World" unique_id=1560448275 instance=ExtResource("3_cujnu")]
 position = Vector2(1128, 2400)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("29_6tmgh")
 collision_size = Vector2(34, 22)
 
-[node name="ForestRock14" type="StaticBody2D" parent="World" unique_id=1237132518 instance=ExtResource("3_cujnu")]
+[node name="ForestRock14" parent="World" unique_id=1237132518 instance=ExtResource("3_cujnu")]
 position = Vector2(840, 2736)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("28_yj0od")
 collision_size = Vector2(44, 28)
 
@@ -1268,95 +1216,76 @@ position = Vector2(936, 768)
 texture = ExtResource("58_v2iap")
 offset = Vector2(0, -24)
 
-[node name="Player2" type="CharacterBody2D" parent="World" unique_id=17329257 instance=ExtResource("69_ranji")]
+[node name="Player2" parent="World" unique_id=17329257 instance=ExtResource("69_ranji")]
 position = Vector2(2280, 3168)
-motion_mode = 1
-script = ExtResource("71_2vfb2")
-camera_zoom = 1.0
 camera_limits = Rect2i(0, 0, 4608, 3264)
 
-[node name="Plot_32_35" type="Node2D" parent="World" unique_id=439742478 instance=ExtResource("73_bhb0f")]
+[node name="Plot_32_35" parent="World" unique_id=439742478 instance=ExtResource("73_bhb0f")]
 position = Vector2(1560, 1728)
-script = ExtResource("73_8n7ji")
 initial_state = 1
 
-[node name="Plot_33_35" type="Node2D" parent="World" unique_id=1553570398 instance=ExtResource("73_bhb0f")]
+[node name="Plot_33_35" parent="World" unique_id=1553570398 instance=ExtResource("73_bhb0f")]
 position = Vector2(1608, 1728)
-script = ExtResource("73_8n7ji")
 initial_state = 1
 
-[node name="Plot_34_35" type="Node2D" parent="World" unique_id=474170283 instance=ExtResource("73_bhb0f")]
+[node name="Plot_34_35" parent="World" unique_id=474170283 instance=ExtResource("73_bhb0f")]
 position = Vector2(1656, 1728)
-script = ExtResource("73_8n7ji")
 
-[node name="Plot_35_35" type="Node2D" parent="World" unique_id=1265813908 instance=ExtResource("73_bhb0f")]
+[node name="Plot_35_35" parent="World" unique_id=1265813908 instance=ExtResource("73_bhb0f")]
 position = Vector2(1704, 1728)
-script = ExtResource("73_8n7ji")
 
-[node name="Plot_32_36" type="Node2D" parent="World" unique_id=2110986644 instance=ExtResource("73_bhb0f")]
+[node name="Plot_32_36" parent="World" unique_id=2110986644 instance=ExtResource("73_bhb0f")]
 position = Vector2(1560, 1776)
-script = ExtResource("73_8n7ji")
 initial_state = 1
 
-[node name="Plot_33_36" type="Node2D" parent="World" unique_id=1864717718 instance=ExtResource("73_bhb0f")]
+[node name="Plot_33_36" parent="World" unique_id=1864717718 instance=ExtResource("73_bhb0f")]
 position = Vector2(1608, 1776)
-script = ExtResource("73_8n7ji")
 initial_state = 1
 
-[node name="Plot_34_36" type="Node2D" parent="World" unique_id=438984053 instance=ExtResource("73_bhb0f")]
+[node name="Plot_34_36" parent="World" unique_id=438984053 instance=ExtResource("73_bhb0f")]
 position = Vector2(1656, 1776)
-script = ExtResource("73_8n7ji")
 
-[node name="Plot_35_36" type="Node2D" parent="World" unique_id=1425720331 instance=ExtResource("73_bhb0f")]
+[node name="Plot_35_36" parent="World" unique_id=1425720331 instance=ExtResource("73_bhb0f")]
 position = Vector2(1704, 1776)
-script = ExtResource("73_8n7ji")
 
-[node name="Cottage" type="StaticBody2D" parent="World" unique_id=1186044800 instance=ExtResource("3_cujnu")]
+[node name="Cottage" parent="World" unique_id=1186044800 instance=ExtResource("3_cujnu")]
 position = Vector2(2640, 3024)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("75_pwcqq")
 collision_size = Vector2(480, 110)
 
-[node name="MarketCrateApples" type="StaticBody2D" parent="World" unique_id=223976684 instance=ExtResource("3_cujnu")]
+[node name="MarketCrateApples" parent="World" unique_id=223976684 instance=ExtResource("3_cujnu")]
 position = Vector2(1824, 2976)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("13_jw0le")
 collision_size = Vector2(90, 50)
 
-[node name="MarketCrateOranges" type="StaticBody2D" parent="World" unique_id=2071572027 instance=ExtResource("3_cujnu")]
+[node name="MarketCrateOranges" parent="World" unique_id=2071572027 instance=ExtResource("3_cujnu")]
 position = Vector2(1824, 2832)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("14_2vfb2")
 collision_size = Vector2(90, 50)
 
-[node name="MarketBasket" type="StaticBody2D" parent="World" unique_id=1696859151 instance=ExtResource("3_cujnu")]
+[node name="MarketBasket" parent="World" unique_id=1696859151 instance=ExtResource("3_cujnu")]
 position = Vector2(1872, 3024)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("15_8n7ji")
 collision_size = Vector2(30, 20)
 
-[node name="Donkey" type="StaticBody2D" parent="World" unique_id=170202492 instance=ExtResource("3_cujnu")]
+[node name="Donkey" parent="World" unique_id=170202492 instance=ExtResource("3_cujnu")]
 position = Vector2(2184, 3024)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("76_gs04t")
 collision_size = Vector2(110, 50)
 hframes = 24
 vframes = 4
 
-[node name="MarketStand" type="StaticBody2D" parent="World" unique_id=807306357 instance=ExtResource("77_c8psk")]
+[node name="MarketStand" parent="World" unique_id=807306357 instance=ExtResource("77_c8psk")]
 position = Vector2(1992, 2976)
-script = ExtResource("77_25qi1")
 
-[node name="NPCSeller" type="Node2D" parent="World" unique_id=797403996 instance=ExtResource("79_mq0d2")]
+[node name="NPCSeller" parent="World" unique_id=797403996 instance=ExtResource("79_mq0d2")]
 position = Vector2(1992, 2736)
-script = ExtResource("79_bhb0f")
 speaker = "Marchande"
 lines = PackedStringArray("Le maïs se vend bien aujourd\'hui. Regardez les prix avant de planter !", "Chaque jour apporte son prix. Cultivez ce que le marché réclame.", "Vos récoltes se vendent au comptoir. Revenez quand le panier est plein.")
 tint = Color(0.78, 0.88, 1, 1)
 
-[node name="NPCVillager" type="Node2D" parent="World" unique_id=915935137 instance=ExtResource("79_mq0d2")]
+[node name="NPCVillager" parent="World" unique_id=915935137 instance=ExtResource("79_mq0d2")]
 position = Vector2(2616, 3072)
-script = ExtResource("79_bhb0f")
 lines = PackedStringArray("Salazie grandit : bientôt, les charrettes relieront le hameau au reste de l\'île.", "Mon grand-père dit que la terre est rude, mais qu\'elle nourrit son homme.", "Le marché est le cœur du hameau. Sans lui, pas de village.")
 tint = Color(1, 0.9, 0.8, 1)
 
@@ -1495,45 +1424,38 @@ position = Vector2(3000, 2784)
 texture = ExtResource("66_fsldl")
 offset = Vector2(0, -24)
 
-[node name="NaturalRock_16_49" type="StaticBody2D" parent="World" unique_id=394872567 instance=ExtResource("3_cujnu")]
+[node name="NaturalRock_16_49" parent="World" unique_id=394872567 instance=ExtResource("3_cujnu")]
 position = Vector2(792, 2400)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("28_yj0od")
 collision_size = Vector2(44, 28)
 
-[node name="NaturalRock_23_56" type="StaticBody2D" parent="World" unique_id=588458530 instance=ExtResource("3_cujnu")]
+[node name="NaturalRock_23_56" parent="World" unique_id=588458530 instance=ExtResource("3_cujnu")]
 position = Vector2(1128, 2736)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("29_6tmgh")
 collision_size = Vector2(34, 22)
 
-[node name="NaturalRock_13_57" type="StaticBody2D" parent="World" unique_id=498853909 instance=ExtResource("3_cujnu")]
+[node name="NaturalRock_13_57" parent="World" unique_id=498853909 instance=ExtResource("3_cujnu")]
 position = Vector2(648, 2784)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("28_yj0od")
 collision_size = Vector2(44, 28)
 
-[node name="NaturalRock_33_55" type="StaticBody2D" parent="World" unique_id=1625029217 instance=ExtResource("3_cujnu")]
+[node name="NaturalRock_33_55" parent="World" unique_id=1625029217 instance=ExtResource("3_cujnu")]
 position = Vector2(1608, 2688)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("28_yj0od")
 collision_size = Vector2(44, 28)
 
-[node name="NaturalRock_63_55" type="StaticBody2D" parent="World" unique_id=1466977240 instance=ExtResource("3_cujnu")]
+[node name="NaturalRock_63_55" parent="World" unique_id=1466977240 instance=ExtResource("3_cujnu")]
 position = Vector2(3048, 2688)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("29_6tmgh")
 collision_size = Vector2(34, 22)
 
-[node name="NaturalRock_66_50" type="StaticBody2D" parent="World" unique_id=1968859614 instance=ExtResource("3_cujnu")]
+[node name="NaturalRock_66_50" parent="World" unique_id=1968859614 instance=ExtResource("3_cujnu")]
 position = Vector2(3192, 2448)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("28_yj0od")
 collision_size = Vector2(44, 28)
 
-[node name="NaturalRock_24_49" type="StaticBody2D" parent="World" unique_id=991916722 instance=ExtResource("3_cujnu")]
+[node name="NaturalRock_24_49" parent="World" unique_id=991916722 instance=ExtResource("3_cujnu")]
 position = Vector2(1176, 2400)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("29_6tmgh")
 collision_size = Vector2(34, 22)
 
@@ -1557,69 +1479,58 @@ position = Vector2(3528, 1776)
 texture = ExtResource("52_72rhk")
 offset = Vector2(0, -120)
 
-[node name="ShoreRock_72_37" type="StaticBody2D" parent="World" unique_id=1151451343 instance=ExtResource("3_cujnu")]
+[node name="ShoreRock_72_37" parent="World" unique_id=1151451343 instance=ExtResource("3_cujnu")]
 position = Vector2(3480, 1824)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("28_yj0od")
 collision_size = Vector2(44, 28)
 
-[node name="ShoreRock_87_36" type="StaticBody2D" parent="World" unique_id=688715448 instance=ExtResource("3_cujnu")]
+[node name="ShoreRock_87_36" parent="World" unique_id=688715448 instance=ExtResource("3_cujnu")]
 position = Vector2(4200, 1776)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("29_6tmgh")
 collision_size = Vector2(34, 22)
 
-[node name="ShoreRock_70_46" type="StaticBody2D" parent="World" unique_id=1275634797 instance=ExtResource("3_cujnu")]
+[node name="ShoreRock_70_46" parent="World" unique_id=1275634797 instance=ExtResource("3_cujnu")]
 position = Vector2(3384, 2256)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("29_6tmgh")
 collision_size = Vector2(34, 22)
 
-[node name="ShoreRock_78_44" type="StaticBody2D" parent="World" unique_id=1553485490 instance=ExtResource("3_cujnu")]
+[node name="ShoreRock_78_44" parent="World" unique_id=1553485490 instance=ExtResource("3_cujnu")]
 position = Vector2(3768, 2160)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("29_6tmgh")
 collision_size = Vector2(34, 22)
 
-[node name="ShoreRock_91_45" type="StaticBody2D" parent="World" unique_id=663192861 instance=ExtResource("3_cujnu")]
+[node name="ShoreRock_91_45" parent="World" unique_id=663192861 instance=ExtResource("3_cujnu")]
 position = Vector2(4392, 2208)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("28_yj0od")
 collision_size = Vector2(44, 28)
 
-[node name="ShoreRock_91_41" type="StaticBody2D" parent="World" unique_id=1348247794 instance=ExtResource("3_cujnu")]
+[node name="ShoreRock_91_41" parent="World" unique_id=1348247794 instance=ExtResource("3_cujnu")]
 position = Vector2(4392, 2016)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("29_6tmgh")
 collision_size = Vector2(34, 22)
 
-[node name="ShoreRock_73_15" type="StaticBody2D" parent="World" unique_id=704148087 instance=ExtResource("3_cujnu")]
+[node name="ShoreRock_73_15" parent="World" unique_id=704148087 instance=ExtResource("3_cujnu")]
 position = Vector2(3528, 768)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("28_yj0od")
 collision_size = Vector2(44, 28)
 
-[node name="ShoreRock_81_12" type="StaticBody2D" parent="World" unique_id=420010786 instance=ExtResource("3_cujnu")]
+[node name="ShoreRock_81_12" parent="World" unique_id=420010786 instance=ExtResource("3_cujnu")]
 position = Vector2(3912, 624)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("29_6tmgh")
 collision_size = Vector2(34, 22)
 
-[node name="ShoreRock_78_27" type="StaticBody2D" parent="World" unique_id=171975067 instance=ExtResource("3_cujnu")]
+[node name="ShoreRock_78_27" parent="World" unique_id=171975067 instance=ExtResource("3_cujnu")]
 position = Vector2(3768, 1344)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("29_6tmgh")
 collision_size = Vector2(34, 22)
 
-[node name="ShoreRock_70_50" type="StaticBody2D" parent="World" unique_id=1147677169 instance=ExtResource("3_cujnu")]
+[node name="ShoreRock_70_50" parent="World" unique_id=1147677169 instance=ExtResource("3_cujnu")]
 position = Vector2(3384, 2448)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("29_6tmgh")
 collision_size = Vector2(34, 22)
 
-[node name="ShoreRock_64_39" type="StaticBody2D" parent="World" unique_id=957774158 instance=ExtResource("3_cujnu")]
+[node name="ShoreRock_64_39" parent="World" unique_id=957774158 instance=ExtResource("3_cujnu")]
 position = Vector2(3096, 1920)
-script = ExtResource("5_jw0le")
 sprite_texture = ExtResource("29_6tmgh")
 collision_size = Vector2(34, 22)
 
@@ -6229,9 +6140,8 @@ autoplay = "shake"
 offset = Vector2(0, -120)
 script = ExtResource("59_aihtc")
 
-[node name="CowWhite" type="Node2D" parent="World" unique_id=1594830714 instance=ExtResource("78_6m0ua")]
+[node name="CowWhite" parent="World" unique_id=1594830714 instance=ExtResource("78_6m0ua")]
 position = Vector2(1752, 2208)
-script = ExtResource("79_efbwu")
 sheet = ExtResource("18_cmeft")
 cell_size = Vector2i(144, 144)
 move_speed = 15.0
@@ -6239,9 +6149,8 @@ roam_rect = Rect2(1440, 2040, 624, 288)
 graze_time = Vector2(4, 9)
 walk_time = Vector2(3, 7)
 
-[node name="CowBlack" type="Node2D" parent="World" unique_id=46020796 instance=ExtResource("78_6m0ua")]
+[node name="CowBlack" parent="World" unique_id=46020796 instance=ExtResource("78_6m0ua")]
 position = Vector2(1992, 2160)
-script = ExtResource("79_efbwu")
 sheet = ExtResource("19_pwcqq")
 cell_size = Vector2i(144, 144)
 move_speed = 15.0
@@ -6249,9 +6158,8 @@ roam_rect = Rect2(1440, 2040, 624, 288)
 graze_time = Vector2(4, 9)
 walk_time = Vector2(3, 7)
 
-[node name="CowCaramel" type="Node2D" parent="World" unique_id=1097053825 instance=ExtResource("78_6m0ua")]
+[node name="CowCaramel" parent="World" unique_id=1097053825 instance=ExtResource("78_6m0ua")]
 position = Vector2(1656, 2304)
-script = ExtResource("79_efbwu")
 sheet = ExtResource("20_gs04t")
 cell_size = Vector2i(144, 144)
 move_speed = 15.0
@@ -6259,139 +6167,108 @@ roam_rect = Rect2(1440, 2040, 624, 288)
 graze_time = Vector2(4, 9)
 walk_time = Vector2(3, 7)
 
-[node name="ChickenWhite" type="Node2D" parent="World" unique_id=1324534490 instance=ExtResource("78_6m0ua")]
+[node name="ChickenWhite" parent="World" unique_id=1324534490 instance=ExtResource("78_6m0ua")]
 position = Vector2(2568, 1824)
-script = ExtResource("79_efbwu")
 sheet = ExtResource("21_c8psk")
+graze_frames = 2
 move_speed = 30.0
 roam_rect = Rect2(2448, 1728, 480, 264)
 graze_time = Vector2(1.5, 3.5)
 walk_time = Vector2(1.2, 3)
-graze_frames = 2
 
-[node name="ChickenBrown" type="Node2D" parent="World" unique_id=1610450478 instance=ExtResource("78_6m0ua")]
+[node name="ChickenBrown" parent="World" unique_id=1610450478 instance=ExtResource("78_6m0ua")]
 position = Vector2(2760, 1776)
-script = ExtResource("79_efbwu")
 sheet = ExtResource("22_67j2y")
+graze_frames = 2
 move_speed = 30.0
 roam_rect = Rect2(2448, 1728, 480, 264)
 graze_time = Vector2(1.5, 3.5)
 walk_time = Vector2(1.2, 3)
-graze_frames = 2
 
-[node name="ChickenGolden" type="Node2D" parent="World" unique_id=791483952 instance=ExtResource("78_6m0ua")]
+[node name="ChickenGolden" parent="World" unique_id=791483952 instance=ExtResource("78_6m0ua")]
 position = Vector2(2856, 1872)
-script = ExtResource("79_efbwu")
 sheet = ExtResource("23_mq0d2")
+graze_frames = 2
 move_speed = 30.0
 roam_rect = Rect2(2448, 1728, 480, 264)
 graze_time = Vector2(1.5, 3.5)
 walk_time = Vector2(1.2, 3)
-graze_frames = 2
 
-[node name="RoosterBrown" type="Node2D" parent="World" unique_id=198543536 instance=ExtResource("78_6m0ua")]
+[node name="RoosterBrown" parent="World" unique_id=198543536 instance=ExtResource("78_6m0ua")]
 position = Vector2(2616, 1920)
-script = ExtResource("79_efbwu")
 sheet = ExtResource("24_v6go6")
 cell_size = Vector2i(48, 96)
+graze_frames = 2
 move_speed = 27.0
 roam_rect = Rect2(2448, 1728, 480, 264)
 graze_time = Vector2(1.5, 3.5)
 walk_time = Vector2(1.2, 3)
-graze_frames = 2
 
-[node name="ChickA" type="Node2D" parent="World" unique_id=1672455434 instance=ExtResource("78_6m0ua")]
+[node name="ChickA" parent="World" unique_id=1672455434 instance=ExtResource("78_6m0ua")]
 position = Vector2(2620, 1850)
-script = ExtResource("79_efbwu")
 sheet = ExtResource("25_lxh7p")
 move_speed = 36.0
 roam_rect = Rect2(2448, 1728, 480, 264)
 graze_time = Vector2(1, 2.5)
 walk_time = Vector2(0.8, 2)
 
-[node name="ChickB" type="Node2D" parent="World" unique_id=1025962993 instance=ExtResource("78_6m0ua")]
+[node name="ChickB" parent="World" unique_id=1025962993 instance=ExtResource("78_6m0ua")]
 position = Vector2(2780, 1880)
-script = ExtResource("79_efbwu")
 sheet = ExtResource("25_lxh7p")
 move_speed = 36.0
 roam_rect = Rect2(2448, 1728, 480, 264)
 graze_time = Vector2(1, 2.5)
 walk_time = Vector2(0.8, 2)
 
-[node name="Leaves_0" type="AnimatedSprite2D" parent="World" unique_id=1766039816 instance=ExtResource("87_y7o85")]
+[node name="Leaves_0" parent="World" unique_id=1766039816 instance=ExtResource("87_y7o85")]
 position = Vector2(400, 1600)
 sprite_frames = ExtResource("88_g36yh")
 animation = &"fall"
-script = ExtResource("89_lg7yc")
 
-[node name="Leaves_1" type="AnimatedSprite2D" parent="World" unique_id=1121563303 instance=ExtResource("87_y7o85")]
+[node name="Leaves_1" parent="World" unique_id=1121563303 instance=ExtResource("87_y7o85")]
 position = Vector2(700, 2100)
 sprite_frames = ExtResource("90_kf6ga")
 animation = &"fall"
-script = ExtResource("89_lg7yc")
 
-[node name="Leaves_2" type="AnimatedSprite2D" parent="World" unique_id=2121290229 instance=ExtResource("87_y7o85")]
+[node name="Leaves_2" parent="World" unique_id=2121290229 instance=ExtResource("87_y7o85")]
 position = Vector2(500, 2600)
 sprite_frames = ExtResource("91_72rhk")
 animation = &"fall"
-script = ExtResource("89_lg7yc")
 
-[node name="Leaves_3" type="AnimatedSprite2D" parent="World" unique_id=1627197764 instance=ExtResource("87_y7o85")]
+[node name="Leaves_3" parent="World" unique_id=1627197764 instance=ExtResource("87_y7o85")]
 position = Vector2(900, 900)
 sprite_frames = ExtResource("88_g36yh")
 animation = &"fall"
-script = ExtResource("89_lg7yc")
 
-[node name="Leaves_4" type="AnimatedSprite2D" parent="World" unique_id=1303666054 instance=ExtResource("87_y7o85")]
+[node name="Leaves_4" parent="World" unique_id=1303666054 instance=ExtResource("87_y7o85")]
 position = Vector2(1500, 500)
 sprite_frames = ExtResource("90_kf6ga")
 animation = &"fall"
-script = ExtResource("89_lg7yc")
 
-[node name="Leaves_5" type="AnimatedSprite2D" parent="World" unique_id=1530072865 instance=ExtResource("87_y7o85")]
+[node name="Leaves_5" parent="World" unique_id=1530072865 instance=ExtResource("87_y7o85")]
 position = Vector2(2500, 450)
 sprite_frames = ExtResource("91_72rhk")
 animation = &"fall"
-script = ExtResource("89_lg7yc")
 
-[node name="Leaves_6" type="AnimatedSprite2D" parent="World" unique_id=1171127785 instance=ExtResource("87_y7o85")]
+[node name="Leaves_6" parent="World" unique_id=1171127785 instance=ExtResource("87_y7o85")]
 position = Vector2(3500, 400)
 sprite_frames = ExtResource("88_g36yh")
 animation = &"fall"
-script = ExtResource("89_lg7yc")
 
-[node name="Leaves_7" type="AnimatedSprite2D" parent="World" unique_id=1553409294 instance=ExtResource("87_y7o85")]
+[node name="Leaves_7" parent="World" unique_id=1553409294 instance=ExtResource("87_y7o85")]
 position = Vector2(4300, 600)
 sprite_frames = ExtResource("90_kf6ga")
 animation = &"fall"
-script = ExtResource("89_lg7yc")
 
-[node name="Leaves_8" type="AnimatedSprite2D" parent="World" unique_id=494908189 instance=ExtResource("87_y7o85")]
+[node name="Leaves_8" parent="World" unique_id=494908189 instance=ExtResource("87_y7o85")]
 position = Vector2(4300, 1300)
 sprite_frames = ExtResource("91_72rhk")
 animation = &"fall"
-script = ExtResource("89_lg7yc")
 
-[node name="Leaves_9" type="AnimatedSprite2D" parent="World" unique_id=1949321979 instance=ExtResource("87_y7o85")]
+[node name="Leaves_9" parent="World" unique_id=1949321979 instance=ExtResource("87_y7o85")]
 position = Vector2(3400, 1400)
 sprite_frames = ExtResource("88_g36yh")
 animation = &"fall"
-script = ExtResource("89_lg7yc")
-
-[node name="Cyclone" parent="World" unique_id=1240383706 instance=ExtResource("70_0ihjh")]
-position = Vector2(2285, 2727)
-scale = Vector2(3, 3)
-pull_radius = 300.0
-pull_speed = 1200.0
-swirl_speed = 900.0
-spin = 3.0
-eject_radius = 42.0
-eject_spin = 1.5
-eject_grace = 0.9
-
-[node name="Guard" parent="World" unique_id=796544600 instance=ExtResource("90_guard")]
-position = Vector2(3439, 2526)
-zone_size = Vector2(180, 120)
 
 [node name="PlayerSpawn" type="Marker2D" parent="." unique_id=407921640]
 position = Vector2(2280, 3168)
@@ -6414,7 +6291,4 @@ shape = SubResource("RectangleShape2D_p1epc")
 position = Vector2(2304, 3280)
 shape = SubResource("RectangleShape2D_822n0")
 
-[node name="HUD" type="CanvasLayer" parent="." unique_id=574004459 instance=ExtResource("81_lxh7p")]
-process_mode = 3
-layer = 10
-script = ExtResource("81_cmeft")
+[node name="HUD" parent="." unique_id=574004459 instance=ExtResource("81_lxh7p")]

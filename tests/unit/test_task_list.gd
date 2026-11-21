@@ -27,7 +27,7 @@ func test_task_list_starts_with_every_task_pending() -> void:
 
 	assert_str(list.get_compact_text()).contains("0 faites")
 	var rows := list.get_row_texts()
-	assert_int(rows.size()).is_equal(6)
+	assert_int(rows.size()).is_equal(5)
 	assert_str(rows[0]).starts_with("○ Trouver la rivière")
 
 
@@ -56,14 +56,14 @@ func test_failed_row_shows_reason_and_retry_hint() -> void:
 	var list := _spawn()
 	await get_tree().process_frame
 
-	Campaign.fail_task("cross_patrol", "Repéré par une patrouille")
+	Campaign.fail_task("find_food", "Repéré par une patrouille")
 	var rows := list.get_row_texts()
 	var found := false
 	for row: String in rows:
-		if row.begins_with("✗ Franchir la patrouille"):
+		if row.begins_with("✗ Rassembler des vivres"):
 			found = true
 			assert_str(row).contains("Repéré par une patrouille")
-			assert_str(row).contains("[Réessayer]")
+			assert_bool(row.contains("[Réessayer]")).is_false()
 	assert_bool(found).override_failure_message("Failed task row was not rendered").is_true()
 	assert_str(list.get_compact_text()).contains("1 échouées")
 

@@ -19,11 +19,11 @@ mountain source above the refuge.
 |---|---|---|
 | 106–112 | Sea | animated water shader, tide foam, buoys, wreck rocks |
 | 92–108 | Beach and mouth | spawn, palms, shells, driftwood, seagulls, ruined dock, wrecked boat |
-| 78–94 | Estuary | wooden bridge, fishing boat, fish, ducks, first patrol |
-| 62–80 | Wide river | second bridge, forest camp, river pool |
-| 46–70 | Tropical forest | tents, campfire, forage, two hide spots, two patrols |
-| 36–48 | Gorge and waterfall | animated cascade, pool, rocks, cave tunnel, waterfall alcove, third bridge |
-| 20–40 | Mountain forest | pines, birches, boulders, goats, pass, cliff-ridge trail, two hide spots |
+| 78–94 | Estuary | wooden bridge, fishing boat, fish, ducks, hide spot, first patrol |
+| 62–80 | Wide river | second bridge, forest camp, river pool, two hide spots |
+| 46–70 | Tropical forest | tents, campfire, forage, wild seeds, two hide spots, two patrols |
+| 36–48 | Gorge and waterfall | animated cascade, pool, rocks, cave tunnel, waterfall alcove, wild seeds, two hide spots, third bridge |
+| 20–40 | Mountain forest | pines, birches, boulders, goats, pass, cliff-ridge trail, wild seeds, three hide spots |
 | 8–22 | Col and refuge | cabin, well, campfire, lanterns, fence, `MapExit` |
 | 0–8 | Rocky crest | large boulders and pines, collision band |
 
@@ -66,10 +66,10 @@ guards, pickups and animals).
 | `World/Player` | `CharacterBody2D` | Player with active `SurvivalComponent` |
 | `World/RiverMouthCheckpoint` | `Area2D` | Completes `follow_river` |
 | `World/ForestCheckpoint` | `Area2D` | Mid-map respawn point |
-| `World/UpperCheckpoint` | `Area2D` | Completes `cross_patrol` after the gorge |
+| `World/UpperCheckpoint` | `Area2D` | Respawn checkpoint after the gorge |
 | `World/Climb_*` | `Area2D` | Ridge climb points (`climb_point.tscn`) |
 | `World/Stealth_*` | `Area2D` | Cave, cascade spray and alcove zones (`stealth_zone.tscn`) |
-| `Overlay` | `CanvasLayer` | Controls hint, notifications, interaction prompt, objective tracker |
+| `MaroonUI` | `CanvasLayer` | Screen-space hint, clock, prompt, notifications and objective tracker |
 | `SurvivalHUD` | `CanvasLayer` | Food and water bars |
 | `TaskList` | `CanvasLayer` | Generation task list |
 | `GenerationResult` | `CanvasLayer` | Result shown before leaving |
@@ -77,36 +77,38 @@ guards, pickups and animals).
 
 ## Tasks
 
-| ID | Success | Failure | Retry |
-|---|---|---|---|
-| `follow_river` | Reach the estuary checkpoint | — | — |
-| `find_water` | Drink at the waterfall basin (`E` near the pool) | — | — |
-| `find_food` | Collect 3 wild foods | — | — |
-| `hide_from_patrol` | Stay hidden for 1.5 s | Spotted while trying to hide | Yes |
-| `cross_patrol` | Reach the upper checkpoint | Caught by a guard | Yes |
-| `reach_refuge` | Enter the cabin | — | — |
+Four required tasks and one optional. The map resolves once every required task is
+done or failed; an optional task never blocks the exit.
 
-Being caught records a failure for `cross_patrol` and, if not already hidden, for
-`hide_from_patrol`. The player respawns at the last checkpoint, the failed tasks return to
-`PENDING`, and the failure history stays in the generation result.
+| ID | Success | Required |
+|---|---|---|
+| `follow_river` | Reach the estuary checkpoint | yes |
+| `find_water` | Drink with `E` at the waterfall basin | yes |
+| `find_food` | Collect 3 wild foods on contact | yes |
+| `reach_refuge` | Enter the cabin | yes |
+| `gather_seeds` | Gather 3 wild seeds with `E` | **no** |
+
+Being caught no longer fails a task: the player respawns at the last checkpoint and keeps
+playing, and the failure history stays in the generation result. Seeds collected by
+`gather_seeds` are stored in `Campaign.bonus_seeds` and granted on top of the starting
+seeds when Map 2 loads.
 
 ## Objective indicator
 
 The HUD shows exactly one objective tracker at a time (gold arrow, task label and
-distance in metres). It follows the first unresolved task in `Campaign.TASKS[1]`
-order and never marks the other pending tasks.
+distance in metres). It follows the first unresolved **required** task in
+`Campaign.TASKS[1]` order and never marks the other pending tasks; the optional
+`gather_seeds` task is not tracked.
 
 | Task | Indicator points at |
 |---|---|
 | `follow_river` | River-mouth checkpoint |
 | `find_water` | Waterfall basin |
 | `find_food` | Nearest unused food spot |
-| `hide_from_patrol` | Nearest hide spot |
-| `cross_patrol` | Upper checkpoint |
 | `reach_refuge` | Refuge exit |
 
 The tracker updates as soon as a task is resolved; `find_food` also shows the
-current `(n/3)` progress. It lives under `Overlay/ObjectiveBar` in
+current `(n/3)` progress. It lives under `MaroonUI/Root/ObjectiveBar` in
 `maroon_map.gd`; no world nodes are created.
 
 Saves written before `follow_river` existed are migrated: when the saved game is already
@@ -115,15 +117,17 @@ past Map 1, the river task is marked done.
 ## Survival and stealth
 
 - `SurvivalComponent`: food drains at 0.35/s, water at 0.55/s.
-- Forage restores 28 food.
+- Food is collected on contact and restores 28.
 - Drinking is an `E` interaction at any freshwater bank (river, estuary, pool).
   Each drink restores 10 water. The sea is salt water and cannot be drunk.
-- Drinking has a 10 s cooldown. Salazie's rivers carry fine volcanic silt: the
-  gourd must stand for about ten seconds so the silt settles before the next
-  sip. The prompt shows the remaining settling time.
+- The drink cooldown is `DRINK_COOLDOWN`: 10 s by design (the gourd must stand so
+  the fine volcanic silt settles before the next sip), but the local branch
+  currently sets it to 0.0 for testing. The prompt shows the remaining time when
+  it is active.
 - The first drink within 12 tiles of `WATER_SPOT_TILE` (the waterfall basin)
   completes `find_water`. There are no water forage pickups any more.
-- A concealed player is ignored by guards beyond 32 px.
+- Hiding is a tool, not a task: ten hide spots conceal the player with a soft
+  green ring and a `Caché` label. Guards ignore a concealed player beyond 32 px.
 - Running emits noise unless the player is inside the cave or the waterfall
   spray, where the ambient noise masks the steps.
 - Guards use the existing vision cone, chase and catch logic with `pause_on_catch = false`
@@ -254,6 +258,43 @@ the crest shader, while the land/water edge uses the static pack variants.
 - **Water and sand props** are reserved around task anchors so a rock or barrel
   cannot cover the player or a checkpoint.
 
+## Navigation
+
+Map 1 bakes its navigation polygon at load time because the static world is a
+`TileMapLayer` plus runtime props.
+
+- Every obstacle `StaticBody2D` joins the `navigation_obstacles` group
+  (`maroon_decor.add_collision`, `maroon_layout._build_collision`).
+- `maroon_map._build_navigation()` creates the `Navigation` region, sets an
+  outline inset by 24 px and `agent_radius = 20`, waits one physics frame, then
+  bakes.
+- `navigation/2d/default_cell_size = 8` in `project.godot` keeps the bake at
+  432 × 672 cells and matches the polygon cell size, so the navigation map does
+  not warn about a mismatch.
+- Guards use the path (`use_navigation = true`) and fall back to a straight line
+  only when no navigation map exists. A patrol point is kept only when
+  `NavigationServer2D.map_get_path` finds a route to it; a 1.5 s no-progress
+  watchdog picks another point otherwise.
+
+Bridges stay walkable because the river collision is built row by row and skips
+the bridge rows.
+
+## Feedback and UI
+
+- The gameplay UI lives in the `MaroonUI` `CanvasLayer`: controls hint bottom-left,
+  day/night clock top-right, objective tracker top-centre, interaction prompt and
+  notifications bottom-centre. It stays fixed while the camera scrolls.
+- The clock reads `DayNightCycle.day_number`, `phase` and
+  `seconds_until_next_phase()` and refreshes twice per second.
+- The player camera is a `ShakeCamera2D`. `add_trauma()` drives a trauma² shake
+  sampled from summed sines, decaying in real time and restoring the base offset.
+- Being caught adds 0.75 trauma, flashes the respawn overlay red, then fades to
+  black for the respawn.
+- Picking up food or seeds spawns a `PickupPop` sprite that rises, scales up and
+  fades.
+- A hide spot shows a soft green ring at its base and a `Caché` label while the
+  player is concealed; the label switches to `Caché !` after the hide delay.
+
 ## Result and carry-over
 
 - Map result: done / failed / failure events / rank.
@@ -266,7 +307,7 @@ the crest shader, while the land/water edge uses the static pack variants.
 |---|---|---|
 | `move_*` | WASD / arrows | Move |
 | `run` | Shift | Run, emits noise |
-| `interact` | E | Climb between the river trail and the cliff ridge; drink at a freshwater bank |
+| `interact` | E | Drink at a freshwater bank, gather seeds, climb between the river trail and the cliff ridge |
 | `toggle_tasks` | T / Select | Open the task list |
 | `pause` | Esc / Start | Pause menu |
 
@@ -278,8 +319,8 @@ the crest shader, while the land/water edge uses the static pack variants.
 | `scripts/maroon/maroon_map.gd` | Gameplay, UI, tasks and respawns |
 | `scripts/maroon/maroon_layout.gd` | Static world generation |
 | `scripts/maroon/maroon_decor.gd` | Props and animation factory |
-| `scripts/maroon/forage_spot.gd` / `scenes/maroon/forage_spot.tscn` | Wild food pickups |
-| `scripts/maroon/hide_spot.gd` / `scenes/maroon/hide_spot.tscn` | Concealment and hide task |
+| `scripts/maroon/forage_spot.gd` / `scenes/maroon/forage_spot.tscn` | Food contact pickups and seed/water `E` pickups |
+| `scripts/maroon/hide_spot.gd` / `scenes/maroon/hide_spot.tscn` | Concealment tool (ring and label, no task) |
 | `scripts/maroon/climb_point.gd` / `scenes/maroon/climb_point.tscn` | Ridge climb interaction |
 | `scripts/maroon/stealth_zone.gd` / `scenes/maroon/stealth_zone.tscn` | Concealment and noise-masking areas |
 | `scripts/maroon/checkpoint.gd` / `scenes/maroon/checkpoint.tscn` | Respawn point and route tasks |

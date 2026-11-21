@@ -103,6 +103,15 @@ const HIDE_TILES: Array[Vector2i] = [
 	Vector2i(18, 44),
 	Vector2i(26, 42),
 	Vector2i(42, 40),
+	Vector2i(26, 86),
+	Vector2i(44, 76),
+	Vector2i(22, 54),
+	Vector2i(40, 20),
+]
+const SEED_TILES: Array[Vector2i] = [
+	Vector2i(18, 60),
+	Vector2i(44, 48),
+	Vector2i(24, 34),
 ]
 const GUARD_TILES: Array[Vector2i] = [
 	Vector2i(47, 88),
@@ -203,6 +212,7 @@ func build(terrain: Node2D, world: Node2D) -> Dictionary:
 		"water_spot": _tile_center(WATER_SPOT_TILE),
 		"food_spots": _tiles_to_points(FOOD_TILES),
 		"hide_spots": _tiles_to_points(HIDE_TILES),
+		"seed_spots": _tiles_to_points(SEED_TILES),
 		"guards": _tiles_to_points(GUARD_TILES),
 		"climb_points": _climb_specs(),
 		"stealth_zones": _stealth_specs(),
@@ -489,6 +499,8 @@ func _reserve_anchors() -> void:
 	for tile: Vector2i in FOOD_TILES:
 		_reserve(tile, 3)
 	for tile: Vector2i in HIDE_TILES:
+		_reserve(tile, 3)
+	for tile: Vector2i in SEED_TILES:
 		_reserve(tile, 3)
 	for tile: Vector2i in GUARD_TILES:
 		_reserve(tile, 5)
