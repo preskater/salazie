@@ -105,6 +105,14 @@ text = "Prix du marché"
 layout_mode = 2
 text = "P"
 
+[node name="TasksLabel" type="Label" parent="Center/Panel/VBox/Content/Rows"]
+layout_mode = 2
+text = "Liste des tâches"
+
+[node name="TasksValue" type="Label" parent="Center/Panel/VBox/Content/Rows"]
+layout_mode = 2
+text = "T ou Select"
+
 [node name="PauseLabel" type="Label" parent="Center/Panel/VBox/Content/Rows"]
 layout_mode = 2
 text = "Pause"

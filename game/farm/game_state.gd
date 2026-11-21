@@ -74,13 +74,14 @@ var produce := {}
 var prices := {}
 var previous_prices := {}
 var playing := false
+var farm_active := true
 var _day_time := 0.0
 
 func _ready() -> void:
 	_reset_market_state()
 
 func _process(delta: float) -> void:
-	if not playing:
+	if not playing or not farm_active:
 		return
 	_day_time += delta
 	if _day_time >= day_length:
@@ -177,14 +178,20 @@ func show_dialogue(speaker: String, text: String) -> void:
 
 
 ## Restarts the farm economy from its initial values without reloading the scene.
-func reset() -> void:
-	money = START_MONEY
+func reset(starting_money := START_MONEY) -> void:
+	money = maxi(0, starting_money)
 	day = START_DAY
 	selected_seed = "corn"
 	seeds = START_SEEDS.duplicate(true)
 	_day_time = 0.0
 	_reset_market_state()
 	_emit_state_changed()
+
+
+## Replaces the purse without resetting the rest of the farm state.
+func set_money(value: int) -> void:
+	money = maxi(0, value)
+	money_changed.emit(money)
 
 
 ## Plain data only: no nodes, resources or engine objects.

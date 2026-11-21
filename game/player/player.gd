@@ -20,6 +20,7 @@ var control_lock := 0.0
 var last_direction := Vector2.DOWN
 var wind := Vector2.ZERO
 var is_running := false
+var concealed := false
 
 var _noise_timer := 0.0
 
@@ -104,3 +105,11 @@ func stun(duration: float) -> void:
 
 func add_wind(v: Vector2) -> void:
 	wind += v
+
+
+## Marks the player as concealed by a hide spot. Guards ignore a hidden player
+## unless the player makes noise or stands almost on top of them.
+func set_hidden(value: bool) -> void:
+	concealed = value
+	if ANIMATIONS != null:
+		ANIMATIONS.modulate.a = 0.55 if concealed else 1.0

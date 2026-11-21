@@ -9,6 +9,7 @@ func before_test() -> void:
 	_original_path = SaveGame.save_path
 	SaveGame.save_path = TEST_PATH
 	_cleanup()
+	Campaign.reset()
 	GameState.playing = true
 	GameState.reset()
 
@@ -18,6 +19,7 @@ func after_test() -> void:
 	SaveGame.save_path = _original_path
 	GameState.playing = false
 	GameState.reset()
+	Campaign.reset()
 
 
 func _cleanup() -> void:
@@ -111,3 +113,26 @@ func test_save_requires_a_running_game() -> void:
 
 	assert_bool(SaveGame.save_game()).is_false()
 	assert_bool(FileAccess.file_exists(TEST_PATH)).is_false()
+
+
+func test_version_one_save_migrates_to_the_farm_generation() -> void:
+	Campaign.reset()
+	var payload := {
+		"version": 1,
+		"money": 120,
+		"day": 3,
+		"day_time": 4.0,
+		"selected_seed": "corn",
+		"seeds": {"corn": 1, "pumpkin": 0, "tomato": 0, "carrot": 0},
+		"produce": {"corn": 0, "pumpkin": 0, "tomato": 0, "carrot": 0},
+		"prices": {"corn": 10, "pumpkin": 16, "tomato": 9, "carrot": 7},
+	}
+	var file := FileAccess.open(TEST_PATH, FileAccess.WRITE)
+	file.store_string(JSON.stringify(payload))
+	file.close()
+
+	assert_bool(SaveGame.load_game()).is_true()
+	assert_int(GameState.money).is_equal(120)
+	assert_int(Campaign.current_map).is_equal(2)
+	assert_int(Campaign.task_status("find_food", 1)).is_equal(Campaign.TaskStatus.DONE)
+	assert_int(Campaign.task_status("earn_100", 2)).is_equal(Campaign.TaskStatus.DONE)

@@ -1,0 +1,136 @@
+extends GdUnitTestSuite
+
+
+func before_test() -> void:
+	GameState.playing = false
+	GameState.farm_active = true
+	Campaign.reset()
+
+
+func after_test() -> void:
+	Campaign.reset()
+	GameState.playing = false
+	GameState.farm_active = true
+	if get_tree() != null:
+		get_tree().paused = false
+
+
+func _complete_map_one(except := "") -> void:
+	for definition: Dictionary in Campaign.TASKS[1]:
+		var task_id := String(definition.get("id", ""))
+		if task_id == except:
+			continue
+		Campaign.complete_task(task_id, 1)
+
+
+func test_each_generation_starts_with_pending_tasks() -> void:
+	assert_int(Campaign.current_map).is_equal(1)
+	for map_id: int in Campaign.MAP_ORDER:
+		var summary := Campaign.map_summary(map_id)
+		assert_int(int(summary["pending"])).override_failure_message(
+			"Map %d should start with all tasks pending" % map_id).is_equal(5 if map_id != 3 else 4)
+		assert_int(int(summary["done"])).is_equal(0)
+		assert_int(int(summary["failed"])).is_equal(0)
+
+
+func test_multi_step_task_completes_at_its_target() -> void:
+	assert_bool(Campaign.add_task_progress("find_food", 1)).is_false()
+	assert_int(Campaign.task_progress("find_food")).is_equal(1)
+	assert_bool(Campaign.add_task_progress("find_food", 2)).is_true()
+	assert_int(Campaign.task_status("find_food")).is_equal(Campaign.TaskStatus.DONE)
+	assert_int(Campaign.task_progress("find_food")).is_equal(3)
+
+
+func test_failure_history_survives_retry_and_success() -> void:
+	assert_bool(Campaign.fail_task("cross_patrol", "Repéré par une patrouille")).is_true()
+	assert_int(Campaign.task_status("cross_patrol")).is_equal(Campaign.TaskStatus.FAILED)
+	assert_int(Campaign.task_failure_count("cross_patrol")).is_equal(1)
+	assert_str(Campaign.task_last_failure("cross_patrol")).is_equal("Repéré par une patrouille")
+
+	assert_bool(Campaign.retry_task("cross_patrol")).is_true()
+	assert_int(Campaign.task_status("cross_patrol")).is_equal(Campaign.TaskStatus.PENDING)
+	assert_bool(Campaign.complete_task("cross_patrol")).is_true()
+
+	assert_int(Campaign.task_status("cross_patrol")).is_equal(Campaign.TaskStatus.DONE)
+	assert_int(Campaign.task_failure_count("cross_patrol")).is_equal(1)
+	assert_int(Campaign.task_attempts("cross_patrol")).is_equal(2)
+
+
+func test_map_resolves_with_a_mix_of_done_and_failed_tasks() -> void:
+	_complete_map_one("hide_from_patrol")
+	var resolved_events: Array[int] = []
+	Campaign.map_resolved.connect(func(map_id: int, _summary: Dictionary) -> void:
+		if map_id == 1:
+			resolved_events.append(map_id))
+	Campaign.fail_task("hide_from_patrol", "Repéré avant d'avoir pu se cacher")
+
+	var summary := Campaign.map_summary(1)
+	assert_bool(Campaign.is_map_resolved()).is_true()
+	assert_int(int(summary["done"])).is_equal(4)
+	assert_int(int(summary["failed"])).is_equal(1)
+	assert_int(int(summary["pending"])).is_equal(0)
+	assert_str(String(summary["rank"])).is_equal("partial")
+	assert_int(Campaign.failure_events_for_map(1)).is_equal(1)
+	assert_int(resolved_events.size()).is_equal(1)
+
+
+func test_advancing_changes_the_scene_to_the_next_generation() -> void:
+	_complete_map_one()
+	assert_bool(Campaign.advance_to_next_map()).is_true()
+	assert_int(Campaign.current_map).is_equal(2)
+	assert_str(Campaign.current_scene_path()).is_equal("res://game/world/maps/Farm.tscn")
+	assert_str(Campaign.map_title()).is_equal("Le cultivateur")
+
+
+func test_map_one_failures_reduce_the_farmer_starting_money() -> void:
+	Campaign.fail_task("cross_patrol", "Repéré")
+	Campaign.retry_task("cross_patrol")
+	Campaign.fail_task("cross_patrol", "Repéré encore")
+	Campaign.retry_task("cross_patrol")
+
+	assert_int(Campaign.starting_money_for_map(2)).is_equal(20)
+
+
+func test_map_two_failures_reduce_the_heritage() -> void:
+	GameState.money = 100
+	Campaign.fail_task("earn_100", "Délai dépassé", 2)
+
+	assert_int(Campaign.heritage_for_map3()).is_equal(90)
+
+
+func test_mayor_support_drops_with_failures() -> void:
+	assert_int(Campaign.mayor_support()).is_equal(6)
+	assert_bool(Campaign.has_mayor_support()).is_true()
+
+	for i in 3:
+		Campaign.fail_task("cross_patrol", "Repéré %d" % i, 1)
+		Campaign.retry_task("cross_patrol", 1)
+
+	assert_int(Campaign.mayor_support()).is_equal(3)
+	assert_bool(Campaign.has_mayor_support()).is_false()
+
+
+func test_round_trip_keeps_tasks_failures_and_results() -> void:
+	Campaign.add_task_progress("find_food", 2)
+	Campaign.fail_task("cross_patrol", "Repéré")
+	Campaign.set_choice("map3_plan", "forest")
+	var payload := Campaign.to_dict()
+
+	Campaign.reset()
+	assert_int(Campaign.task_progress("find_food")).is_equal(0)
+	assert_bool(Campaign.from_dict(payload)).is_true()
+
+	assert_int(Campaign.task_progress("find_food")).is_equal(2)
+	assert_int(Campaign.task_status("cross_patrol")).is_equal(Campaign.TaskStatus.FAILED)
+	assert_int(Campaign.task_failure_count("cross_patrol")).is_equal(1)
+	assert_str(Campaign.get_choice("map3_plan")).is_equal("forest")
+
+
+func test_legacy_v1_save_unlocks_the_farm_without_escape_tasks() -> void:
+	GameState.money = 120
+	assert_bool(Campaign.from_dict({"legacy_v1": true, "current_map": 2})).is_true()
+
+	assert_int(Campaign.current_map).is_equal(2)
+	for definition: Dictionary in Campaign.TASKS[1]:
+		assert_int(Campaign.task_status(String(definition["id"]), 1)).is_equal(Campaign.TaskStatus.DONE)
+	assert_int(Campaign.task_status("earn_100", 2)).is_equal(Campaign.TaskStatus.DONE)
