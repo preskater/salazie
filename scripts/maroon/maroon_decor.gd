@@ -142,6 +142,7 @@ func add_collision(parent: Node2D, position: Vector2, size: Vector2,
 	shape.position = Vector2(0, -size.y / 2.0)
 	body.add_child(shape)
 	parent.add_child(body)
+	body.add_to_group(&"navigation_obstacles")
 	return body
 
 

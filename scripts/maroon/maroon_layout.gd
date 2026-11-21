@@ -500,6 +500,7 @@ func _build_collision(terrain: Node2D) -> void:
 	var body := StaticBody2D.new()
 	body.name = "WorldCollision"
 	terrain.add_child(body)
+	body.add_to_group(&"navigation_obstacles")
 	var bridge_rows: Dictionary = {}
 	for row: int in BRIDGE_ROWS:
 		for offset in BRIDGE_HEIGHT:

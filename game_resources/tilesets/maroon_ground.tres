@@ -1,11 +1,11 @@
-[gd_resource type="TileSet" format=3]
+[gd_resource type="TileSet" format=3 uid="uid://7wg7ibd3npq0"]
 
-[ext_resource type="Texture2D" path="res://sprites/exteriors_48x48/tilesets/1_Terrains_and_Fences_48x48.png" id="1_uqvum"]
-[ext_resource type="Texture2D" path="res://sprites/farm_48x48/tilesets/1_Terrains_48x48.png" id="2_rhhfg"]
-[ext_resource type="Texture2D" path="res://sprites/exteriors_48x48/tilesets/21_Beach_48x48.png" id="3_kc38f"]
-[ext_resource type="Texture2D" path="res://sprites/exteriors_48x48/singles/1_Terrains_and_Fences/ME_Singles_Terrains_and_Fences_48x48_Mound_1_1.png" id="4_skypg"]
-[ext_resource type="Texture2D" path="res://sprites/exteriors_48x48/singles/1_Terrains_and_Fences/ME_Singles_Terrains_and_Fences_48x48_Mound_2_1.png" id="5_io4in"]
-[ext_resource type="Texture2D" path="res://sprites/exteriors_48x48/animated/terrains/Sea_Water_Tileset_48x48.png" id="6_lb0h4"]
+[ext_resource type="Texture2D" uid="uid://bgv4tm27s0yji" path="res://sprites/exteriors_48x48/tilesets/1_Terrains_and_Fences_48x48.png" id="1_uqvum"]
+[ext_resource type="Texture2D" uid="uid://ijhvyo6dh67k" path="res://sprites/farm_48x48/tilesets/1_Terrains_48x48.png" id="2_rhhfg"]
+[ext_resource type="Texture2D" uid="uid://bld2y8pt1uvxc" path="res://sprites/exteriors_48x48/tilesets/21_Beach_48x48.png" id="3_kc38f"]
+[ext_resource type="Texture2D" uid="uid://dwufi3qd77nkj" path="res://sprites/exteriors_48x48/singles/1_Terrains_and_Fences/ME_Singles_Terrains_and_Fences_48x48_Mound_1_1.png" id="4_skypg"]
+[ext_resource type="Texture2D" uid="uid://55l262i3d1h6" path="res://sprites/exteriors_48x48/singles/1_Terrains_and_Fences/ME_Singles_Terrains_and_Fences_48x48_Mound_2_1.png" id="5_io4in"]
+[ext_resource type="Texture2D" uid="uid://7nvquvfmodaw" path="res://sprites/exteriors_48x48/animated/terrains/Sea_Water_Tileset_48x48.png" id="6_lb0h4"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_spodq"]
 texture = ExtResource("1_uqvum")

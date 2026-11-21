@@ -63,6 +63,7 @@ func _ready() -> void:
 	_add_hide_spots()
 	_add_checkpoints()
 	_add_refuge()
+	_build_navigation()
 	Campaign.map_resolved.connect(_on_map_resolved)
 	Campaign.task_status_changed.connect(_on_task_status_changed)
 	_notify("Map 1 — Le marron : de la mer au col, remontez la rivière et rejoignez le refuge.")
@@ -84,6 +85,31 @@ func _build_world() -> void:
 	_anchors = _layout.build(_terrain, _world)
 	_map_size = _anchors["size"]
 	_respawn_position = _anchors["spawn"]
+
+
+func _build_navigation() -> void:
+	var region := NavigationRegion2D.new()
+	region.name = "Navigation"
+	add_child(region)
+
+	var polygon := NavigationPolygon.new()
+	polygon.parsed_geometry_type = NavigationPolygon.PARSED_GEOMETRY_STATIC_COLLIDERS
+	polygon.source_geometry_mode = NavigationPolygon.SOURCE_GEOMETRY_GROUPS_WITH_CHILDREN
+	polygon.source_geometry_group_name = &"navigation_obstacles"
+	polygon.agent_radius = 20.0
+	polygon.cell_size = float(
+		ProjectSettings.get_setting("navigation/2d/default_cell_size", 1.0))
+	polygon.add_outline(PackedVector2Array([
+		Vector2(24.0, 24.0),
+		Vector2(_map_size.x - 24.0, 24.0),
+		Vector2(_map_size.x - 24.0, _map_size.y - 24.0),
+		Vector2(24.0, _map_size.y - 24.0),
+	]))
+	region.navigation_polygon = polygon
+
+	# StaticBody shapes must be registered before the source geometry is parsed.
+	await get_tree().physics_frame
+	region.bake_navigation_polygon()
 
 
 func _add_bounds() -> void:
@@ -166,7 +192,7 @@ func _add_guards() -> void:
 		guard.position = spawn
 		guard.set("zone_size", Vector2(360, 260))
 		guard.set("vision_range", 300.0)
-		guard.set("use_navigation", false)
+		guard.set("use_navigation", true)
 		guard.set("pause_on_catch", false)
 		_world.add_child(guard)
 		guard.caught.connect(_on_caught.bind(guard))

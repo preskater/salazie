@@ -306,3 +306,83 @@ func test_concealed_player_is_not_seen_by_a_guard() -> void:
 	player.call("set_hidden", false)
 	guard.set("facing", Vector2.RIGHT)
 	assert_bool(guard.call("_sees_player")).is_true()
+
+
+func _wait_for_bake(region: NavigationRegion2D, frames := 240) -> bool:
+	for _i in frames:
+		if region.navigation_polygon != null \
+				and region.navigation_polygon.get_polygon_count() > 0:
+			return true
+		await get_tree().process_frame
+	return false
+
+
+func test_map_bakes_a_navigation_region() -> void:
+	var map := await _spawn_map()
+	var region := map.get_node_or_null("Navigation") as NavigationRegion2D
+	assert_object(region).is_not_null()
+	if region == null:
+		return
+
+	var baked := await _wait_for_bake(region)
+	assert_bool(baked) \
+		.override_failure_message("Navigation polygon was never baked").is_true()
+	assert_int(region.navigation_polygon.get_polygon_count()).is_greater(0)
+
+
+func test_maroon_guards_use_navigation() -> void:
+	var map := await _spawn_map()
+
+	for guard: Node in get_tree().get_nodes_in_group("guards"):
+		assert_bool(bool(guard.get("use_navigation"))) \
+			.override_failure_message("Guard %s does not use navigation" % guard.name) \
+			.is_true()
+
+
+func test_navigation_excludes_the_river_and_keeps_the_bridge() -> void:
+	var map := await _spawn_map()
+	var region := map.get_node_or_null("Navigation") as NavigationRegion2D
+	assert_object(region).is_not_null()
+	if region == null:
+		return
+	var baked := await _wait_for_bake(region)
+	assert_bool(baked).is_true()
+
+	var collision := map.get_node_or_null("Terrain/WorldCollision")
+	assert_object(collision).is_not_null()
+	if collision == null or collision.get_child_count() == 0:
+		return
+
+	var water_shape := collision.get_child(0) as CollisionShape2D
+	assert_object(water_shape).is_not_null()
+	if water_shape == null:
+		return
+
+	var nav_map := map.get_world_2d().navigation_map
+	var water_center := water_shape.global_position
+	var snapped := NavigationServer2D.map_get_closest_point(nav_map, water_center)
+	assert_bool(snapped.distance_to(water_center) > 24.0) \
+		.override_failure_message("River point is walkable: %s" % snapped).is_true()
+
+
+func test_guards_move_after_the_bake() -> void:
+	var map := await _spawn_map()
+	var region := map.get_node_or_null("Navigation") as NavigationRegion2D
+	assert_object(region).is_not_null()
+	if region == null:
+		return
+	var baked := await _wait_for_bake(region)
+	assert_bool(baked).is_true()
+
+	var starts: Dictionary = {}
+	for guard: Node in get_tree().get_nodes_in_group("guards"):
+		starts[guard] = (guard as Node2D).global_position
+
+	for _i in 240:
+		await get_tree().physics_frame
+
+	for guard: Node in get_tree().get_nodes_in_group("guards"):
+		var moved := (guard as Node2D).global_position.distance_to(starts[guard])
+		assert_float(moved) \
+			.override_failure_message("Guard %s stayed frozen" % guard.name) \
+			.is_greater(15.0)

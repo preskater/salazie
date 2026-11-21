@@ -53,6 +53,8 @@ var _state_timer := 0.0
 var _vision_timer := 0.0
 var _out_of_zone_timer := 0.0
 var _ignore_timer := 0.0
+var _patrol_progress_timer := 0.0
+var _patrol_best_distance := INF
 var _can_see := false
 var _caught_emitted := false
 
@@ -65,8 +67,8 @@ func _ready() -> void:
 	_spawn_position = global_position
 	add_to_group("guards")
 	player = get_tree().get_first_node_in_group("player") as Node2D
-	agent.path_desired_distance = 8.0
-	agent.target_desired_distance = 8.0
+	agent.path_desired_distance = 12.0
+	agent.target_desired_distance = 16.0
 	_pick_patrol_point()
 	alert.visible = false
 
@@ -169,7 +171,19 @@ func _tick_patrol(delta: float) -> void:
 		move_and_slide()
 		return
 
-	if global_position.distance_to(_patrol_point) <= ARRIVE_DISTANCE:
+	var distance := global_position.distance_to(_patrol_point)
+	if distance <= ARRIVE_DISTANCE:
+		_wait_timer = randf_range(wait_min, wait_max)
+		_pick_patrol_point()
+		return
+
+	# Watchdog: an unreachable target (river island, stale path after a bake)
+	# would otherwise leave the guard frozen forever.
+	_patrol_progress_timer += delta
+	if distance < _patrol_best_distance - 2.0:
+		_patrol_best_distance = distance
+		_patrol_progress_timer = 0.0
+	elif _patrol_progress_timer > 1.5:
 		_wait_timer = randf_range(wait_min, wait_max)
 		_pick_patrol_point()
 		return
@@ -313,7 +327,30 @@ func _pick_patrol_point() -> void:
 	var center := _spawn_position
 	if zone_center != null:
 		center = zone_center.global_position
-	_patrol_point = center + Vector2(
+
+	_patrol_progress_timer = 0.0
+	_patrol_best_distance = INF
+	_patrol_point = _random_patrol_point(center)
+
+	if not use_navigation or not _has_navigation_map():
+		return
+
+	# Snap to the navmesh and keep looking until a path exists, otherwise the
+	# guard would freeze on a point across the river or inside a tree.
+	var nav_map := agent.get_navigation_map()
+	for _attempt in 6:
+		var candidate := NavigationServer2D.map_get_closest_point(nav_map, _patrol_point)
+		if NavigationServer2D.map_get_path(
+				nav_map, global_position, candidate, true).size() > 1:
+			_patrol_point = candidate
+			return
+		_patrol_point = _random_patrol_point(center)
+
+	_patrol_point = NavigationServer2D.map_get_closest_point(nav_map, _patrol_point)
+
+
+func _random_patrol_point(center: Vector2) -> Vector2:
+	return center + Vector2(
 		randf_range(-zone_size.x * 0.5, zone_size.x * 0.5),
 		randf_range(-zone_size.y * 0.5, zone_size.y * 0.5)
 	)
@@ -329,16 +366,23 @@ func _zone_rect() -> Rect2:
 
 func _move_towards(target: Vector2, speed: float) -> void:
 	var next := target
+
 	if use_navigation:
 		agent.target_position = target
-
-		# Without a baked navigation polygon the agent reports a "next point"
-		# that is its own position. Fall back to a straight line so patrols
-		# still work.
-		if not agent.is_navigation_finished():
-			var candidate := agent.get_next_path_position()
-			if candidate.distance_to(global_position) > 0.5:
-				next = candidate
+		if _has_navigation_map():
+			if not agent.is_target_reachable():
+				# Unreachable target: head to the closest navigable point.
+				next = agent.get_final_position()
+				if next.distance_to(global_position) < 1.0:
+					velocity = Vector2.ZERO
+					move_and_slide()
+					return
+			elif agent.is_navigation_finished():
+				velocity = Vector2.ZERO
+				move_and_slide()
+				return
+			else:
+				next = agent.get_next_path_position()
 
 	var direction := global_position.direction_to(next)
 	velocity = direction * speed
@@ -346,6 +390,10 @@ func _move_towards(target: Vector2, speed: float) -> void:
 
 	if direction.length() > 0.01:
 		facing = direction
+
+
+func _has_navigation_map() -> bool:
+	return NavigationServer2D.map_get_iteration_id(agent.get_navigation_map()) > 0
 
 
 func _draw() -> void:
