@@ -6,8 +6,9 @@ Technical reference for the second map of Salazie. Narrative intent lives in
 - Scene: `game/world/maps/Farm.tscn`, root script `game/farm/farm_map.gd`
 - Size: 96 × 68 tiles at 48 px → 4608 × 3264 px
 - Player: `World/Player2`, spawned at `PlayerSpawn` `(2280, 3168)`, tile `(47.5, 66)`
-- The game boots on `game/ui/menus/main_menu.tscn`; **Nouvelle partie** or **Continuer**
-  loads `Farm.tscn`. Open the scene directly to test the map without the menu.
+- The game boots on `game/ui/menus/main_menu.tscn`; **Nouvelle partie** now loads
+  `Maroon.tscn`. **Continuer** loads the saved generation. Map 2 is entered from the
+  refuge of [Map 1](MAP1.md), or opened directly for testing.
 
 ## Scene structure
 
@@ -42,7 +43,8 @@ Landmarks in world pixels: `MarketStand` `(1992, 2976)`, `NPCSeller` `(1992, 273
 Prepare a plot → plant the selected seed → wait for growth → harvest → sell at the market →
 buy more seeds. Prices change when the day changes.
 
-- Start: **30 G**, day 1, seeds `corn ×2, pumpkin ×1, tomato ×2, carrot ×1`
+- Start: money carried from Map 1 (**30 G** minus 5 G per failure event, minimum 15 G),
+  day 1, seeds `corn ×2, pumpkin ×1, tomato ×2, carrot ×1`
 - Day length: **60 s**; prices reroll each day by about **±25 %** around the base price
 - Selling pays the current daily price; buying a seed costs its `seed_price`
 
@@ -56,7 +58,23 @@ buy more seeds. Prices change when the day changes.
 `CropPlot` states: `EMPTY → TILLED → GROWING → READY → TILLED` after harvest. Sprout and
 mid-stage textures swap automatically while growing.
 
-Objectives, in order: prepare a plot, plant a seed, harvest a crop, sell produce, reach 100 G.
+### Generation tasks
+
+| ID | Success | Failure |
+|---|---|---|
+| `prepare_plot` | Prepare a plot | — |
+| `plant_seed` | Plant a seed | — |
+| `harvest_crop` | Harvest a crop | — |
+| `sell_produce` | Sell produce | — |
+| `earn_100` | Reach 100 G before day 6 | Day 6 starts first |
+
+The five tasks replace the old local objective booleans and are stored in `Campaign`.
+`earn_100` is permanent once the day-6 deadline passes: the farm can still be left, but the
+generation result is partial and the heir receives a smaller heritage.
+
+The road exit is east of the market hamlet, at `(4360, 3168)`. It is gated on all five
+tasks being resolved and shows the generation result before the chapter fade to
+[Map 3](MAP3.md).
 
 ### Controls
 
@@ -67,11 +85,12 @@ Objectives, in order: prepare a plot, plant a seed, harvest a crop, sell produce
 | `select_seed_1..4` | 1–4 | Choose seed (also in the inventory popup) |
 | `toggle_inventory` | I | Inventory popup (pause) |
 | `toggle_prices` | P | Show/hide market prices |
+| `toggle_tasks` | T / Select | Open the generation task list |
 | `pause` | Esc / Start | Open the pause menu |
 | `ui_cancel` | Esc / B | Close the open overlay |
 
-The HUD shows money and day (top-left), the current objective (top-centre), interaction
-prompts and notifications. The market overlay pauses the game; the inventory and price
+The HUD shows money and day (top-left), the task list and current objective (top-centre),
+interaction prompts and notifications. The market overlay pauses the game; the inventory and price
 overlays never duplicate each other. The pause menu only opens when no HUD overlay owns the
 pause, so `Esc` closes the market or inventory first.
 
@@ -146,8 +165,11 @@ their `lines` export. `FarmMap` assigns each NPC the player reference on ready.
 | `game/farm/market_stand.gd` / `.tscn` | Market interaction point |
 | `game/farm/npc.gd` / `.tscn` | Dialogue, patrol and player-facing |
 | `game/farm/farm_hud.gd` / `.tscn` | HUD, market, inventory, prices |
-| `game/farm/farm_map.gd` | Manager and objective tracker |
+| `game/farm/farm_map.gd` | Manager, campaign task wiring and road exit |
 | `game/farm/animals/animal.gd` / `.tscn` | Animal frames and roaming AI |
+| `game/systems/campaign/campaign_state.gd` | Generation tasks, failures, results and carry-over |
+| `game/ui/tasks/task_list.tscn` / `.gd` | Task list UI |
+| `game/ui/tasks/generation_result.tscn` / `.gd` | Generation result overlay |
 | `game/world/tree_sway.gd`, `crop_sway.gd`, `ambient_leaves.gd` / `.tscn` | World animation helpers |
 | `game/world/animations/` | Shared tree and leaf `SpriteFrames` |
 | `game/world/WorldObject.tscn` | Reusable prop: texture, bottom-centred collision |
@@ -166,13 +188,13 @@ python3 .claude/skills/godot-nodes-scenes/scripts/check_godot_project.py . --jso
 ```
 
 Tests: `tests/unit/test_player.gd` and `tests/unit/test_farm_life.gd` (animal animations,
-roam bounds, tree and leaf frames, fruit slice geometry, NPC facing), plus the menu,
-settings, save and UI-asset suites in `tests/unit/`. Status at time of writing: 52/52
-gdUnit4 tests pass.
+roam bounds, tree and leaf frames, fruit slice geometry, NPC facing), plus the campaign,
+map, menu, settings, save and UI-asset suites in `tests/unit/`.
 
 ## Known limits
 
 - One autosave slot managed by `SaveGame`; state still resets if the save file is deleted.
 - Animals are decorative; they do not produce eggs or milk and do not react to the player.
 - Fruit trees and field crops are visual only; only the 8 `CropPlot`s are harvestable.
+- The day-6 prosperity deadline is the only failure source on this map.
 - No audio assets yet.

@@ -148,6 +148,9 @@ func can_see(target: Vector2) -> bool:
 func _sees_player() -> bool:
 	if player == null or not is_instance_valid(player):
 		return false
+	if player.has_method("set_hidden") and bool(player.get("concealed")) \
+			and global_position.distance_to(player.global_position) > 32.0:
+		return false
 	return can_see(player.global_position)
 
 
@@ -275,6 +278,20 @@ func _catch() -> void:
 	print("GAME OVER")
 	if pause_on_catch:
 		get_tree().paused = true
+
+
+## Puts a guard back on patrol after the player respawns at a checkpoint.
+func reset_after_catch(at := _spawn_position) -> void:
+	global_position = at
+	_caught_emitted = false
+	state = State.PATROL
+	suspicion = 0.0
+	velocity = Vector2.ZERO
+	_can_see = false
+	_ignore_timer = give_up_cooldown
+	alert.visible = false
+	_pick_patrol_point()
+	queue_redraw()
 
 
 # --- Helpers ----------------------------------------------------------------

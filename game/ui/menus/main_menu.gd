@@ -67,7 +67,10 @@ func _refresh_continue() -> void:
 	var has_save := not metadata.is_empty()
 	continue_button.disabled = not has_save
 	if has_save:
-		continue_info.text = "Jour %d · %d G" % [int(metadata["day"]), int(metadata["money"])]
+		var map_id := int(metadata.get("map", 2))
+		var title := String(Campaign.map_title(map_id))
+		continue_info.text = "Gén. %d · %s · Jour %d · %d G" % [
+			map_id, title, int(metadata["day"]), int(metadata["money"])]
 	else:
 		continue_info.text = "Aucune sauvegarde"
 

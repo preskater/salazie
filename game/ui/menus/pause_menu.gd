@@ -51,7 +51,8 @@ func open() -> void:
 	get_tree().paused = true
 	visible = true
 	root.visible = true
-	subtitle.text = "Jour %d · %d G" % [GameState.day, GameState.money]
+	subtitle.text = "%s · Jour %d · %d G" % [
+		Campaign.map_title(), GameState.day, GameState.money]
 	save_status.visible = false
 	stack.reset("Pause")
 	SaveGame.save_game()

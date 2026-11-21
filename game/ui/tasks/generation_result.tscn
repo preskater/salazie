@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/ui/tasks/generation_result.gd" id="1_result"]
+
+[node name="GenerationResult" type="CanvasLayer"]
+layer = 30
+script = ExtResource("1_result")

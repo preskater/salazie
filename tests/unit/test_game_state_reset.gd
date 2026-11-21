@@ -10,6 +10,7 @@ func before_test() -> void:
 	SaveGame.save_path = TEST_SAVE_PATH
 	_remove_test_save()
 	GameState.playing = false
+	GameState.farm_active = true
 	GameState.reset()
 
 

@@ -6,7 +6,10 @@ signal scene_changed(scene: Node)
 signal transition_finished()
 
 const MAIN_MENU_SCENE := "res://game/ui/menus/main_menu.tscn"
-const GAME_SCENE := "res://game/world/maps/Farm.tscn"
+const GAME_SCENE := "res://game/world/maps/Maroon.tscn"
+const FARM_SCENE := "res://game/world/maps/Farm.tscn"
+const HEIR_SCENE := "res://game/world/maps/Heir.tscn"
+const ENDING_SCENE := "res://game/ui/ending/ending_screen.tscn"
 const FADE_TIME := 0.25
 
 var is_gameplay := false
@@ -27,11 +30,13 @@ func _ready() -> void:
 func start_new_game() -> void:
 	if _transitioning:
 		return
-	GameState.reset()
+	Campaign.reset()
+	GameState.reset(Campaign.starting_money_for_map(1))
+	GameState.farm_active = false
 	GameState.playing = true
 	is_gameplay = true
 	_set_day_night_active(true, true)
-	var ok := await _change_scene(GAME_SCENE)
+	var ok := await _change_scene(Campaign.current_scene_path())
 	if not ok:
 		GameState.playing = false
 		is_gameplay = false
@@ -46,13 +51,57 @@ func continue_game() -> void:
 	if not SaveGame.load_game():
 		return
 	GameState.playing = true
+	GameState.farm_active = Campaign.current_map == 2
 	is_gameplay = true
 	_set_day_night_active(true, true)
-	var ok := await _change_scene(GAME_SCENE)
+	var ok := await _change_scene(Campaign.current_scene_path())
 	if not ok:
 		GameState.playing = false
 		is_gameplay = false
 		_set_day_night_active(false)
+
+
+## Leaves the current map for the next generation. The caller must have
+## resolved every task; failed tasks are allowed and recorded in the result.
+func go_to_next_map() -> bool:
+	if _transitioning or SceneTransition.is_transitioning:
+		return false
+	if not Campaign.can_leave_map():
+		return false
+	var summary := Campaign.finalize_map()
+	var previous_map := Campaign.current_map
+	if not Campaign.advance_to_next_map():
+		await go_to_ending()
+		return true
+	_prepare_map_entry(Campaign.current_map)
+	SaveGame.save_game()
+	_transitioning = true
+	get_tree().paused = false
+	var subtitle := "%s · %d réussies · %d échouées" % [
+		Campaign.map_subtitle(),
+		int(summary.get("done", 0)),
+		int(summary.get("failed", 0)),
+	]
+	await SceneTransition.change_scene(
+		Campaign.current_scene_path(), Campaign.map_title(), subtitle)
+	_transitioning = false
+	is_gameplay = true
+	scene_changed.emit(get_tree().current_scene)
+	transition_finished.emit()
+	return Campaign.current_map != previous_map
+
+
+func go_to_ending() -> void:
+	if _transitioning or SceneTransition.is_transitioning:
+		return
+	Campaign.finalize_map()
+	Campaign.finished = true
+	if GameState.playing:
+		SaveGame.save_game()
+	GameState.playing = false
+	is_gameplay = false
+	_set_day_night_active(false)
+	await _change_scene(ENDING_SCENE)
 
 
 func go_to_main_menu() -> void:
@@ -95,6 +144,17 @@ func _change_scene(path: String) -> bool:
 	return true
 
 
+func _prepare_map_entry(map_id: int) -> void:
+	GameState.playing = true
+	GameState.farm_active = map_id == 2
+	if map_id == 2:
+		GameState.reset(Campaign.starting_money_for_map(2))
+	elif map_id == 3:
+		Campaign.heritage = Campaign.heritage_for_map3()
+	_set_day_night_active(true, true)
+	DayNightCycle.nights_required_for_next_map = 0
+
+
 func _on_close_requested() -> void:
 	Settings.save_settings()
 	if is_gameplay:
@@ -104,7 +164,7 @@ func _on_close_requested() -> void:
 
 func _set_day_night_active(active: bool, reset_cycle := false) -> void:
 	if reset_cycle:
-		DayNightCycle.reset_for_new_map()
+		DayNightCycle.reset_for_new_map(0)
 	DayNightCycle.running = active
 	DayNightCycle.tint_enabled = active
 
