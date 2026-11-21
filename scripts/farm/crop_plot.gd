@@ -20,6 +20,7 @@ func _ready() -> void:
 	_soil = $Soil
 	_crop = $Sprite
 	add_to_group("interactable")
+	add_to_group("crops")
 	state = initial_state
 	_ensure_textures()
 	_sync_visual()
@@ -89,6 +90,17 @@ func _harvest() -> void:
 	GameState.announce("Récolte : +1 %s." % label)
 	state = State.TILLED
 	_sync_visual()
+
+
+## The cyclone only takes ripe crops; the plot keeps its tilled soil.
+func destroy_crop() -> bool:
+	if state != State.READY:
+		return false
+	state = State.TILLED
+	growth = 0.0
+	_shown_stage = -1
+	_sync_visual()
+	return true
 
 func _ensure_textures() -> void:
 	if _textures.has(crop_type):
