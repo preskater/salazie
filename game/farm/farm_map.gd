@@ -7,6 +7,8 @@ const MAP_EXIT_SCENE := preload("res://game/world/MapExit.tscn")
 const TASK_LIST_SCENE := preload("res://game/ui/tasks/task_list.tscn")
 const SIGN_TEXTURE := "res://assets/farm_48x48/singles/Props_and_Buildings/Sign_1_48x48.png"
 
+@export var economy_generation: StringName = &"cultivateur"
+
 @onready var player: Node2D = _find_player()
 @onready var hud: FarmHUD = $HUD
 @onready var market_stand: MarketStand = $World/MarketStand
@@ -19,6 +21,13 @@ func _find_player() -> Node2D:
 	if node == null:
 		node = get_node_or_null("World/Player")
 	return node as Node2D
+
+
+func _enter_tree() -> void:
+	# Runs before the HUD builds its offer rows. A loaded save already matches.
+	if Economy.has_generation(economy_generation) \
+			and Economy.current_generation_id() != economy_generation:
+		Economy.select_generation(economy_generation)
 
 
 func _ready() -> void:
@@ -151,7 +160,8 @@ func _on_produce_sold(_crop: String, _amount: int, _total: int) -> void:
 func _on_money_changed(value: int) -> void:
 	if value >= 100 and Campaign.task_status("earn_100") == Campaign.TaskStatus.PENDING:
 		Campaign.complete_task("earn_100")
-		GameState.announce("Objectif atteint : 100 G — la ferme prospère !")
+		GameState.announce(
+			"Objectif atteint : %s — la ferme prospère !" % GameState.format_money(100))
 	_refresh_objective()
 
 
@@ -166,7 +176,8 @@ func _check_prosperity_deadline(day: int) -> void:
 	if Campaign.task_status("earn_100") != Campaign.TaskStatus.PENDING:
 		return
 	Campaign.fail_task("earn_100",
-		"Délai dépassé : 100 G non atteints avant le jour %d" % PROSPERITY_DEADLINE_DAY)
+		"Délai dépassé : %s non atteints avant le jour %d"
+			% [GameState.format_money(100), PROSPERITY_DEADLINE_DAY])
 	GameState.announce("Le délai du marché est passé : la ferme termine la génération en difficulté.")
 
 

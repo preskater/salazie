@@ -96,14 +96,15 @@ is pressed.
 | `Settings` | `game/systems/settings/settings.gd` | Load/apply/save audio, window and VSync settings |
 | `DayNightCycle` | `game/world/DayNightCycle.tscn` | Day/night phases and tint |
 | `SceneTransition` | `game/ui/SceneTransition.tscn` | Chapter fade used by map exits |
+| `Economy` | `game/systems/economy/economy.gd` | Per-generation wallets, offers, trading, ownership |
 | `GameState` | `game/farm/game_state.gd` | Farm economy, day timer, `playing`/`farm_active`, serialisation |
 | `Campaign` | `game/systems/campaign/campaign_state.gd` | Generation tasks, failures, results, choices and carry-over |
 | `SaveGame` | `game/systems/save/save_game.gd` | Single-slot JSON save, autosave, `.bak` fallback |
 | `SceneRouter` | `game/systems/scene_router.gd` | New game, continue, generation transitions, menu/quit, fade |
 | `PauseMenu` | `game/ui/menus/pause_menu.tscn` | Global pause overlay, process mode `ALWAYS` |
 
-Autoload order matters: `Settings`, `DayNightCycle`, `SceneTransition`, `GameState`,
-`Campaign`, `SaveGame`, `SceneRouter`, `PauseMenu`.
+Autoload order matters: `Settings`, `DayNightCycle`, `SceneTransition`, `Economy`,
+`GameState`, `Campaign`, `SaveGame`, `SceneRouter`, `PauseMenu`.
 
 `SceneRouter` stops and hides the day/night tint on the title screen, resets the cycle when a
 game starts or continues, and re-enables it in gameplay. Map exits keep using
@@ -134,8 +135,10 @@ defaults above.
 
 ## Save format
 
-Only plain data is stored. The farm scene rebuilds itself from `GameState`; the campaign
-rebuilds task states from `Campaign`. No nodes, resources or node paths are serialised.
+Only plain data is stored. The farm scene rebuilds itself from `GameState` and the campaign
+rebuilds task states from `Campaign`; no nodes, resources or node paths are serialised.
+Save version 2 adds the per-generation economy payload documented in [ECONOMY.md](ECONOMY.md)
+and the campaign payload.
 
 ```json
 {
@@ -149,6 +152,13 @@ rebuilds task states from `Campaign`. No nodes, resources or node paths are seri
   "produce": {"corn": 1, "pumpkin": 0, "tomato": 3, "carrot": 0},
   "prices": {"corn": 10, "pumpkin": 16, "tomato": 9, "carrot": 7},
   "previous_prices": {"corn": 10, "pumpkin": 16, "tomato": 9, "carrot": 7},
+  "economy": {
+    "generation": "cultivateur",
+    "enabled": true,
+    "wallets": {"gourde": 84},
+    "owned": {"barn": 1},
+    "stock": {"building_barn": 0, "slot_field": 2, "item_hoe": 1}
+  },
   "campaign": {
     "current_map": 2,
     "tasks": {
@@ -177,10 +187,13 @@ but keeps the failure list.
   to `savegame.json.bak`.
 - Loading tries the primary file, then the backup. Invalid JSON, missing fields, or a newer
   `version` are refused without mutating the current state.
+- Version 1 payloads without the `economy` block still load; `money` is applied to the
+  active generation's primary currency.
 - JSON numbers load as floats; `GameState.to_dict()` / `from_dict()` and
   `Campaign.to_dict()` / `from_dict()` convert them back to integers.
-- Autosave triggers: day change, task status change, map resolution, opening the pause menu,
-  pressing **Sauvegarder**, returning to the main menu, and closing the window while playing.
+- Autosave triggers: day change (`GameState.day_advanced`), task status change, map
+  resolution, opening the pause menu, pressing **Sauvegarder**, returning to the main menu,
+  and closing the window while playing.
 - **Nouvelle partie** resets both the farm and the campaign, then saves immediately. An
   existing save is replaced only after the confirmation panel.
 - Version 1 saves migrate to version 2: the farm is kept, `current_map` becomes 2, Map 1 is
@@ -204,6 +217,9 @@ systems apart:
 
 - `FarmHUD` small panels (money, objective, prompt, dialogue, prices) use the `HudPanel`
   type variation; the market and inventory use the large panel frame.
+- Money text uses `GameState.format_wallets()` so every enabled wallet follows the active
+  generation's currencies. The market adds an **OBJETS & PROPRIÉTÉS** section for `ITEM`,
+  `BUILDING` and `SLOT` offers; see [ECONOMY.md](ECONOMY.md).
 - `farm_hud.gd` keeps the market/inventory text colours in a small palette
   (`TEXT_DARK`, `TEXT_MUTED`, `TEXT_ACCENT`, `POSITIVE`, `NEGATIVE`) instead of the old
   cream-on-dark values.
@@ -253,6 +269,8 @@ Rebinding is not implemented; `Commandes` is a read-only screen.
 | `game/ui/decision/decision_panel.tscn` / `.gd` | Map 3 plan decision |
 | `game/ui/ending/ending_screen.tscn` / `.gd` | Choice-driven epilogue |
 | `game/systems/settings/settings.gd` | Persistent settings |
+| `game/systems/economy/economy.gd` | Per-generation wallets, offers and ownership |
+| `game/systems/economy/config/economy.tres` | Shipped currency, generation and offer data |
 | `game/systems/save/save_game.gd` | Save/load and autosave |
 | `game/systems/scene_router.gd` | Scene transitions and game lifecycle |
 | `default_bus_layout.tres` | Master / Music / SFX buses |
@@ -278,7 +296,10 @@ Focused suites:
 - `tests/unit/test_menu_layout.gd` — off-screen controls and initial focus at 1280×720,
   1536×648, 1152×864 and 2560×1080.
 - `tests/unit/test_settings.gd` — defaults, round-trip, clamping, slider wiring, buses.
-- `tests/unit/test_save_game.gd` — round-trip, `.bak` fallback, newer version refusal.
+- `tests/unit/test_save_game.gd` — round-trip, `.bak` fallback, newer version refusal,
+  economy round-trip and version 1 migration.
+- `tests/unit/test_economy.gd` — generation currencies, disabled generations, buy/sell,
+  trading, ownership and state round-trip.
 - `tests/unit/test_game_state_reset.gd` — reset, signals, day timer, JSON floats.
 - `tests/unit/test_campaign_state.gd` — task statuses, failures, retries, results, carry-over.
 - `tests/unit/test_task_list.gd` — pending/done/failed rows and result text.
@@ -289,11 +310,13 @@ Focused suites:
 - `tests/unit/test_ui_assets.gd` — UI-pack-only texture references, portrait layers, trio
   wiring, survival HUD icons and bars.
 
-Current status: **136/136 gdUnit4 tests pass**.
+Current status: **155/155 gdUnit4 tests pass**.
 
 ## Known limits
 
 - One save slot; no slot picker or cloud save.
+- Building and slot ownership is recorded by the economy but does not build anything in the
+  world yet.
 - No audio assets yet; music/SFX volumes are ready but silent.
 - No key rebinding and no language selector.
 - Display options are ignored in headless mode and may behave differently in a browser.

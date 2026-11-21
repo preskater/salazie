@@ -35,6 +35,9 @@ const SLOT_SCENE := preload("res://game/farm/ui/item_slot.tscn")
 var _price_labels := {}
 var _sell_buttons := {}
 var _buy_buttons := {}
+var _extra_offers: Array[EconomyOffer] = []
+var _extra_buy_buttons: Dictionary[StringName, Button] = {}
+var _extra_sell_buttons: Dictionary[StringName, Button] = {}
 var _seed_slots := {}
 var _produce_slots := {}
 var _icons := {}
@@ -62,6 +65,7 @@ func _ready() -> void:
 	GameState.seed_changed.connect(_on_seed_changed)
 	GameState.notification_requested.connect(notify)
 	GameState.dialogue_requested.connect(show_dialogue)
+	Economy.economy_enabled_changed.connect(_on_economy_enabled_changed)
 	_refresh_all()
 
 func set_prompt(text: String) -> void:
@@ -180,6 +184,40 @@ func _build_market_rows() -> void:
 		buy.pressed.connect(_on_buy.bind(crop))
 		buy_rows.add_child(buy)
 		_buy_buttons[crop] = buy
+	_build_extra_rows()
+
+
+func _build_extra_rows() -> void:
+	_extra_offers.clear()
+	if Economy.generation() == null or not Economy.is_enabled():
+		return
+	for offer: EconomyOffer in Economy.offers():
+		_extra_offers.append(offer)
+	if _extra_offers.is_empty():
+		return
+	_add_section_label(sell_rows, "OBJETS & PROPRIÉTÉS")
+	_add_section_label(buy_rows, "OBJETS & PROPRIÉTÉS")
+	for offer: EconomyOffer in _extra_offers:
+		var buy := Button.new()
+		buy.name = "Buy_" + String(offer.id)
+		buy.custom_minimum_size = Vector2(0, 38)
+		buy.pressed.connect(_on_buy_extra.bind(offer.id))
+		buy_rows.add_child(buy)
+		_extra_buy_buttons[offer.id] = buy
+		if offer.is_sellable():
+			var sell := Button.new()
+			sell.name = "Sell_" + String(offer.id)
+			sell.custom_minimum_size = Vector2(0, 38)
+			sell.pressed.connect(_on_sell_extra.bind(offer.id))
+			sell_rows.add_child(sell)
+			_extra_sell_buttons[offer.id] = sell
+
+
+func _add_section_label(parent: VBoxContainer, text: String) -> void:
+	var label := Label.new()
+	label.text = text
+	label.add_theme_color_override("font_color", Color(0.42, 0.22, 0.03, 1))
+	parent.add_child(label)
 
 func _build_inventory_rows() -> void:
 	for crop: String in GameState.CROP_ORDER:
@@ -207,10 +245,14 @@ func _refresh_all() -> void:
 	_refresh_inventory_popup()
 	_refresh_market()
 
-func _on_money_changed(value: int) -> void:
-	money_label.text = "Argent : %d G" % value
+func _on_money_changed(_value: int) -> void:
+	money_label.text = "Argent : %s" % GameState.format_wallets()
 	_refresh_inventory_popup()
 	_refresh_market()
+
+
+func _on_economy_enabled_changed(_enabled: bool) -> void:
+	_on_money_changed(GameState.money)
 
 func _on_day_changed(day: int) -> void:
 	day_label.text = "Jour %d" % day
@@ -223,7 +265,8 @@ func _on_seed_changed(_crop: String) -> void:
 	_refresh_inventory_popup()
 
 func _refresh_inventory_popup() -> void:
-	inventory_context.text = "Argent : %d G · Jour %d" % [GameState.money, GameState.day]
+	inventory_context.text = "Argent : %s · Jour %d" % [
+		GameState.format_wallets(), GameState.day]
 
 	var produce_visible := 0
 	var seed_visible := 0
@@ -271,24 +314,53 @@ func _refresh_prices() -> void:
 			arrow = "▼"
 			color = NEGATIVE
 		var row: Label = _price_labels[crop]
-		row.text = "%s — %d G %s" % [label, price, arrow]
+		row.text = "%s — %s %s" % [label, GameState.format_money(price), arrow]
 		row.add_theme_color_override("font_color", color)
 
 func _refresh_market() -> void:
 	if not _market_open:
 		return
-	market_day_label.text = "Jour %d — les prix changent chaque jour." % GameState.day
+	var economy_on := GameState.is_economy_enabled()
+	if economy_on:
+		market_day_label.text = "Jour %d — %s. Les prix changent chaque jour." % [
+			GameState.day, GameState.currency_label()]
+	else:
+		market_day_label.text = "Économie désactivée pour cette génération."
 	for crop: String in GameState.CROP_ORDER:
 		var label := String(GameState.CROPS[crop]["label"]).to_lower()
 		var count := GameState.produce_count(crop)
 		var price := int(GameState.prices[crop])
 		var sell: Button = _sell_buttons[crop]
-		sell.text = "Vendre tout le %s (%d) — %d G" % [label, count, price * count]
-		sell.disabled = count <= 0
+		sell.text = "Vendre tout le %s (%d) — %s" % [
+			label, count, GameState.format_money(price * count)]
+		sell.disabled = not economy_on or count <= 0
 		var seed_price := int(GameState.CROPS[crop]["seed_price"])
 		var buy: Button = _buy_buttons[crop]
-		buy.text = "Acheter 1 graine de %s — %d G" % [label, seed_price]
-		buy.disabled = GameState.money < seed_price
+		buy.text = "Acheter 1 graine de %s — %s" % [
+			label, GameState.format_money(seed_price)]
+		buy.disabled = not economy_on or GameState.money < seed_price
+	_refresh_extra_rows()
+
+
+func _refresh_extra_rows() -> void:
+	for offer: EconomyOffer in _extra_offers:
+		var buy: Button = _extra_buy_buttons.get(offer.id)
+		if buy != null:
+			var suffix := ""
+			var stock := Economy.offer_stock(offer.id)
+			if stock >= 0:
+				suffix = " (reste %d)" % stock
+			elif Economy.owned_count(offer.asset_id()) > 0:
+				suffix = " (possédé ×%d)" % Economy.owned_count(offer.asset_id())
+			buy.text = "Acheter %s — %s%s" % [
+				offer.label, Economy.format_amount(offer.currency_id, offer.price), suffix]
+			buy.disabled = not Economy.can_buy(offer.id)
+		var sell: Button = _extra_sell_buttons.get(offer.id)
+		if sell != null:
+			var count := Economy.owned_count(offer.asset_id())
+			sell.text = "Vendre %s (%d) — %s" % [
+				offer.label, count, Economy.format_amount(offer.currency_id, offer.sell_price)]
+			sell.disabled = not Economy.can_sell(offer.id)
 
 func _on_sell(crop: String) -> void:
 	var count := GameState.produce_count(crop)
@@ -296,7 +368,8 @@ func _on_sell(crop: String) -> void:
 		return
 	var label := String(GameState.CROPS[crop]["label"])
 	var total := GameState.sell(crop, count)
-	market_message.text = "Vente : %d × %s — +%d G" % [count, label, total]
+	market_message.text = "Vente : %d × %s — +%s" % [
+		count, label, GameState.format_money(total)]
 	_refresh_market()
 	_keep_focus_valid()
 
@@ -304,9 +377,39 @@ func _on_buy(crop: String) -> void:
 	var label := String(GameState.CROPS[crop]["label"])
 	var seed_price := int(GameState.CROPS[crop]["seed_price"])
 	if GameState.buy_seed(crop):
-		market_message.text = "Achat : 1 graine de %s — %d G" % [label.to_lower(), seed_price]
+		market_message.text = "Achat : 1 graine de %s — %s" % [
+			label.to_lower(), GameState.format_money(seed_price)]
 	else:
 		market_message.text = "Pas assez d'argent."
+	_refresh_market()
+	_keep_focus_valid()
+
+
+func _on_buy_extra(offer_id: StringName) -> void:
+	var target := Economy.offer(offer_id)
+	if target == null:
+		return
+	if Economy.buy(offer_id):
+		market_message.text = "Achat : %s — %s" % [
+			target.label, Economy.format_amount(target.currency_id, target.price)]
+	else:
+		market_message.text = "Achat impossible (fonds, stock ou économie désactivée)."
+	_refresh_market()
+	_keep_focus_valid()
+
+
+func _on_sell_extra(offer_id: StringName) -> void:
+	var target := Economy.offer(offer_id)
+	if target == null:
+		return
+	if not Economy.can_sell(offer_id):
+		market_message.text = "Vente impossible."
+		_refresh_market()
+		_keep_focus_valid()
+		return
+	var total := Economy.sell(offer_id)
+	market_message.text = "Vente : %s — +%s" % [
+		target.label, Economy.format_amount(target.currency_id, total)]
 	_refresh_market()
 	_keep_focus_valid()
 

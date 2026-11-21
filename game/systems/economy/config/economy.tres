@@ -1,0 +1,138 @@
+[gd_resource type="Resource" script_class="EconomyConfig" format=3]
+
+[ext_resource type="Script" path="res://game/systems/economy/economy_config.gd" id="1_config"]
+[ext_resource type="Script" path="res://game/systems/economy/economy_generation.gd" id="2_generation"]
+[ext_resource type="Script" path="res://game/systems/economy/economy_currency.gd" id="3_currency"]
+[ext_resource type="Script" path="res://game/systems/economy/economy_offer.gd" id="4_offer"]
+
+[sub_resource type="Resource" id="EconomyCurrency_gourde"]
+script = ExtResource("3_currency")
+id = &"gourde"
+label = "Gourde"
+symbol = "G"
+starting_balance = 30
+enabled = true
+
+[sub_resource type="Resource" id="EconomyCurrency_euro"]
+script = ExtResource("3_currency")
+id = &"euro"
+label = "Euro"
+symbol = "€"
+starting_balance = 120
+enabled = true
+
+[sub_resource type="Resource" id="EconomyCurrency_credit_vert"]
+script = ExtResource("3_currency")
+id = &"credit_vert"
+label = "Crédit vert"
+symbol = "CV"
+starting_balance = 5
+enabled = true
+
+[sub_resource type="Resource" id="EconomyOffer_barn"]
+script = ExtResource("4_offer")
+id = &"building_barn"
+label = "Grange"
+description = "Une grange partagée pour stocker les récoltes du hameau."
+kind = 1
+currency_id = &"gourde"
+price = 60
+sell_price = 30
+stock = 1
+grant_id = &"barn"
+
+[sub_resource type="Resource" id="EconomyOffer_field_slot"]
+script = ExtResource("4_offer")
+id = &"slot_field"
+label = "Parcelle"
+description = "Une parcelle de plus à cultiver autour de la ferme."
+kind = 2
+currency_id = &"gourde"
+price = 35
+sell_price = 17
+stock = 2
+grant_id = &"field_slot"
+
+[sub_resource type="Resource" id="EconomyOffer_hoe"]
+script = ExtResource("4_offer")
+id = &"item_hoe"
+label = "Houe"
+description = "Un outil robuste pour préparer la terre plus vite."
+kind = 0
+currency_id = &"gourde"
+price = 20
+sell_price = 8
+stock = 1
+grant_id = &"hoe"
+
+[sub_resource type="Resource" id="EconomyOffer_wetland"]
+script = ExtResource("4_offer")
+id = &"building_wetland"
+label = "Réserve humide"
+description = "Une zone humide préservée pour la biodiversité du cirque."
+kind = 1
+currency_id = &"euro"
+price = 80
+sell_price = 40
+stock = 1
+grant_id = &"wetland"
+
+[sub_resource type="Resource" id="EconomyOffer_refuge_slot"]
+script = ExtResource("4_offer")
+id = &"slot_refuge"
+label = "Refuge"
+description = "Un emplacement pour accueillir les habitants touchés par le climat."
+kind = 2
+currency_id = &"credit_vert"
+price = 12
+sell_price = 6
+stock = 3
+grant_id = &"refuge_slot"
+
+[sub_resource type="Resource" id="EconomyOffer_seedling"]
+script = ExtResource("4_offer")
+id = &"item_seedling_kit"
+label = "Jeunes plants"
+description = "Jeunes plants pour restaurer les versants fragiles."
+kind = 0
+currency_id = &"euro"
+price = 15
+sell_price = 5
+stock = -1
+grant_id = &"seedling_kit"
+
+[sub_resource type="Resource" id="EconomyGeneration_marron"]
+script = ExtResource("2_generation")
+id = &"marron"
+label = "Le marron"
+enabled = false
+allow_buy = false
+allow_sell = false
+allow_trade = false
+
+[sub_resource type="Resource" id="EconomyGeneration_cultivateur"]
+script = ExtResource("2_generation")
+id = &"cultivateur"
+label = "Le cultivateur"
+enabled = true
+allow_buy = true
+allow_sell = true
+allow_trade = true
+currencies = Array[ExtResource("3_currency")]([SubResource("EconomyCurrency_gourde")])
+offers = Array[ExtResource("4_offer")]([SubResource("EconomyOffer_barn"), SubResource("EconomyOffer_field_slot"), SubResource("EconomyOffer_hoe")])
+
+[sub_resource type="Resource" id="EconomyGeneration_heritier"]
+script = ExtResource("2_generation")
+id = &"heritier"
+label = "L’héritier"
+enabled = true
+allow_buy = true
+allow_sell = true
+allow_trade = true
+currencies = Array[ExtResource("3_currency")]([SubResource("EconomyCurrency_euro"), SubResource("EconomyCurrency_credit_vert")])
+offers = Array[ExtResource("4_offer")]([SubResource("EconomyOffer_wetland"), SubResource("EconomyOffer_refuge_slot"), SubResource("EconomyOffer_seedling")])
+
+[resource]
+script = ExtResource("1_config")
+generations = Array[ExtResource("2_generation")]([SubResource("EconomyGeneration_marron"), SubResource("EconomyGeneration_cultivateur"), SubResource("EconomyGeneration_heritier")])
+default_generation = &"cultivateur"

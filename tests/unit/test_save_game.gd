@@ -115,6 +115,38 @@ func test_save_requires_a_running_game() -> void:
 	assert_bool(FileAccess.file_exists(TEST_PATH)).is_false()
 
 
+func test_round_trip_restores_economy_state() -> void:
+	Economy.select_generation(&"cultivateur")
+	GameState.money = 100
+	assert_bool(Economy.buy(&"building_barn")).is_true()
+	var wallet := Economy.balance(&"gourde")
+	var owned := Economy.owned_count(&"barn")
+	assert_bool(SaveGame.save_game()).is_true()
+
+	Economy.select_generation(&"cultivateur")
+	assert_int(Economy.balance(&"gourde")).is_equal(30)
+	assert_int(Economy.owned_count(&"barn")).is_equal(0)
+
+	assert_bool(SaveGame.load_game()).is_true()
+	assert_int(Economy.balance(&"gourde")).is_equal(wallet)
+	assert_int(Economy.owned_count(&"barn")).is_equal(owned)
+	assert_int(GameState.money).is_equal(wallet)
+
+
+func test_version_1_payload_without_economy_still_loads() -> void:
+	var payload := GameState.to_dict()
+	payload.erase("economy")
+	payload["version"] = 1
+	payload["money"] = 55
+	var file := FileAccess.open(TEST_PATH, FileAccess.WRITE)
+	file.store_string(JSON.stringify(payload))
+	file.close()
+	GameState.money = 1
+
+	assert_bool(SaveGame.load_game()).is_true()
+	assert_int(GameState.money).is_equal(55)
+
+
 func test_version_one_save_migrates_to_the_farm_generation() -> void:
 	Campaign.reset()
 	var payload := {
