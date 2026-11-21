@@ -1,6 +1,6 @@
 extends GdUnitTestSuite
 
-const TASK_LIST_SCENE := preload("res://game/ui/tasks/task_list.tscn")
+const TASK_LIST_SCENE := preload("res://scenes/ui/tasks/task_list.tscn")
 
 
 func before_test() -> void:

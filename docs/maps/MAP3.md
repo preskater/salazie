@@ -3,10 +3,10 @@
 Technical reference for the final generation of Salazie. Narrative intent lives in
 [LORE.md](../../LORE.md#map-3--lhéritier); this note records what is built and where.
 
-- Scene: `game/world/maps/Heir.tscn`, root script `game/heir/heir_map.gd`
+- Scene: `scenes/maps/heir.tscn`, root script `scripts/heir/heir_map.gd`
 - Size: 50 × 37.5 tiles at 48 px → 2400 × 1800 px
 - Player spawn: `(1200, 1600)`
-- Entered from `Farm.tscn` after the farm generation is resolved.
+- Entered from `farm.tscn` after the farm generation is resolved.
 
 ## Scene structure
 
@@ -77,21 +77,21 @@ The heritage is displayed in the top-left label and in the epilogue.
 
 | Path | Purpose |
 |---|---|
-| `game/world/maps/Heir.tscn` | Minimal map scene |
-| `game/heir/heir_map.gd` | Runtime layout and game loop |
-| `game/heir/fragile_site.gd` / `.tscn` | Three inspectable sites |
-| `game/heir/decision_point.gd` / `.tscn` | Opens the plan panel |
-| `game/heir/town_hall.gd` / `.tscn` | Final council vote |
-| `game/ui/dialogue/dialogue_box.tscn` / `.gd` | NPC and site dialogue |
-| `game/ui/decision/decision_panel.tscn` / `.gd` | Three-plan modal |
-| `game/ui/ending/ending_screen.tscn` / `.gd` | Choice-driven epilogue |
+| `scenes/maps/heir.tscn` | Minimal map scene |
+| `scripts/heir/heir_map.gd` | Runtime layout and game loop |
+| `scripts/heir/fragile_site.gd` / `scenes/heir/fragile_site.tscn` | Three inspectable sites |
+| `scripts/heir/decision_point.gd` / `scenes/heir/decision_point.tscn` | Opens the plan panel |
+| `scripts/heir/town_hall.gd` / `scenes/heir/town_hall.tscn` | Final council vote |
+| `scenes/ui/dialogue/dialogue_box.tscn` / `scripts/ui/dialogue/dialogue_box.gd` | NPC and site dialogue |
+| `scenes/ui/decision/decision_panel.tscn` / `scripts/ui/decision/decision_panel.gd` | Three-plan modal |
+| `scenes/ui/ending/ending_screen.tscn` / `scripts/ui/ending/ending_screen.gd` | Choice-driven epilogue |
 
 ## Verification
 
 ```bash
 GODOT_BIN=/Applications/Godot.app/Contents/MacOS/Godot
 "$GODOT_BIN" --headless --audio-driver Dummy --quit-after 5 \
-  --scene res://game/world/maps/Heir.tscn
+  --scene res://scenes/maps/heir.tscn
 GODOT_BIN="$GODOT_BIN" bash addons/gdUnit4/runtest.sh \
   --headless --audio-driver Dummy --ignoreHeadlessMode \
   --continue --add res://tests

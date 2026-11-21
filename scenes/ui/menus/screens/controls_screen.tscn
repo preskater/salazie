@@ -1,0 +1,179 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/menus/screens/controls_screen.gd" id="1_script"]
+[ext_resource type="Theme" path="res://themes/salazie/salazie_theme.tres" id="2_theme"]
+[ext_resource type="Texture2D" path="res://themes/salazie/icons/icon_back.tres" id="3_back"]
+[ext_resource type="Texture2D" path="res://themes/salazie/icons/icon_controller.tres" id="4_controller"]
+
+[node name="ControlsScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_script")
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="PanelContainer" parent="Center"]
+custom_minimum_size = Vector2(900, 560)
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="Center/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TopSpacer" type="Control" parent="Center/Panel/VBox"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Title" type="Label" parent="Center/Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42, 0.22, 0.03, 1)
+theme_override_font_sizes/font_size = 34
+text = "Commandes"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="Center/Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.44, 0.36, 0.28, 1)
+theme_override_font_sizes/font_size = 15
+text = "Clavier et manette. Les touches sont fixes dans cette version."
+horizontal_alignment = 1
+
+[node name="Separator" type="HSeparator" parent="Center/Panel/VBox"]
+layout_mode = 2
+
+[node name="Content" type="HBoxContainer" parent="Center/Panel/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 24
+
+[node name="Rows" type="GridContainer" parent="Center/Panel/VBox/Content"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 40
+theme_override_constants/v_separation = 10
+columns = 2
+
+[node name="MoveLabel" type="Label" parent="Center/Panel/VBox/Content/Rows"]
+layout_mode = 2
+text = "Se déplacer"
+
+[node name="MoveValue" type="Label" parent="Center/Panel/VBox/Content/Rows"]
+layout_mode = 2
+text = "WASD ou flèches"
+
+[node name="InteractLabel" type="Label" parent="Center/Panel/VBox/Content/Rows"]
+layout_mode = 2
+text = "Interagir"
+
+[node name="InteractValue" type="Label" parent="Center/Panel/VBox/Content/Rows"]
+layout_mode = 2
+text = "E"
+
+[node name="SeedLabel" type="Label" parent="Center/Panel/VBox/Content/Rows"]
+layout_mode = 2
+text = "Choisir une graine"
+
+[node name="SeedValue" type="Label" parent="Center/Panel/VBox/Content/Rows"]
+layout_mode = 2
+text = "1 à 4"
+
+[node name="InventoryLabel" type="Label" parent="Center/Panel/VBox/Content/Rows"]
+layout_mode = 2
+text = "Inventaire"
+
+[node name="InventoryValue" type="Label" parent="Center/Panel/VBox/Content/Rows"]
+layout_mode = 2
+text = "I"
+
+[node name="PricesLabel" type="Label" parent="Center/Panel/VBox/Content/Rows"]
+layout_mode = 2
+text = "Prix du marché"
+
+[node name="PricesValue" type="Label" parent="Center/Panel/VBox/Content/Rows"]
+layout_mode = 2
+text = "P"
+
+[node name="TasksLabel" type="Label" parent="Center/Panel/VBox/Content/Rows"]
+layout_mode = 2
+text = "Liste des tâches"
+
+[node name="TasksValue" type="Label" parent="Center/Panel/VBox/Content/Rows"]
+layout_mode = 2
+text = "T ou Select"
+
+[node name="PauseLabel" type="Label" parent="Center/Panel/VBox/Content/Rows"]
+layout_mode = 2
+text = "Pause"
+
+[node name="PauseValue" type="Label" parent="Center/Panel/VBox/Content/Rows"]
+layout_mode = 2
+text = "Échap ou Start"
+
+[node name="MenuLabel" type="Label" parent="Center/Panel/VBox/Content/Rows"]
+layout_mode = 2
+text = "Naviguer dans les menus"
+
+[node name="MenuValue" type="Label" parent="Center/Panel/VBox/Content/Rows"]
+layout_mode = 2
+text = "Flèches + Entrée, ou croix + A"
+
+[node name="BackLabel" type="Label" parent="Center/Panel/VBox/Content/Rows"]
+layout_mode = 2
+text = "Retour / fermer"
+
+[node name="BackValue" type="Label" parent="Center/Panel/VBox/Content/Rows"]
+layout_mode = 2
+text = "Échap ou B"
+
+[node name="ControllerBox" type="VBoxContainer" parent="Center/Panel/VBox/Content"]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="Frame" type="PanelContainer" parent="Center/Panel/VBox/Content/ControllerBox"]
+custom_minimum_size = Vector2(232, 161)
+layout_mode = 2
+theme_type_variation = &"PortraitFrame"
+
+[node name="Controller" type="TextureRect" parent="Center/Panel/VBox/Content/ControllerBox/Frame"]
+custom_minimum_size = Vector2(216, 145)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+mouse_filter = 2
+texture = ExtResource("4_controller")
+texture_filter = 1
+expand_mode = 1
+stretch_mode = 0
+
+[node name="Caption" type="Label" parent="Center/Panel/VBox/Content/ControllerBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.44, 0.36, 0.28, 1)
+theme_override_font_sizes/font_size = 15
+text = "Manette"
+horizontal_alignment = 1
+
+[node name="SeparatorBottom" type="HSeparator" parent="Center/Panel/VBox"]
+layout_mode = 2
+
+[node name="BackButton" type="Button" parent="Center/Panel/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(220, 44)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Retour"
+icon = ExtResource("3_back")

@@ -1,6 +1,6 @@
 extends GdUnitTestSuite
 
-const CROP_PLOT_SCENE := "res://game/farm/crop_plot.tscn"
+const CROP_PLOT_SCENE := "res://scenes/farm/crop_plot.tscn"
 
 
 func _spawn_plot(initial_state := 0) -> Node2D:

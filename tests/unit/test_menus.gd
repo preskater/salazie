@@ -1,7 +1,7 @@
 extends GdUnitTestSuite
 
-const MAIN_MENU_SCENE := "res://game/ui/menus/main_menu.tscn"
-const PAUSE_MENU_SCENE := "res://game/ui/menus/pause_menu.tscn"
+const MAIN_MENU_SCENE := "res://scenes/ui/menus/main_menu.tscn"
+const PAUSE_MENU_SCENE := "res://scenes/preloads/pause_menu.tscn"
 
 var _original_save_path := ""
 var _original_settings_path := ""
@@ -132,7 +132,7 @@ func test_continue_is_enabled_with_a_valid_save() -> void:
 
 
 func test_hud_ignores_inventory_when_paused_by_another_system() -> void:
-	var hud: CanvasLayer = load("res://game/farm/farm_hud.tscn").instantiate()
+	var hud: CanvasLayer = load("res://scenes/farm/farm_hud.tscn").instantiate()
 	add_child(hud)
 	auto_free(hud)
 	await get_tree().process_frame

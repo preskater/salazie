@@ -3,11 +3,11 @@
 Technical reference for the second map of Salazie. Narrative intent lives in
 [LORE.md](../../LORE.md#map-2--le-cultivateur); this note records what is built and where.
 
-- Scene: `game/world/maps/Farm.tscn`, root script `game/farm/farm_map.gd`
+- Scene: `scenes/maps/farm.tscn`, root script `scripts/farm/farm_map.gd`
 - Size: 96 × 68 tiles at 48 px → 4608 × 3264 px
 - Player: `World/Player2`, spawned at `PlayerSpawn` `(2280, 3168)`, tile `(47.5, 66)`
-- The game boots on `game/ui/menus/main_menu.tscn`; **Nouvelle partie** now loads
-  `Maroon.tscn`. **Continuer** loads the saved generation. Map 2 is entered from the
+- The game boots on `scenes/ui/menus/main_menu.tscn`; **Nouvelle partie** now loads
+  `maroon.tscn`. **Continuer** loads the saved generation. Map 2 is entered from the
   refuge of [Map 1](MAP1.md), or opened directly for testing.
 
 ## Scene structure
@@ -15,9 +15,9 @@ Technical reference for the second map of Salazie. Narrative intent lives in
 | Node | Type | Role |
 |---|---|---|
 | `Farm` | `Node2D` + `farm_map.gd` | Map manager: interactions, objectives, wiring |
-| `Ground` | `TileMapLayer` | Terrain, paths, tilled soil and water (`game/world/tilesets/terrains.tres`) |
+| `Ground` | `TileMapLayer` | Terrain, paths, tilled soil and water (`game_resources/tilesets/terrains.tres`) |
 | `World` | `Node2D`, y-sorted | Y-sorted props, plots, NPCs, animals, animated trees |
-| `World/Fences` | `TileMapLayer` | Pens, pastures, field fences (`game/world/tilesets/fences.tres`) |
+| `World/Fences` | `TileMapLayer` | Pens, pastures, field fences (`game_resources/tilesets/fences.tres`) |
 | `World/Player2` | `CharacterBody2D` | Farmer controller |
 | `Bounds` | `StaticBody2D` | Map edges |
 | `HUD` | `CanvasLayer` (layer 10) | `FarmHUD` overlays and prompts |
@@ -48,7 +48,7 @@ buy more seeds. Prices change when the day changes.
 - Day length: **60 s**; prices reroll each day by about **±25 %** around the base price
 - Selling pays the current daily price; buying a seed costs its `seed_price`
 - The `gourde` wallet, its starting balance and the `OBJETS & PROPRIÉTÉS` offers come from
-  `game/systems/economy/config/economy.tres`; see [ECONOMY.md](../ECONOMY.md)
+  `game_resources/economy/economy.tres`; see [ECONOMY.md](../ECONOMY.md)
 - `FarmMap.economy_generation` selects the generation before the HUD builds its rows; it is
   `cultivateur` on this map
 
@@ -112,7 +112,7 @@ See [docs/UI.md](../UI.md) for the title screen, options and save format.
 - 4 fruit trees (apple, orange, peach, lemon)
 - Dense-canopy trees have no collision; all other trees keep a per-tree
   `RectangleShape2D` sized from the original prop
-- Shared `SpriteFrames` live in `game/world/animations/`; `game/world/tree_sway.gd`
+- Shared `SpriteFrames` live in `game_resources/animations/`; `scripts/world/tree_sway.gd`
   randomises start frame and speed per tree so the canopy is not synchronised
 
 ### Animals
@@ -124,7 +124,7 @@ See [docs/UI.md](../UI.md) for the title screen, options and save format.
 | `RoosterBrown` | `Rooster_Brown` | 48 × 96 | 27 px/s |
 | `ChickA`, `ChickB` | `Chick` | 48 × 48 | 36 px/s |
 
-`game/farm/animals/animal.gd` builds four walk and four graze animations from each sheet
+`scripts/farm/animals/animal.gd` builds four walk and four graze animations from each sheet
 (24 columns × 4 rows; row 1 = walk, row 3 = graze; direction groups of 6: right, up, left,
 down). The AI alternates grazing and walking to a random point inside `roam_rect`:
 
@@ -144,10 +144,10 @@ their `lines` export. `FarmMap` assigns each NPC the player reference on ready.
 ### Crops and ambient details
 
 - 30 decorative field crops (`Crop_*` sprites) sway from their base with
-  `game/world/crop_sway.gd`
+  `scripts/world/crop_sway.gd`
 - `CropPlot` sprites swap growth textures; the gameplay plots do not sway
 - 10 ambient leaf emitters (green, yellow, brown 24-frame loops) drift through the forest;
-  scene `game/world/ambient_leaves.tscn`, frames `game/world/animations/Leaves_*.tres`
+  scene `scenes/world/ambient_leaves.tscn`, frames `game_resources/animations/Leaves_*.tres`
 
 ## Animation resource rules
 
@@ -160,38 +160,38 @@ their `lines` export. `FarmMap` assigns each NPC the player reference on ready.
   files to maintain.
 - When adding a tree type, add the static texture under `singles/Trees/`, the matching
   `animated/Trees_<name>_Shake_48x48.png`, a 3-frame `SpriteFrames` resource in
-  `game/world/animations/`, and instance it with `tree_sway.gd`.
+  `game_resources/animations/`, and instance it with `tree_sway.gd`.
 
 ## Files
 
 | Path | Purpose |
 |---|---|
-| `game/farm/game_state.gd` | Autoload: money, day, crops, seeds, produce, prices, signals |
-| `game/systems/economy/economy.gd` | Autoload: per-generation wallets, offers and ownership |
-| `game/systems/economy/config/economy.tres` | Currency, generation and property offer data |
-| `game/farm/crop_plot.gd` / `.tscn` | Plot states, growth, harvest |
-| `game/farm/market_stand.gd` / `.tscn` | Market interaction point |
-| `game/farm/npc.gd` / `.tscn` | Dialogue, patrol and player-facing |
-| `game/farm/farm_hud.gd` / `.tscn` | HUD, market, inventory, prices |
-| `game/farm/farm_map.gd` | Manager, campaign task wiring and road exit |
-| `game/farm/animals/animal.gd` / `.tscn` | Animal frames and roaming AI |
-| `game/systems/campaign/campaign_state.gd` | Generation tasks, failures, results and carry-over |
-| `game/ui/tasks/task_list.tscn` / `.gd` | Task list UI |
-| `game/ui/tasks/generation_result.tscn` / `.gd` | Generation result overlay |
-| `game/world/tree_sway.gd`, `crop_sway.gd`, `ambient_leaves.gd` / `.tscn` | World animation helpers |
-| `game/world/animations/` | Shared tree and leaf `SpriteFrames` |
-| `game/world/WorldObject.tscn` | Reusable prop: texture, bottom-centred collision |
-| `game/ui/theme/salazie_theme.tres` | Shared UI-pack theme for menus and HUD |
-| `game/ui/menus/` | Title screen, options, pause, controls, credits, confirmations |
-| `game/ui/hud/hud.tscn` / `.gd` | Survival bars and UI-pack icons |
-| `game/systems/save/`, `game/systems/settings/`, `game/systems/scene_router.gd` | Save, settings and scene lifecycle |
+| `scripts/systems/game_state.gd` | Autoload: money, day, crops, seeds, produce, prices, signals |
+| `scripts/systems/economy/economy.gd` | Autoload: per-generation wallets, offers and ownership |
+| `game_resources/economy/economy.tres` | Currency, generation and property offer data |
+| `scripts/farm/crop_plot.gd` / `scenes/farm/crop_plot.tscn` | Plot states, growth, harvest |
+| `scripts/farm/market_stand.gd` / `scenes/farm/market_stand.tscn` | Market interaction point |
+| `scripts/farm/npc.gd` / `scenes/farm/npc.tscn` | Dialogue, patrol and player-facing |
+| `scripts/farm/farm_hud.gd` / `scenes/farm/farm_hud.tscn` | HUD, market, inventory, prices |
+| `scripts/farm/farm_map.gd` | Manager, campaign task wiring and road exit |
+| `scripts/farm/animals/animal.gd` / `scenes/farm/animals/animal.tscn` | Animal frames and roaming AI |
+| `scripts/systems/campaign/campaign_state.gd` | Generation tasks, failures, results and carry-over |
+| `scenes/ui/tasks/task_list.tscn` / `scripts/ui/tasks/task_list.gd` | Task list UI |
+| `scenes/ui/tasks/generation_result.tscn` / `scripts/ui/tasks/generation_result.gd` | Generation result overlay |
+| `scripts/world/tree_sway.gd`, `scripts/world/crop_sway.gd`, `scripts/world/ambient_leaves.gd` / `scenes/world/ambient_leaves.tscn` | World animation helpers |
+| `game_resources/animations/` | Shared tree and leaf `SpriteFrames` |
+| `scenes/world/world_object.tscn` | Reusable prop: texture, bottom-centred collision |
+| `themes/salazie/salazie_theme.tres` | Shared UI-pack theme for menus and HUD |
+| `scenes/ui/menus/` | Title screen, options, pause, controls, credits, confirmations |
+| `scenes/ui/hud/hud.tscn` / `scripts/ui/hud/hud.gd` | Survival bars and UI-pack icons |
+| `scripts/systems/save/`, `scripts/systems/settings/`, `scripts/systems/scene_router.gd` | Save, settings and scene lifecycle |
 
 ## Verification
 
 ```bash
 GODOT_BIN=/Applications/Godot.app/Contents/MacOS/Godot   # macOS; `godot` on Linux/CI
 "$GODOT_BIN" --headless --import
-"$GODOT_BIN" --headless --audio-driver Dummy --quit-after 30 --scene res://game/world/maps/Farm.tscn
+"$GODOT_BIN" --headless --audio-driver Dummy --quit-after 30 --scene res://scenes/maps/farm.tscn
 python3 .claude/skills/godot-nodes-scenes/scripts/check_godot_project.py . --json
 ```
 

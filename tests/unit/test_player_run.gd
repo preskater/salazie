@@ -1,8 +1,8 @@
 extends GdUnitTestSuite
 
-const PLAYER_SCENE := "res://game/player/player.tscn"
-const GUARD_SCENE := "res://game/world/ai/guard/guard.tscn"
-const GUARD_SCRIPT := preload("res://game/world/ai/guard/guard.gd")
+const PLAYER_SCENE := "res://scenes/player/player.tscn"
+const GUARD_SCENE := "res://scenes/world/ai/guard/guard.tscn"
+const GUARD_SCRIPT := preload("res://scripts/world/ai/guard/guard.gd")
 
 
 func _spawn_player() -> CharacterBody2D:

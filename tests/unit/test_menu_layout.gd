@@ -1,7 +1,7 @@
 extends GdUnitTestSuite
 
-const MAIN_MENU_SCENE := "res://game/ui/menus/main_menu.tscn"
-const PAUSE_MENU_SCENE := "res://game/ui/menus/pause_menu.tscn"
+const MAIN_MENU_SCENE := "res://scenes/ui/menus/main_menu.tscn"
+const PAUSE_MENU_SCENE := "res://scenes/preloads/pause_menu.tscn"
 const SIZES: Array[Vector2i] = [
 	Vector2i(1280, 720),
 	Vector2i(1536, 648),

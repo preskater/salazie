@@ -33,7 +33,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: .godot
-          key: ${{ runner.os }}-godot-${{ env.GODOT_VERSION }}-${{ hashFiles('project.godot', 'game/**', 'assets/**/*.import', 'icon.svg*') }}
+          key: ${{ runner.os }}-godot-${{ env.GODOT_VERSION }}-${{ hashFiles('project.godot', 'scenes/**', 'scripts/**', 'game_resources/**', 'themes/**', 'shaders/**', 'audio/**', 'sprites/**/*.import', 'icon.svg*') }}
           restore-keys: |
             ${{ runner.os }}-godot-${{ env.GODOT_VERSION }}-
 
@@ -73,7 +73,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: .godot
-          key: ${{ runner.os }}-godot-${{ env.GODOT_VERSION }}-${{ hashFiles('project.godot', 'game/**', 'assets/**/*.import', 'icon.svg*') }}
+          key: ${{ runner.os }}-godot-${{ env.GODOT_VERSION }}-${{ hashFiles('project.godot', 'scenes/**', 'scripts/**', 'game_resources/**', 'themes/**', 'shaders/**', 'audio/**', 'sprites/**/*.import', 'icon.svg*') }}
           restore-keys: |
             ${{ runner.os }}-godot-${{ env.GODOT_VERSION }}-
 
@@ -128,7 +128,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: .godot
-          key: ${{ runner.os }}-godot-${{ env.GODOT_VERSION }}-${{ hashFiles('project.godot', 'game/**', 'assets/**/*.import', 'icon.svg*') }}
+          key: ${{ runner.os }}-godot-${{ env.GODOT_VERSION }}-${{ hashFiles('project.godot', 'scenes/**', 'scripts/**', 'game_resources/**', 'themes/**', 'shaders/**', 'audio/**', 'sprites/**/*.import', 'icon.svg*') }}
           restore-keys: |
             ${{ runner.os }}-godot-${{ env.GODOT_VERSION }}-
 

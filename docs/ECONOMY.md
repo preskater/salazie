@@ -3,12 +3,12 @@
 Technical reference for currencies, market offers and asset ownership. Narrative intent lives
 in [LORE.md](../LORE.md); this note records what is built and where.
 
-- Autoload: `game/systems/economy/economy.gd` (`Economy`)
-- Shipped config: `game/systems/economy/config/economy.tres`
-- Data resources: `game/systems/economy/economy_config.gd`,
+- Autoload: `scripts/systems/economy/economy.gd` (`Economy`)
+- Shipped config: `game_resources/economy/economy.tres`
+- Data resources: `scripts/systems/economy/economy_config.gd`,
   `economy_generation.gd`, `economy_currency.gd`, `economy_offer.gd`
-- Farm integration: `game/farm/game_state.gd`, `game/farm/farm_hud.gd`
-- Save integration: `game/systems/save/save_game.gd` (save version 2)
+- Farm integration: `scripts/systems/game_state.gd`, `scripts/farm/farm_hud.gd`
+- Save integration: `scripts/systems/save/save_game.gd` (save version 2)
 
 `Economy` is the single wallet store. `GameState.money` is a facade over the active
 generation's primary currency, so existing farm code keeps using `money`, `add_money()` and
@@ -186,7 +186,7 @@ builds its offer rows. `GameState.reset()` deliberately returns to
 ## Adding content
 
 1. Add an `EconomyCurrency` and/or `EconomyOffer` to the generation in
-   `game/systems/economy/config/economy.tres`.
+   `game_resources/economy/economy.tres`.
 2. Give buildings and slots a stable `grant_id`; this is the key used by future gameplay
    systems and by the save file.
 3. Keep `sell_price` at `-1` for non-sellable offers.

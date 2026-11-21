@@ -40,13 +40,13 @@ La liste des tâches est visible en permanence en haut de l'écran. **T** ou **S
 
 ## Cycle jour/nuit
 
-Chaque map alterne une phase de jour et une phase de nuit. Le cycle est décoratif : ce sont les tâches qui débloquent la génération suivante. Le nombre de nuits reste configurable dans `game/world/DayNightCycle.tscn`, via `nights_required_for_next_map`.
+Chaque map alterne une phase de jour et une phase de nuit. Le cycle est décoratif : ce sont les tâches qui débloquent la génération suivante. Le nombre de nuits reste configurable dans `scenes/preloads/day_night_cycle.tscn`, via `nights_required_for_next_map`.
 
 ## Transitions entre maps
 
-Le passage d'une map à l'autre utilise `game/ui/SceneTransition.tscn`, chargé en autoload : un fondu au noir affiche un titre et un sous-texte, la scène suivante est chargée, puis le jeu réapparaît. Les durées (`fade_out_duration`, `hold_duration`, `fade_in_duration`), la couleur du fondu et les couleurs de texte se configurent dans cette scène.
+Le passage d'une map à l'autre utilise `scenes/preloads/scene_transition.tscn`, chargé en autoload : un fondu au noir affiche un titre et un sous-texte, la scène suivante est chargée, puis le jeu réapparaît. Les durées (`fade_out_duration`, `hold_duration`, `fade_in_duration`), la couleur du fondu et les couleurs de texte se configurent dans cette scène.
 
-Pour déclencher la transition, placer une zone `MapExit` (`game/world/MapExit.tscn`) dans la map et renseigner :
+Pour déclencher la transition, placer une zone `MapExit` (`scenes/world/map_exit.tscn`) dans la map et renseigner :
 
 - `next_scene_path` : la scène de destination ;
 - `title` et `subtitle` : le texte affiché pendant la transition ;
@@ -82,7 +82,7 @@ Détails techniques : [docs/UI.md](docs/UI.md).
 ## Économie
 
 Chaque génération possède sa propre économie, configurable dans
-`game/systems/economy/config/economy.tres` :
+`game_resources/economy/economy.tres` :
 
 - **Le marron** : économie désactivée, le joueur survit sans argent.
 - **Le cultivateur** : gourdes (G), marché des récoltes, des graines et des propriétés.

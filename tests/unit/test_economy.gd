@@ -1,7 +1,7 @@
 extends GdUnitTestSuite
 
-const SHIPPED_CONFIG := "res://game/systems/economy/config/economy.tres"
-const HUD_SCENE := "res://game/farm/farm_hud.tscn"
+const SHIPPED_CONFIG := "res://game_resources/economy/economy.tres"
+const HUD_SCENE := "res://scenes/farm/farm_hud.tscn"
 
 var _original_config: EconomyConfig
 

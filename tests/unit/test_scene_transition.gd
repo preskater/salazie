@@ -1,6 +1,6 @@
 extends GdUnitTestSuite
 
-const TRANSITION_SCENE := preload("res://game/ui/SceneTransition.tscn")
+const TRANSITION_SCENE := preload("res://scenes/preloads/scene_transition.tscn")
 
 
 func _spawn_transition():

@@ -1,6 +1,6 @@
 extends GdUnitTestSuite
 
-const ENDING_SCENE := preload("res://game/ui/ending/ending_screen.tscn")
+const ENDING_SCENE := preload("res://scenes/ui/ending/ending_screen.tscn")
 
 
 func before_test() -> void:

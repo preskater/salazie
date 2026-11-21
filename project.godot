@@ -12,21 +12,25 @@ config_version=5
 
 config/name="Salazie"
 config/version="0.1.0"
-run/main_scene="res://game/ui/menus/main_menu.tscn"
+run/main_scene="res://scenes/ui/menus/main_menu.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon.svg"
 
+[audio]
+
+buses/default_bus_layout="res://audio/default_bus_layout.tres"
+
 [autoload]
 
-Settings="*res://game/systems/settings/settings.gd"
-DayNightCycle="*res://game/world/DayNightCycle.tscn"
-SceneTransition="*res://game/ui/SceneTransition.tscn"
-Economy="*res://game/systems/economy/economy.gd"
-GameState="*res://game/farm/game_state.gd"
-Campaign="*res://game/systems/campaign/campaign_state.gd"
-SaveGame="*res://game/systems/save/save_game.gd"
-SceneRouter="*res://game/systems/scene_router.gd"
-PauseMenu="*res://game/ui/menus/pause_menu.tscn"
+Settings="*res://scripts/systems/settings/settings.gd"
+DayNightCycle="*res://scenes/preloads/day_night_cycle.tscn"
+SceneTransition="*res://scenes/preloads/scene_transition.tscn"
+Economy="*res://scripts/systems/economy/economy.gd"
+GameState="*res://scripts/systems/game_state.gd"
+Campaign="*res://scripts/systems/campaign/campaign_state.gd"
+SaveGame="*res://scripts/systems/save/save_game.gd"
+SceneRouter="*res://scripts/systems/scene_router.gd"
+PauseMenu="*res://scenes/preloads/pause_menu.tscn"
 
 [display]
 
@@ -39,7 +43,7 @@ window/stretch/aspect="expand"
 
 [gui]
 
-theme/custom="res://game/ui/theme/salazie_theme.tres"
+theme/custom="res://themes/salazie/salazie_theme.tres"
 
 [input]
 

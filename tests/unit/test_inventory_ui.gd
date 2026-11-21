@@ -1,6 +1,6 @@
 extends GdUnitTestSuite
 
-const HUD_SCENE := "res://game/farm/farm_hud.tscn"
+const HUD_SCENE := "res://scenes/farm/farm_hud.tscn"
 
 
 func before_test() -> void:

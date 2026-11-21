@@ -1,0 +1,32 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://dn3kww4q00jwa"]
+
+[ext_resource type="Texture2D" uid="uid://dxrn0xysqwmk4" path="res://sprites/farm_48x48/animated/Fruit_Tree_Lemon_Ripe_Shake_48x48.png" id="1_4luwj"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_4n4uv"]
+atlas = ExtResource("1_4luwj")
+region = Rect2(0, 0, 192, 240)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vnbnt"]
+atlas = ExtResource("1_4luwj")
+region = Rect2(192, 0, 192, 240)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_38sp2"]
+atlas = ExtResource("1_4luwj")
+region = Rect2(384, 0, 192, 240)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_4n4uv")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_vnbnt")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_38sp2")
+}],
+"loop": 1,
+"name": &"shake",
+"speed": 3.0
+}]

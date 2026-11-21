@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://cxtqwdbbje1b8"]
+
+[ext_resource type="PackedScene" uid="uid://ua626s0cynio" path="res://scenes/player/player.tscn" id="1_oa506"]
+[ext_resource type="PackedScene" uid="uid://dvj4qrlxnbvrl" path="res://scenes/world/fx/cyclone.tscn" id="2_cyclone"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud/hud.tscn" id="3_hud"]
+[ext_resource type="PackedScene" path="res://scenes/world/ai/guard/guard.tscn" id="4_guard"]
+
+[node name="Main" type="Node2D" groups=["gameplay"] unique_id=1747024271]
+
+[node name="Player" parent="." unique_id=17329257 instance=ExtResource("1_oa506")]
+position = Vector2(573, 322)
+
+[node name="Cyclone" parent="." unique_id=83232216 instance=ExtResource("2_cyclone")]
+position = Vector2(420, 260)
+
+[node name="HUD" parent="." unique_id=191455984 instance=ExtResource("3_hud")]
+
+[node name="GuardA" parent="." instance=ExtResource("4_guard")]
+position = Vector2(395, 425)
+zone_size = Vector2(180, 120)
+
+[node name="GuardB" parent="." instance=ExtResource("4_guard")]
+position = Vector2(755, 225)
+zone_size = Vector2(180, 120)
