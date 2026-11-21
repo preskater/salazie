@@ -128,7 +128,7 @@ func test_continue_is_enabled_with_a_valid_save() -> void:
 	var continue_button: Button = menu.get_node("%ContinueButton")
 	var info: Label = menu.get_node("%ContinueInfo")
 	assert_bool(continue_button.disabled).is_false()
-	assert_str(info.text).is_equal("Jour 2 · 55 G")
+	assert_str(info.text).is_equal("Gén. 1 · Le marron · Jour 2 · 55 G")
 
 
 func test_hud_ignores_inventory_when_paused_by_another_system() -> void:
@@ -156,6 +156,11 @@ func test_pause_action_exists_and_is_bound_to_keyboard() -> void:
 			has_key = true
 			break
 	assert_bool(has_key).is_true()
+
+
+func test_task_list_action_exists() -> void:
+	assert_bool(InputMap.has_action("toggle_tasks")).is_true()
+	assert_int(InputMap.action_get_events("toggle_tasks").size()).is_greater(0)
 
 
 func test_game_scene_path_exists() -> void:

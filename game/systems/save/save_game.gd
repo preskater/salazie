@@ -10,6 +10,11 @@ var save_path := SAVE_PATH
 
 func _ready() -> void:
 	GameState.day_advanced.connect(_on_day_advanced)
+	Campaign.task_status_changed.connect(
+		func(_map_id: int, _task_id: String, _status: int) -> void: _on_campaign_changed())
+	Campaign.map_resolved.connect(
+		func(_map_id: int, _summary: Dictionary) -> void: _on_campaign_changed())
+	Campaign.choices_changed.connect(_on_campaign_changed)
 
 
 func has_valid_save() -> bool:
@@ -20,9 +25,15 @@ func read_metadata() -> Dictionary:
 	var data := _read_valid_data()
 	if data.is_empty():
 		return {}
+	var campaign: Dictionary = {}
+	var raw_campaign: Variant = data.get("campaign", {})
+	if raw_campaign is Dictionary:
+		campaign = raw_campaign as Dictionary
 	return {
 		"day": int(data.get("day", 1)),
 		"money": int(data.get("money", 0)),
+		"map": clampi(int(campaign.get("current_map", 2)), 1, 3),
+		"finished": bool(campaign.get("finished", false)),
 		"saved_at": String(data.get("saved_at", "")),
 	}
 
@@ -31,6 +42,7 @@ func save_game() -> bool:
 	if not GameState.playing:
 		return false
 	var data := GameState.to_dict()
+	data["campaign"] = Campaign.to_dict()
 	data["version"] = SAVE_VERSION
 	data["saved_at"] = Time.get_datetime_string_from_system()
 	return _write_atomic(save_path, data)
@@ -44,6 +56,10 @@ func load_game() -> bool:
 	if not GameState.from_dict(data):
 		push_warning("Save file %s contains an invalid game state." % save_path)
 		return false
+	var raw_campaign: Variant = data.get("campaign", {})
+	if not (raw_campaign is Dictionary) or not Campaign.from_dict(raw_campaign as Dictionary):
+		push_warning("Save file %s contains an invalid campaign state." % save_path)
+		return false
 	return true
 
 
@@ -54,6 +70,11 @@ func delete_save() -> void:
 
 
 func _on_day_advanced(_day: int) -> void:
+	if GameState.playing:
+		save_game()
+
+
+func _on_campaign_changed() -> void:
 	if GameState.playing:
 		save_game()
 
@@ -114,11 +135,14 @@ func _read_candidate(path: String) -> Dictionary:
 func _is_valid_payload(data: Dictionary) -> bool:
 	if not data.has("version"):
 		return false
-	if int(data["version"]) < 1 or int(data["version"]) > SAVE_VERSION:
+	var version := int(data["version"])
+	if version < 1 or version > SAVE_VERSION:
 		return false
 	for key: String in ["money", "day", "seeds", "produce", "prices"]:
 		if not data.has(key):
 			return false
+	if version >= 2 and not (data.get("campaign", null) is Dictionary):
+		return false
 	return true
 
 
@@ -131,8 +155,14 @@ func _migrate(data: Dictionary) -> Dictionary:
 	return data
 
 
-func _migrate_step(data: Dictionary, _from_version: int) -> Dictionary:
-	# Version 1 is the first shipped schema. Future migrations chain here.
+func _migrate_step(data: Dictionary, from_version: int) -> Dictionary:
+	if from_version == 1:
+		# Version 1 only knew the farm. Keep the farm state, unlock Map 3 from
+		# Map 2, and treat the escape as already completed.
+		data["campaign"] = {
+			"legacy_v1": true,
+			"current_map": 2,
+		}
 	return data
 
 

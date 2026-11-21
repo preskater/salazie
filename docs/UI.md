@@ -4,7 +4,8 @@ Technical reference for the title screen, options, pause overlay and the single-
 Narrative text lives in [LORE.md](../LORE.md); this note records what is built and where.
 
 - Boot scene: `game/ui/menus/main_menu.tscn`
-- Game scene opened by **Nouvelle partie**: `game/world/maps/Farm.tscn`
+- Game scene opened by **Nouvelle partie**: `game/world/maps/Maroon.tscn`
+- **Continuer** opens the generation stored in `Campaign.current_map`
 - Pause overlay: autoload `game/ui/menus/pause_menu.tscn`
 - Save file: `user://savegame.json` (plus `savegame.json.bak`)
 - Settings file: `user://settings.cfg`
@@ -14,21 +15,29 @@ Narrative text lives in [LORE.md](../LORE.md); this note records what is built a
 
 ```text
 main_menu.tscn
-  Home ── Nouvelle partie ──> Farm.tscn
-    │    └─ (existing save) ─> Confirm ─> Farm.tscn
-    ├── Continuer ───────────> Farm.tscn
+  Home ── Nouvelle partie ──> Maroon.tscn (Map 1)
+    │    └─ (existing save) ─> Confirm ─> Maroon.tscn
+    ├── Continuer ───────────> saved generation
     ├── Options ─────────────> Settings
     ├── Crédits ─────────────> Credits
     └── Quitter ─────────────> Confirm ─> quit
 
+Maroon.tscn
+  Refuge exit ──────────────> Farm.tscn (Map 2)
+
 Farm.tscn
-  Pause (Échap / Start)
-    ├── Reprendre
-    ├── Options ─────────────> Settings
-    ├── Commandes ───────────> Controls
-    ├── Sauvegarder
-    ├── Menu principal ──────> Confirm ─> main_menu.tscn
-    └── Quitter ─────────────> Confirm ─> quit
+  Road exit ────────────────> Heir.tscn (Map 3)
+
+Heir.tscn
+  Town hall ────────────────> EndingScreen
+
+Pause (Échap / Start)
+  ├── Reprendre
+  ├── Options ─────────────> Settings
+  ├── Commandes ───────────> Controls
+  ├── Sauvegarder
+  ├── Menu principal ──────> Confirm ─> main_menu.tscn
+  └── Quitter ─────────────> Confirm ─> quit
 ```
 
 Each menu uses `game/ui/menus/menu_stack.gd`: one screen is visible at a time, the
@@ -65,26 +74,42 @@ portrait-generator frames cropped to `(16, 12, 56, 56)` and displayed at 3×:
 No farm texture is referenced by a menu or HUD scene; `tests/unit/test_ui_assets.gd`
 enforces this. The engine default font is kept because the UI pack does not ship a font.
 
+## Task list and generation result
+
+`game/ui/tasks/task_list.tscn` is instanced by every map. It reads `Campaign` and never
+polls:
+
+- compact row: `Tâches — X faites · Y échouées · Z en cours`;
+- expanded rows: `✓` done, `✗` failed with the last reason and `[Réessayer]` when the task
+  can be retried, `○` pending with `(progress/target)` for multi-step tasks;
+- result footer once the map is resolved: rank and next-generation label;
+- `T` or gamepad Select toggles the panel.
+
+`game/ui/tasks/generation_result.tscn` is the modal shown by a `MapExit` or the town hall.
+It pauses the tree, lists every task and its failure count, and resumes when **Continuer**
+is pressed.
+
 ## Autoloads
 
 | Autoload | Script | Responsibility |
 |---|---|---|
 | `Settings` | `game/systems/settings/settings.gd` | Load/apply/save audio, window and VSync settings |
-| `DayNightCycle` | `game/world/DayNightCycle.tscn` | Day/night phases and map-ready gating |
+| `DayNightCycle` | `game/world/DayNightCycle.tscn` | Day/night phases and tint |
 | `SceneTransition` | `game/ui/SceneTransition.tscn` | Chapter fade used by map exits |
 | `Economy` | `game/systems/economy/economy.gd` | Per-generation wallets, offers, trading, ownership |
-| `GameState` | `game/farm/game_state.gd` | Farm economy, day timer, `playing` flag, serialisation |
+| `GameState` | `game/farm/game_state.gd` | Farm economy, day timer, `playing`/`farm_active`, serialisation |
+| `Campaign` | `game/systems/campaign/campaign_state.gd` | Generation tasks, failures, results, choices and carry-over |
 | `SaveGame` | `game/systems/save/save_game.gd` | Single-slot JSON save, autosave, `.bak` fallback |
-| `SceneRouter` | `game/systems/scene_router.gd` | New game, continue, menu/quit, menu fade |
+| `SceneRouter` | `game/systems/scene_router.gd` | New game, continue, generation transitions, menu/quit, fade |
 | `PauseMenu` | `game/ui/menus/pause_menu.tscn` | Global pause overlay, process mode `ALWAYS` |
 
-Autoload order matters: `Settings`, `DayNightCycle`, `SceneTransition`, `Economy`, `GameState`,
-`SaveGame`, `SceneRouter`, `PauseMenu`.
+Autoload order matters: `Settings`, `DayNightCycle`, `SceneTransition`, `Economy`,
+`GameState`, `Campaign`, `SaveGame`, `SceneRouter`, `PauseMenu`.
 
 `SceneRouter` stops and hides the day/night tint on the title screen, resets the cycle when a
 game starts or continues, and re-enables it in gameplay. Map exits keep using
 `SceneTransition` for their chapter fade; the pause menu is blocked while a chapter fade is
-running.
+running. Day/night remains decorative: the next generation is unlocked by the task list.
 
 ## Settings
 
@@ -110,14 +135,15 @@ defaults above.
 
 ## Save format
 
-Only plain data is stored. The farm scene rebuilds itself from `GameState`; no nodes,
-resources or node paths are serialised. Save version 2 adds the per-generation economy
-payload documented in [ECONOMY.md](ECONOMY.md).
+Only plain data is stored. The farm scene rebuilds itself from `GameState` and the campaign
+rebuilds task states from `Campaign`; no nodes, resources or node paths are serialised.
+Save version 2 adds the per-generation economy payload documented in [ECONOMY.md](ECONOMY.md)
+and the campaign payload.
 
 ```json
 {
   "version": 2,
-  "saved_at": "2026-11-20T22:30:00",
+  "saved_at": "2026-11-21T10:30:00",
   "money": 84,
   "day": 3,
   "day_time": 12.5,
@@ -132,9 +158,30 @@ payload documented in [ECONOMY.md](ECONOMY.md).
     "wallets": {"gourde": 84},
     "owned": {"barn": 1},
     "stock": {"building_barn": 0, "slot_field": 2, "item_hoe": 1}
+  },
+  "campaign": {
+    "current_map": 2,
+    "tasks": {
+      "1": {
+        "find_food": {"status": 1, "progress": 3, "attempts": 1, "failures": []},
+        "cross_patrol": {
+          "status": 1,
+          "progress": 1,
+          "attempts": 2,
+          "failures": [{"reason": "Repéré par une patrouille", "at": "2026-11-21T10:12:00"}]
+        }
+      }
+    },
+    "results": {},
+    "choices": {"map3_plan": "forest"},
+    "heritage": 0,
+    "finished": false
   }
 }
 ```
+
+Task statuses are `0` pending, `1` done and `2` failed. A retry returns the status to `0`
+but keeps the failure list.
 
 - Writes are atomic: `savegame.json.tmp` → `savegame.json`, with the previous file rotated
   to `savegame.json.bak`.
@@ -142,12 +189,16 @@ payload documented in [ECONOMY.md](ECONOMY.md).
   `version` are refused without mutating the current state.
 - Version 1 payloads without the `economy` block still load; `money` is applied to the
   active generation's primary currency.
-- JSON numbers load as floats; `GameState.to_dict()` / `from_dict()` convert them back to
-  integers.
-- Autosave triggers: day change (`GameState.day_advanced`), opening the pause menu, pressing
-  **Sauvegarder**, returning to the main menu, and closing the window while playing.
-- **Nouvelle partie** resets the farm state and saves it immediately. An existing save is
-  replaced only after the confirmation panel.
+- JSON numbers load as floats; `GameState.to_dict()` / `from_dict()` and
+  `Campaign.to_dict()` / `from_dict()` convert them back to integers.
+- Autosave triggers: day change (`GameState.day_advanced`), task status change, map
+  resolution, opening the pause menu, pressing **Sauvegarder**, returning to the main menu,
+  and closing the window while playing.
+- **Nouvelle partie** resets both the farm and the campaign, then saves immediately. An
+  existing save is replaced only after the confirmation panel.
+- Version 1 saves migrate to version 2: the farm is kept, `current_map` becomes 2, Map 1 is
+  treated as completed, and `earn_100` is marked done when the old purse had 100 G.
+- The **Continuer** line shows the generation, its title, the day and the purse.
 
 ## Pause and HUD interaction
 
@@ -186,6 +237,7 @@ systems apart:
 | Select seed | `1`–`4` |
 | Inventory | `I` |
 | Market prices | `P` |
+| Task list | `T` / gamepad Select |
 | Pause | `Échap` / gamepad Start |
 | Menu navigation | arrows / D-pad + Enter / A |
 | Back / close | `Échap` / B |
@@ -208,6 +260,14 @@ Rebinding is not implemented; `Commandes` is a read-only screen.
 | `game/ui/theme/icons/*.tres` | `AtlasTexture` icons cropped from the UI pack |
 | `game/ui/hud/hud.tscn` / `.gd` | Survival bars and pack icons |
 | `game/farm/farm_hud.tscn` / `.gd` | Farm HUD, market and inventory |
+| `game/systems/campaign/campaign_state.gd` | Generation tasks, failures, results and choices |
+| `game/ui/tasks/task_list.tscn` / `.gd` | Per-generation task list |
+| `game/ui/tasks/generation_result.tscn` / `.gd` | Generation result overlay |
+| `game/world/maps/Maroon.tscn` + `game/maroon/` | Map 1 |
+| `game/world/maps/Heir.tscn` + `game/heir/` | Map 3 |
+| `game/ui/dialogue/dialogue_box.tscn` / `.gd` | Map 3 NPC/site dialogue |
+| `game/ui/decision/decision_panel.tscn` / `.gd` | Map 3 plan decision |
+| `game/ui/ending/ending_screen.tscn` / `.gd` | Choice-driven epilogue |
 | `game/systems/settings/settings.gd` | Persistent settings |
 | `game/systems/economy/economy.gd` | Per-generation wallets, offers and ownership |
 | `game/systems/economy/config/economy.tres` | Shipped currency, generation and offer data |
@@ -241,10 +301,16 @@ Focused suites:
 - `tests/unit/test_economy.gd` — generation currencies, disabled generations, buy/sell,
   trading, ownership and state round-trip.
 - `tests/unit/test_game_state_reset.gd` — reset, signals, day timer, JSON floats.
+- `tests/unit/test_campaign_state.gd` — task statuses, failures, retries, results, carry-over.
+- `tests/unit/test_task_list.gd` — pending/done/failed rows and result text.
+- `tests/unit/test_generation_result.gd` — result overlay and pause handling.
+- `tests/unit/test_maroon_map.gd` — survival, forage, hiding, checkpoints and refuge gate.
+- `tests/unit/test_heir_map.gd` — NPCs, fragile sites, decision and plans.
+- `tests/unit/test_ending.gd` — choice-driven epilogue.
 - `tests/unit/test_ui_assets.gd` — UI-pack-only texture references, portrait layers, trio
   wiring, survival HUD icons and bars.
 
-Current status: 123/123 gdUnit4 tests pass.
+Current status: **155/155 gdUnit4 tests pass**.
 
 ## Known limits
 
@@ -257,3 +323,5 @@ Current status: 123/123 gdUnit4 tests pass.
 - The title screen uses the engine default font because the UI pack has no font asset; there
   is no dedicated logo.
 - Menu/HUD art is limited to `assets/ui_48x48`; the game world keeps the farm packs.
+- Map 1 and Map 3 build their props at runtime from the existing packs, so their `.tscn`
+  files are thin and most layout changes live in `maroon_map.gd` / `heir_map.gd`.
