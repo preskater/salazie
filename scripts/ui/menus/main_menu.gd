@@ -3,6 +3,7 @@ extends Control
 
 const PENDING_NEW_GAME := "new_game"
 const PENDING_QUIT := "quit"
+const CONTINUE_TEXT := "Continuer"
 
 @onready var stack: Control = %MenuStack
 @onready var home_screen: Control = %HomeScreen
@@ -66,12 +67,17 @@ func _refresh_continue() -> void:
 	var metadata := SaveGame.read_metadata()
 	var has_save := not metadata.is_empty()
 	continue_button.disabled = not has_save
-	if has_save:
+	if has_save and bool(metadata.get("finished", false)):
+		continue_button.text = "Revoir l'épilogue"
+		continue_info.text = "Histoire terminée"
+	elif has_save:
+		continue_button.text = CONTINUE_TEXT
 		var map_id := int(metadata.get("map", 2))
 		var title := String(Campaign.map_title(map_id))
 		continue_info.text = "Gén. %d · %s · Jour %d · %d G" % [
 			map_id, title, int(metadata["day"]), int(metadata["money"])]
 	else:
+		continue_button.text = CONTINUE_TEXT
 		continue_info.text = "Aucune sauvegarde"
 
 
@@ -91,7 +97,11 @@ func _on_continue_pressed() -> void:
 	if not SaveGame.has_valid_save():
 		_refresh_continue()
 		return
-	SceneRouter.continue_game()
+	if SceneRouter.is_transitioning():
+		return
+	if not await SceneRouter.continue_game():
+		_refresh_continue()
+		continue_info.text = "Sauvegarde illisible"
 
 
 func _on_options_pressed() -> void:

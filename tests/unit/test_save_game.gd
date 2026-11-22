@@ -168,3 +168,78 @@ func test_version_one_save_migrates_to_the_farm_generation() -> void:
 	assert_int(Campaign.current_map).is_equal(2)
 	assert_int(Campaign.task_status("find_food", 1)).is_equal(Campaign.TaskStatus.DONE)
 	assert_int(Campaign.task_status("earn_100", 2)).is_equal(Campaign.TaskStatus.DONE)
+
+
+func _rewrite(mutate: Callable) -> void:
+	var payload: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(TEST_PATH))
+	mutate.call(payload)
+	var file := FileAccess.open(TEST_PATH, FileAccess.WRITE)
+	file.store_string(JSON.stringify(payload))
+	file.close()
+
+
+func test_a_save_the_game_would_refuse_is_not_a_valid_save() -> void:
+	# Regression (#24): Continue stayed enabled and did nothing when pressed.
+	SaveGame.save_game()
+	for mutate: Callable in [
+		func(data: Dictionary) -> void: data["money"] = "beaucoup",
+		func(data: Dictionary) -> void: data["economy"]["generation"] = "disparue",
+		func(data: Dictionary) -> void: data["campaign"] = {},
+		func(data: Dictionary) -> void: data["seeds"] = [],
+	]:
+		SaveGame.save_game()
+		_rewrite(mutate)
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(TEST_PATH + ".bak"))
+
+		assert_bool(SaveGame.has_valid_save()).is_false()
+		assert_dict(SaveGame.read_metadata()).is_empty()
+		assert_bool(SaveGame.load_game()).is_false()
+
+
+func test_an_unloadable_primary_falls_back_to_a_healthy_backup() -> void:
+	GameState.money = 64
+	SaveGame.save_game()
+	GameState.money = 99
+	SaveGame.save_game()
+	_rewrite(func(data: Dictionary) -> void: data["money"] = "x")
+	GameState.money = 0
+
+	assert_bool(SaveGame.has_valid_save()).is_true()
+	assert_bool(SaveGame.load_game()).is_true()
+
+	assert_int(GameState.money).is_equal(64)
+
+
+func test_a_refused_load_leaves_the_game_untouched() -> void:
+	# The game state used to be applied before the campaign was found invalid.
+	GameState.money = 12
+	SaveGame.save_game()
+	_rewrite(func(data: Dictionary) -> void:
+		data["money"] = 500
+		data["campaign"] = {})
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(TEST_PATH + ".bak"))
+	GameState.money = 33
+	Campaign.current_map = 2
+
+	assert_bool(SaveGame.load_game()).is_false()
+
+	assert_int(GameState.money).is_equal(33)
+	assert_int(Campaign.current_map).is_equal(2)
+
+
+func test_metadata_survives_hand_edited_values() -> void:
+	Campaign.current_map = 3
+	Campaign.finished = true
+	SaveGame.save_game()
+	var metadata := SaveGame.read_metadata()
+	assert_int(int(metadata["map"])).is_equal(3)
+	assert_bool(bool(metadata["finished"])).is_true()
+	assert_str(String(metadata["saved_at"])).is_not_empty()
+
+	_rewrite(func(data: Dictionary) -> void:
+		data["campaign"]["current_map"] = 42
+		data["campaign"]["finished"] = "oui")
+
+	metadata = SaveGame.read_metadata()
+	assert_int(int(metadata["map"])).is_equal(3)
+	assert_bool(bool(metadata["finished"])).is_false()

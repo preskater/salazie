@@ -40,12 +40,16 @@ func read_metadata() -> Dictionary:
 	if raw_campaign is Dictionary:
 		campaign = raw_campaign as Dictionary
 	return {
-		"day": int(data.get("day", 1)),
-		"money": int(data.get("money", 0)),
-		"map": clampi(int(campaign.get("current_map", 2)), 1, 3),
-		"finished": bool(campaign.get("finished", false)),
+		"day": _int_or(data.get("day", 1), 1),
+		"money": _int_or(data.get("money", 0), 0),
+		"map": clampi(_int_or(campaign.get("current_map", 2), 2), 1, 3),
+		"finished": campaign.get("finished", false) is bool and bool(campaign["finished"]),
 		"saved_at": String(data.get("saved_at", "")),
 	}
+
+
+func _int_or(value: Variant, fallback: int) -> int:
+	return int(value) if _is_number(value) else fallback
 
 
 ## Called by a map once it is built. `provider` returns the dictionary to
@@ -114,17 +118,15 @@ func save_game() -> bool:
 	return _write_atomic(save_path, data)
 
 
+## Applies the first loadable candidate. Both blocks were validated by
+## `_read_valid_data()`, so a refusal never leaves the game half restored.
 func load_game() -> bool:
 	var data := _read_valid_data()
 	if data.is_empty():
 		return false
 	data = _migrate(data)
-	if not GameState.from_dict(data):
-		push_warning("Save file %s contains an invalid game state." % save_path)
-		return false
-	var raw_campaign: Variant = data.get("campaign", {})
-	if not (raw_campaign is Dictionary) or not Campaign.from_dict(raw_campaign as Dictionary):
-		push_warning("Save file %s contains an invalid campaign state." % save_path)
+	if not GameState.from_dict(data) or not Campaign.from_dict(data["campaign"] as Dictionary):
+		push_warning("Save file %s could not be applied." % save_path)
 		return false
 	world = _read_world(data.get("world", {}))
 	# A world saved for another generation than the one resumed is stale.
@@ -184,12 +186,24 @@ func _write_atomic(path: String, data: Dictionary) -> bool:
 	return true
 
 
+## First candidate that can really be loaded: the primary file, then its
+## backup. A primary that parses but that the game would refuse (wrong types,
+## an economy generation that no longer exists) falls through to the backup
+## instead of leaving Continue enabled on a save that does nothing.
 func _read_valid_data() -> Dictionary:
 	for path: String in [save_path, save_path + ".bak"]:
 		var data := _read_candidate(path)
-		if not data.is_empty() and _is_valid_payload(data):
+		if not data.is_empty() and _is_valid_payload(data) and _is_loadable(data):
 			return data
 	return {}
+
+
+func _is_loadable(data: Dictionary) -> bool:
+	var migrated := _migrate(data.duplicate(true))
+	var campaign: Variant = migrated.get("campaign", null)
+	if not (campaign is Dictionary) or not Campaign.can_restore(campaign as Dictionary):
+		return false
+	return GameState.can_restore(migrated)
 
 
 func _read_candidate(path: String) -> Dictionary:

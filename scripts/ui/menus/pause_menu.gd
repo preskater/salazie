@@ -43,10 +43,14 @@ func _ready() -> void:
 	confirm_screen.cancelled.connect(_on_cancelled)
 	save_status_timer.timeout.connect(_hide_save_status)
 	SceneRouter.scene_changed.connect(_on_scene_changed)
+	# A browser tab cannot be quit: the canvas would just freeze.
+	if OS.has_feature("web"):
+		quit_button.visible = false
 
 
 func open() -> void:
-	if visible or not SceneRouter.is_gameplay or get_tree().paused or SceneTransition.is_transitioning:
+	if visible or not SceneRouter.is_gameplay or get_tree().paused \
+			or SceneRouter.is_transitioning():
 		return
 	get_tree().paused = true
 	visible = true

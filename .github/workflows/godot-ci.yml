@@ -21,7 +21,7 @@ env:
   GDUNIT_VERSION: "v6.2.3"
   # Coverage floor in percent. Raise it with every PR that adds tests; see
   # .agent/skills/salazie-coverage/SKILL.md.
-  COVERAGE_MIN: "80"
+  COVERAGE_MIN: "87"
 
 jobs:
   test:
