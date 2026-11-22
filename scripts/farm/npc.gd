@@ -68,8 +68,8 @@ func _physics_process(delta: float) -> void:
 
 func get_interaction_prompt() -> String:
 	if not talk_prompt.is_empty():
-		return talk_prompt
-	return "E — Parler à %s" % speaker
+		return InputHints.format(talk_prompt)
+	return InputHints.prompt(&"interact", "Parler à %s" % speaker)
 
 func interact(_player: Node2D) -> void:
 	var text := "Bienvenue à Salazie."

@@ -136,7 +136,8 @@ func _add_ui() -> void:
 
 	_hint_label = Label.new()
 	_hint_label.name = "HintLabel"
-	_hint_label.text = "Déplacez-vous : WASD · Interagir : E · Tâches : T"
+	_hint_label.text = _controls_hint()
+	InputHints.device_changed.connect(_on_input_device_changed)
 	_hint_label.add_theme_color_override("font_color", Color(0.95, 0.92, 0.82))
 	_hint_label.add_theme_color_override("font_outline_color", Color(0.08, 0.06, 0.04))
 	_hint_label.add_theme_constant_override("outline_size", 6)
@@ -168,6 +169,15 @@ func _add_ui() -> void:
 
 	get_viewport().size_changed.connect(_layout_hud)
 	_layout_hud()
+
+
+func _controls_hint() -> String:
+	return InputHints.format(
+		"Déplacez-vous : {move} · Interagir : {interact} · Tâches : {toggle_tasks}")
+
+
+func _on_input_device_changed(_using_gamepad: bool) -> void:
+	_hint_label.text = _controls_hint()
 
 
 func _layout_hud() -> void:

@@ -13,7 +13,7 @@ func _ready() -> void:
 
 
 func get_interaction_prompt() -> String:
-	return "E — Prendre la navette"
+	return InputHints.prompt(&"interact", "Prendre la navette")
 
 
 func interact(_player: Node2D) -> void:

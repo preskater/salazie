@@ -89,11 +89,11 @@ tasks being resolved and shows the generation result before the chapter fade to
 
 | Action | Keys | Effect |
 |---|---|---|
-| `move_*` | WASD / arrows | Move |
-| `interact` | E | Prepare, plant, harvest, open market, talk |
-| `select_seed_1..4` | 1–4 | Choose seed (also in the inventory popup) |
-| `toggle_inventory` | I | Inventory popup (pause) |
-| `toggle_prices` | P | Show/hide market prices |
+| `move_*` | WASD position / arrows, left stick / D-pad | Move |
+| `interact` | E, gamepad A | Prepare, plant, harvest, open market, talk |
+| `select_seed_1..4` | 1–4, gamepad LB / RB | Choose seed (also in the inventory popup) |
+| `toggle_inventory` | I, gamepad Y | Inventory popup (pause) |
+| `toggle_prices` | P, gamepad R3 | Show/hide market prices |
 | `toggle_tasks` | T / Select | Open the generation task list |
 | `pause` | Esc / Start | Open the pause menu |
 | `ui_cancel` | Esc / B | Close the open overlay |

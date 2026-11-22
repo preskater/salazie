@@ -1527,7 +1527,7 @@ position = Vector2(3192, 2280)
 speaker = "Mme Payet"
 lines = PackedStringArray("La rivière monte chaque année un peu plus.", "Les jeunes partent, mais ils reviennent quand le marché vit.")
 tint = Color(0.95, 0.82, 0.92, 1)
-talk_prompt = "E — Parler à Mme Payet"
+talk_prompt = "{interact} — Parler à Mme Payet"
 sprite_frames = ExtResource("29_3n0gb")
 sprite_scale = 3.0
 
@@ -1536,7 +1536,7 @@ position = Vector2(888, 1176)
 speaker = "Le pêcheur"
 lines = PackedStringArray("Il y a vingt ans, on voyait le fond de l\'eau depuis la berge.", "Les crevettes ont presque disparu du bras nord.")
 tint = Color(0.76, 0.88, 0.96, 1)
-talk_prompt = "E — Parler au pêcheur"
+talk_prompt = "{interact} — Parler au pêcheur"
 sprite_frames = ExtResource("30_4cly3")
 sprite_scale = 3.0
 
@@ -1545,7 +1545,7 @@ position = Vector2(1848, 1656)
 speaker = "La marchande"
 lines = PackedStringArray("Le marché inonde dès qu\'il pleut fort.", "Si les fermes tiennent, le village tient.")
 tint = Color(0.98, 0.86, 0.7, 1)
-talk_prompt = "E — Parler à la marchande"
+talk_prompt = "{interact} — Parler à la marchande"
 sprite_frames = ExtResource("31_hlcot")
 sprite_scale = 3.0
 
@@ -1554,7 +1554,7 @@ position = Vector2(2904, 1272)
 speaker = "L'instituteur"
 lines = PackedStringArray("Les enfants apprennent Salazie dans les livres, pas dans la forêt.", "Il faudrait les emmener sur les sentiers.")
 tint = Color(0.8, 0.92, 0.8, 1)
-talk_prompt = "E — Parler à l'instituteur"
+talk_prompt = "{interact} — Parler à l'instituteur"
 sprite_frames = ExtResource("30_4cly3")
 sprite_scale = 3.0
 
@@ -1563,7 +1563,7 @@ position = Vector2(2520, 888)
 speaker = "Le garde forestier"
 lines = PackedStringArray("La forêt du cirque n\'a jamais été aussi fragile.", "Une coupe mal placée et c\'est toute la pente qui glisse.")
 tint = Color(0.86, 0.78, 0.64, 1)
-talk_prompt = "E — Parler au garde forestier"
+talk_prompt = "{interact} — Parler au garde forestier"
 sprite_frames = ExtResource("31_hlcot")
 sprite_scale = 3.0
 

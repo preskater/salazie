@@ -318,9 +318,9 @@ the bridge rows.
 
 | Action | Keys | Effect |
 |---|---|---|
-| `move_*` | WASD / arrows | Move |
-| `run` | Shift | Run, emits noise |
-| `interact` | E | Drink at a freshwater bank, gather seeds, climb between the river trail and the cliff ridge |
+| `move_*` | WASD position / arrows, left stick / D-pad | Move |
+| `run` | Shift, gamepad X / RT | Run, emits noise |
+| `interact` | E, gamepad A | Drink at a freshwater bank, gather seeds, climb between the river trail and the cliff ridge |
 | `toggle_tasks` | T / Select | Open the task list |
 | `pause` | Esc / Start | Pause menu |
 

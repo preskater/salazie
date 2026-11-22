@@ -168,3 +168,22 @@ func test_a_ruined_farmer_can_still_finish_the_generation() -> void:
 	for task_id: String in ["prepare_plot", "plant_seed", "harvest_crop", "sell_produce"]:
 		assert_int(Campaign.task_status(task_id)).override_failure_message(
 			"%s should be done" % task_id).is_equal(Campaign.TaskStatus.DONE)
+
+
+func test_shoulder_buttons_walk_through_the_seeds() -> void:
+	var map := await _spawn_farm()
+	GameState.select_seed(GameState.CROP_ORDER[0])
+	var next := InputEventAction.new()
+	next.action = &"seed_next"
+	next.pressed = true
+	var previous := InputEventAction.new()
+	previous.action = &"seed_previous"
+	previous.pressed = true
+
+	map._unhandled_input(next)
+	assert_str(GameState.selected_seed).is_equal(GameState.CROP_ORDER[1])
+	map._unhandled_input(previous)
+	map._unhandled_input(previous)
+	assert_str(GameState.selected_seed).is_equal(GameState.CROP_ORDER[-1])
+	map._unhandled_input(next)
+	assert_str(GameState.selected_seed).is_equal(GameState.CROP_ORDER[0])

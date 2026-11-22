@@ -174,6 +174,7 @@ GODOT_BIN="$GODOT_BIN" bash addons/gdUnit4/runtest.sh \
 - Signals: past tense (`died`, `item_picked_up`). Children emit; parents connect. Disconnect one-shot connections when the listener can outlive the emitter.
 - Movement: set `velocity` and call `move_and_slide()` once per `_physics_process`.
 - Input: use named actions from `project.godot`; never hardcode physical keys. The project must work on AZERTY and with rebinding.
+- UI text never spells a key or a button: use `InputHints.prompt()` / `InputHints.label()`, or an `{action}` token resolved by `InputHints.format()` for text stored in scenes and data. Every gameplay action needs a keyboard and a gamepad binding.
 - Scenes: keep ownership clear, instance reusable `.tscn` files, and do not hand-edit UIDs.
 - Do not add `class_name` casually; it becomes a global identifier.
 - Keep `project.godot` changes minimal and explain them.

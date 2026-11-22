@@ -10,7 +10,7 @@ func _ready() -> void:
 
 
 func get_interaction_prompt() -> String:
-	return "E — Présenter le plan au conseil"
+	return InputHints.prompt(&"interact", "Présenter le plan au conseil")
 
 
 func interact(_player: Node2D) -> void:

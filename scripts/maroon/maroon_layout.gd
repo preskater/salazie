@@ -144,9 +144,9 @@ const ALCOVE_TRAIL_POINTS: Array[Vector2i] = [
 ]
 const CLIMB_POINTS := [
 	{"tile": Vector2i(39, 51), "destination": Vector2i(42, 48),
-		"label": "E — Grimper sur la crête"},
+		"label": "{interact} — Grimper sur la crête"},
 	{"tile": Vector2i(42, 30), "destination": Vector2i(44, 28),
-		"label": "E — Descendre vers la rivière"},
+		"label": "{interact} — Descendre vers la rivière"},
 ]
 const STEALTH_ZONES := [
 	{"tile": Vector2i(18, 44), "tiles": Vector2i(2, 14), "name": "la grotte",

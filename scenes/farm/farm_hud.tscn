@@ -81,7 +81,7 @@ mouse_filter = 2
 [node name="ObjectiveLabel" type="Label" parent="Root/ObjectivePanel"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Objectif : préparez une parcelle du potager, au nord de la ferme (E)."
+text = "Objectif : préparez une parcelle du potager, au nord de la ferme."
 horizontal_alignment = 1
 autowrap_mode = 3
 
@@ -104,7 +104,7 @@ mouse_filter = 2
 [node name="PromptLabel" type="Label" parent="Root/PromptPanel"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "E — Préparer la parcelle"
+text = "Préparer la parcelle"
 horizontal_alignment = 1
 
 [node name="DialoguePanel" type="PanelContainer" parent="Root"]
@@ -159,6 +159,7 @@ autowrap_mode = 3
 text = "Map 2 — Le cultivateur"
 
 [node name="ControlsLabel" type="Label" parent="Root"]
+unique_name_in_owner = true
 anchor_left = 1.0
 anchor_right = 1.0
 anchor_top = 1.0
@@ -175,7 +176,7 @@ theme_override_colors/font_outline_color = Color(0.02, 0.03, 0.05, 1)
 theme_override_constants/outline_size = 4
 theme_override_font_sizes/font_size = 14
 horizontal_alignment = 2
-text = "WASD/Flèches · E interagir · 1-4 graines · I · P · Échap pause"
+text = ""
 
 [node name="MarketOverlay" type="Control" parent="Root"]
 unique_name_in_owner = true
@@ -284,7 +285,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(240, 42)
 layout_mode = 2
 size_flags_horizontal = 4
-text = "Fermer (Échap)"
+text = "Fermer"
 
 [node name="InventoryOverlay" type="Control" parent="Root"]
 unique_name_in_owner = true
@@ -380,19 +381,20 @@ horizontal_alignment = 1
 text = "Aucune graine — achetez-en au marché."
 
 [node name="InventoryHint" type="Label" parent="Root/InventoryOverlay/InventoryPopup/VBox"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.44, 0.36, 0.28, 1)
 theme_override_font_sizes/font_size = 14
 horizontal_alignment = 1
 autowrap_mode = 3
-text = "En jeu, les touches 1-4 choisissent la graine à planter."
+text = ""
 
 [node name="InventoryCloseButton" type="Button" parent="Root/InventoryOverlay/InventoryPopup/VBox"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(240, 42)
 layout_mode = 2
 size_flags_horizontal = 4
-text = "Fermer (I / Échap)"
+text = "Fermer"
 
 [node name="NotificationTimer" type="Timer" parent="."]
 wait_time = 3.5

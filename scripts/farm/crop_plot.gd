@@ -43,17 +43,18 @@ func _process(delta: float) -> void:
 func get_interaction_prompt() -> String:
 	match state:
 		State.EMPTY:
-			return "E — Préparer la parcelle"
+			return InputHints.prompt(&"interact", "Préparer la parcelle")
 		State.TILLED:
 			var label := String(GameState.CROPS[GameState.selected_seed]["label"])
 			var count := GameState.seed_count(GameState.selected_seed)
 			if count <= 0:
 				return "Plus de graines de %s — achetez-en au marché" % label
-			return "E — Planter %s (%d graines)" % [label, count]
+			return InputHints.prompt(&"interact", "Planter %s (%d graines)" % [label, count])
 		State.GROWING:
 			return "%s — en croissance" % String(GameState.CROPS[crop_type]["label"])
 		State.READY:
-			return "E — Récolter %s" % String(GameState.CROPS[crop_type]["label"])
+			return InputHints.prompt(&"interact",
+				"Récolter %s" % String(GameState.CROPS[crop_type]["label"]))
 	return ""
 
 func interact(_player: Node2D) -> void:

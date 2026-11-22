@@ -29,6 +29,8 @@ const NEGATIVE := Color(0.62, 0.14, 0.1)
 @onready var seed_grid: GridContainer = %SeedGrid
 @onready var seed_empty: Label = %SeedEmpty
 @onready var inventory_close_button: Button = %InventoryCloseButton
+@onready var controls_label: Label = %ControlsLabel
+@onready var inventory_hint: Label = %InventoryHint
 
 const SLOT_SCENE := preload("res://scenes/farm/ui/item_slot.tscn")
 
@@ -66,7 +68,21 @@ func _ready() -> void:
 	GameState.notification_requested.connect(notify)
 	GameState.dialogue_requested.connect(show_dialogue)
 	Economy.economy_enabled_changed.connect(_on_economy_enabled_changed)
+	InputHints.device_changed.connect(_refresh_input_hints.unbind(1))
+	_refresh_input_hints()
 	_refresh_all()
+
+
+## Texts that name a key or a button follow the device in use.
+func _refresh_input_hints() -> void:
+	controls_label.text = InputHints.format(
+		"{move} · {interact} interagir · {select_seed} graines · {toggle_inventory} inventaire"
+		+ " · {toggle_prices} prix · {pause} pause")
+	inventory_hint.text = InputHints.format(
+		"En jeu, {select_seed} choisit la graine à planter.")
+	close_button.text = "Fermer (%s)" % InputHints.label(&"ui_cancel")
+	inventory_close_button.text = InputHints.format("Fermer ({toggle_inventory} / %s)"
+		% InputHints.label(&"ui_cancel"))
 
 func set_prompt(text: String) -> void:
 	if text == _prompt_text:

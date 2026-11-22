@@ -3,7 +3,8 @@ extends Area2D
 
 signal climb_requested(destination: Vector2)
 
-@export var label := "E — Grimper"
+## `{interact}` is replaced by the key or button bound to the action.
+@export var label := "{interact} — Grimper"
 @export var destination := Vector2.ZERO
 
 
@@ -13,7 +14,7 @@ func _ready() -> void:
 
 
 func get_interaction_prompt() -> String:
-	return label
+	return InputHints.format(label)
 
 
 func interact(_player: Node2D) -> void:

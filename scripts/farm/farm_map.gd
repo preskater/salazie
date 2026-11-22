@@ -150,6 +150,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			GameState.select_seed(GameState.CROP_ORDER[i])
 			get_viewport().set_input_as_handled()
 			return
+	# A gamepad has no number row: the shoulder buttons walk through the seeds.
+	for step: int in [1, -1]:
+		if event.is_action_pressed(&"seed_next" if step > 0 else &"seed_previous"):
+			var order: Array = GameState.CROP_ORDER
+			var index := order.find(GameState.selected_seed)
+			GameState.select_seed(order[posmod(index + step, order.size())])
+			get_viewport().set_input_as_handled()
+			return
 
 
 func _install_generation_ui() -> void:
@@ -375,5 +383,6 @@ func _objective_text() -> String:
 	for definition: Dictionary in Campaign.TASKS[2]:
 		var task_id := String(definition.get("id", ""))
 		if Campaign.task_status(task_id) == Campaign.TaskStatus.PENDING:
-			return "Objectif : %s" % String(definition.get("hint", definition.get("label", "")))
+			return "Objectif : %s" % InputHints.format(
+				String(definition.get("hint", definition.get("label", ""))))
 	return "Objectif : terminez les tâches de la ferme."
