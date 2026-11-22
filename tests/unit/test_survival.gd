@@ -91,3 +91,19 @@ func test_depleted_rearms_after_refill() -> void:
 
 	assert_int(kinds.size()).is_equal(3)
 	assert_array(kinds).contains_exactly_in_any_order([&"food", &"water", &"food"])
+
+
+func test_drain_adds_up_over_very_short_frames() -> void:
+	# Regression (#38): above ~350 fps the drain of one frame was smaller than
+	# the tolerance of is_equal_approx and the bars never went down.
+	var survival: Node = auto_free(load("res://scripts/systems/survival/survival_component.gd").new())
+	add_child(survival)
+	survival.set_process(false)
+	survival.set("food_drain", 0.35)
+	survival.set("water_drain", 0.55)
+
+	for frame: int in 2000:
+		survival.call("tick", 1.0 / 1000.0)
+
+	assert_float(float(survival.get("food"))).is_equal_approx(100.0 - 0.35 * 2.0, 0.01)
+	assert_float(float(survival.get("water"))).is_equal_approx(100.0 - 0.55 * 2.0, 0.01)

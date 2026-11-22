@@ -38,11 +38,20 @@ const HIDE_TEXTURES := [
 	"res://sprites/exteriors_48x48/singles/17_Garden/ME_Singles_Garden_48x48_Bush_5.png",
 ]
 ## A gourd of river water is worth one sip, and the volcanic silt needs ten
-## seconds to settle before the next one.
+## seconds to settle before the next one. At 1 water/s against a drain of
+## 0.55/s, staying by the river is safe but slow: water is a reason to stop.
 const DRINK_WATER := 10.0
-const DRINK_COOLDOWN := 3.0
+const DRINK_COOLDOWN := 10.0
 const DRINK_REACH_TILES := 2
-const WATERFALL_TASK_RADIUS := 12.0 * 48.0
+## `find_water` asks for the basin under the waterfall, not for any bank
+## nearby: six tiles keeps the bridge downstream out of it.
+const WATERFALL_TASK_RADIUS := 6.0 * 48.0
+## Guards run faster than a walking player (300) and slower than a running
+## one (510): being seen means running, and running makes noise.
+const GUARD_CHASE_SPEED := 340.0
+## How long the patrols ignore a player who just respawned. Three checkpoints
+## out of four are within sight of a patrol.
+const RESPAWN_GRACE := 4.0
 ## An empty food or water bar slows the player; after this many seconds without
 ## eating or drinking the player collapses and wakes at the last checkpoint.
 const EXHAUSTED_SPEED_SCALE := 0.6
@@ -434,16 +443,26 @@ func _drink() -> void:
 	if _drink_cooldown > 0.0:
 		_notify("L'eau est encore trouble : laissez la vase se déposer (%d s)." % ceili(_drink_cooldown))
 		return
+	var at_basin: bool = _player.global_position.distance_to(_anchors["water_spot"]) \
+		<= WATERFALL_TASK_RADIUS
+	var first_sip_at_basin := at_basin \
+		and Campaign.task_status("find_water") == Campaign.TaskStatus.PENDING
 	var survival := _player.get_node_or_null("Survival")
 	if survival != null:
+		# No sip, no wait: drinking on a full gourd would only cost the cooldown.
+		# Reaching the basin still counts, however full the gourd is.
+		var full := float(survival.get("water")) >= float(survival.get("water_max")) - 0.5
+		if full and not first_sip_at_basin:
+			_notify("Votre gourde est pleine.")
+			return
 		survival.call("add_water", DRINK_WATER)
 	_drink_cooldown = DRINK_COOLDOWN
 	Audio.play_sfx(&"drink")
-	if _player.global_position.distance_to(_anchors["water_spot"]) <= WATERFALL_TASK_RADIUS:
+	if at_basin:
 		Campaign.complete_task("find_water")
-		_notify("Vous buvez au bassin (+10 eau). La vase doit se décanter.")
+		_notify("Vous buvez au bassin (+%d eau). La vase doit se décanter." % int(DRINK_WATER))
 	else:
-		_notify("Vous buvez à la rivière (+10 eau). La vase doit se décanter.")
+		_notify("Vous buvez à la rivière (+%d eau). La vase doit se décanter." % int(DRINK_WATER))
 
 
 func _update_objective_bar() -> void:
@@ -451,8 +470,9 @@ func _update_objective_bar() -> void:
 		return
 	var task := _current_task()
 	if task.is_empty():
-		_objective_bar.visible = false
-		return
+		# Everything is done but the player is still here: the refuge task
+		# completes on first contact, so the way back to the cabin stays shown.
+		task = {"id": "reach_refuge", "label": "Rejoindre le refuge du col"}
 	var task_id := String(task["id"])
 	var target: Vector2 = _objective_target(task_id)
 	if target == Vector2.ZERO:
@@ -540,6 +560,7 @@ func _add_guards() -> void:
 		guard.set("vision_range", 300.0)
 		guard.set("use_navigation", true)
 		guard.set("pause_on_catch", false)
+		guard.set("chase_speed", GUARD_CHASE_SPEED)
 		_world.add_child(guard)
 		guard.caught.connect(_on_caught.bind(guard))
 		var sprite := guard.get_node_or_null("Sprite") as AnimatedSprite2D
@@ -739,15 +760,22 @@ func _on_refuge_blocked() -> void:
 
 
 func _on_task_status_changed(_map_id: int, _task_id: String, _status: int) -> void:
-	if Campaign.is_map_resolved():
-		_notify("Toutes les tâches sont résolues — le refuge est ouvert.")
+	_update_objective_bar()
 
 
+## One message for the event: `task_status_changed` fires in the same frame and
+## used to show a second line that this one replaced at once.
 func _on_map_resolved(_map_id: int, _summary: Dictionary) -> void:
-	_notify("Map 1 résolue — rejoignez la cabane du col.")
+	_notify("Toutes les tâches sont accomplies — le refuge du col vous attend.")
 
 
-func _on_caught(_guard: CharacterBody2D) -> void:
+func _on_caught(guard: CharacterBody2D) -> void:
+	if _respawning or _climbing:
+		# This catch is ignored (the player is mid-climb or already being sent
+		# back). The guard already switched to its "caught" state, where it
+		# stands still for good: put it back on its round.
+		guard.call("reset_after_catch", guard.global_position)
+		return
 	await _lose_ground("Repéré par une patrouille", "Repéré !")
 
 
@@ -803,7 +831,7 @@ func _lose_ground(reason: String, headline: String) -> void:
 	for entry: Dictionary in _guards:
 		var other: CharacterBody2D = entry["guard"]
 		if is_instance_valid(other):
-			other.call("reset_after_catch", entry["spawn"])
+			other.call("reset_after_catch", entry["spawn"], RESPAWN_GRACE)
 	if count <= Campaign.SETBACK_CAP:
 		_notify("%s Retour au dernier checkpoint — la génération suivante en paiera le prix."
 			% headline)

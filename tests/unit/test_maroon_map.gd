@@ -828,3 +828,130 @@ func test_props_block_sight_but_water_and_bounds_do_not() -> void:
 	assert_int((map.get_node("World/Player") as CollisionObject2D).collision_layer & 2).is_equal(0)
 	var guard: Node = map.get_node("World/Guard1")
 	assert_int((guard.get_node("VisionRay") as RayCast2D).collision_mask).is_equal(2)
+
+
+# --- P2 fixes ------------------------------------------------------------------
+
+func _blocked_at(point: Vector2) -> bool:
+	var params := PhysicsPointQueryParameters2D.new()
+	params.position = point
+	params.collision_mask = 1
+	params.collide_with_areas = false
+	return not get_tree().root.world_2d.direct_space_state.intersect_point(params, 1).is_empty()
+
+
+func test_the_ridge_is_sealed_and_only_the_climbs_lead_in() -> void:
+	# Regression (#39): rows 30 and 48 had no wall, so the lane could be walked
+	# into and the two climbs were optional.
+	var map := await _spawn_map()
+	var layout: RefCounted = map.get("_layout")
+	var ring: Array[Vector2i] = layout.call("ridge_wall_tiles")
+	assert_int(ring.size()).is_equal(2 * 21 + 2 * 3)
+
+	for tile: Vector2i in ring:
+		var centre := Vector2(tile.x + 0.5, tile.y + 0.5) * 48.0
+		for offset: Vector2 in [Vector2.ZERO, Vector2(-20, -20), Vector2(20, 20), Vector2(-20, 20)]:
+			assert_bool(_blocked_at(centre + offset)).override_failure_message(
+				"Ridge wall is open at tile %s (+%s)" % [tile, offset]).is_true()
+
+	for y in range(LAYOUT.RIDGE_TOP, LAYOUT.RIDGE_BOTTOM + 1):
+		assert_bool(_blocked_at(Vector2(42.5, y + 0.5) * 48.0)).override_failure_message(
+			"The lane is blocked at row %d" % y).is_false()
+
+	for climb: Node in get_tree().get_nodes_in_group("climb_points"):
+		var destination: Vector2 = climb.get("destination")
+		assert_bool(_blocked_at(destination)).override_failure_message(
+			"A climb lands inside a wall at %s" % destination).is_false()
+		assert_bool(_blocked_at((climb as Node2D).global_position)).is_false()
+
+
+func test_no_pickup_sits_inside_a_wall() -> void:
+	var map := await _spawn_map()
+	for spot: Node in get_tree().get_nodes_in_group("forage_spots"):
+		if not map.is_ancestor_of(spot):
+			continue
+		assert_bool(_blocked_at((spot as Node2D).global_position)).override_failure_message(
+			"%s is inside a collider" % spot.name).is_false()
+
+
+func test_drinking_takes_time_and_a_full_gourd_refuses() -> void:
+	var map := await _spawn_map()
+	var player: Node2D = map.get_node("World/Player")
+	var survival: Node = player.get_node("Survival")
+	var notification := map.get_node("MaroonUI/Root/Notification") as Label
+
+	survival.call("add_water", 100.0)
+	map.call("_drink")
+	assert_str(notification.text).contains("pleine")
+	assert_float(float(map.get("_drink_cooldown"))).is_equal(0.0)
+
+	# The bars drain while the map loads, hence the tolerance.
+	survival.call("add_water", -40.0)
+	map.call("_drink")
+	assert_float(float(survival.get("water"))).is_equal_approx(70.0, 0.5)
+	assert_float(float(map.get("_drink_cooldown"))).is_equal(MaroonMap.DRINK_COOLDOWN)
+	assert_float(MaroonMap.DRINK_COOLDOWN).is_equal(10.0)
+
+	map.call("_drink")
+	assert_float(float(survival.get("water"))).is_equal_approx(70.0, 0.5)
+	assert_str(notification.text).contains("trouble")
+
+
+func test_only_the_basin_completes_the_water_task() -> void:
+	var map := await _spawn_map()
+	var player: Node2D = map.get_node("World/Player")
+	var survival: Node = player.get_node("Survival")
+	var basin: Vector2 = (map.get("_anchors") as Dictionary)["water_spot"]
+	survival.call("add_water", -80.0)
+
+	player.global_position = basin + Vector2(MaroonMap.WATERFALL_TASK_RADIUS + 48.0, 0)
+	map.call("_drink")
+	assert_int(Campaign.task_status("find_water")).is_equal(Campaign.TaskStatus.PENDING)
+
+	map.set("_drink_cooldown", 0.0)
+	player.global_position = basin + Vector2(48, 0)
+	map.call("_drink")
+	assert_int(Campaign.task_status("find_water")).is_equal(Campaign.TaskStatus.DONE)
+
+
+func test_the_way_to_the_refuge_stays_shown_once_everything_is_done() -> void:
+	var map := await _spawn_map()
+	for definition: Dictionary in Campaign.TASKS[1]:
+		Campaign.complete_task(String(definition["id"]))
+
+	map.call("_update_objective_bar")
+
+	assert_bool((map.get("_objective_bar") as Node2D).visible).is_true()
+	assert_str((map.get("_objective_label") as Label).text).contains("refuge")
+	var notification := map.get_node("MaroonUI/Root/Notification") as Label
+	assert_str(notification.text).contains("refuge")
+
+
+func test_a_catch_that_is_ignored_does_not_freeze_the_guard() -> void:
+	# Regression (#37): the guard stayed in its "caught" state for good.
+	var map := await _spawn_map()
+	var guard: CharacterBody2D = map.get_node("World/Guard1")
+	var guard_script: GDScript = guard.get_script()
+	map.set("_climbing", true)
+	guard.set("state", guard_script.get("State")["CAUGHT"])
+
+	guard.emit_signal("caught")
+
+	assert_int(int(guard.get("state"))).is_equal(guard_script.get("State")["PATROL"])
+	assert_int(Campaign.setbacks_for_map(1)).is_equal(0)
+	map.set("_climbing", false)
+
+
+func test_patrols_give_a_respawned_player_time_to_move() -> void:
+	var map := await _spawn_map()
+	var guard: CharacterBody2D = map.get_node("World/Guard1")
+
+	guard.emit_signal("caught")
+	await _finish_respawn(map)
+
+	assert_float(float(guard.get("_ignore_timer"))).is_greater(MaroonMap.RESPAWN_GRACE - 1.0)
+	assert_float(float(guard.get("chase_speed"))).is_equal(MaroonMap.GUARD_CHASE_SPEED)
+	var player: Node = map.get_node("World/Player")
+	assert_float(MaroonMap.GUARD_CHASE_SPEED).is_greater(float(player.get("SPEED")))
+	assert_float(MaroonMap.GUARD_CHASE_SPEED).is_less(
+		float(player.get("SPEED")) * float(player.get("RUN_MULTIPLIER")))

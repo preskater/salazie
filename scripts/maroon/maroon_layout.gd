@@ -89,6 +89,11 @@ const WATER_SPOT_TILE := Vector2i(26, 44)
 
 const BRIDGE_ROWS: Array[int] = [84, 52, 26]
 const BRIDGE_HEIGHT := 2
+## Walkable part of the cliff ridge, in tiles (inclusive).
+const RIDGE_LEFT := 41
+const RIDGE_RIGHT := 43
+const RIDGE_TOP := 30
+const RIDGE_BOTTOM := 48
 
 const FOOD_TILES: Array[Vector2i] = [
 	Vector2i(10, 99),
@@ -108,9 +113,11 @@ const HIDE_TILES: Array[Vector2i] = [
 	Vector2i(22, 54),
 	Vector2i(40, 20),
 ]
+## The second one rewards the ridge route. It used to sit in the gap of the
+## ridge wall, which is now closed.
 const SEED_TILES: Array[Vector2i] = [
 	Vector2i(18, 60),
-	Vector2i(44, 48),
+	Vector2i(41, 38),
 	Vector2i(24, 34),
 ]
 const GUARD_TILES: Array[Vector2i] = [
@@ -715,21 +722,32 @@ func _build_cave() -> void:
 	_decor.add_prop(_world, DECOR.BUSHES[2], _tile_base(Vector2i(19, 46)), 1.0)
 
 
+## Tiles of the cliff ring around the ridge lane (columns 41-43, rows 30-48).
+## The two climb points are the only way in or out.
+func ridge_wall_tiles() -> Array[Vector2i]:
+	var tiles: Array[Vector2i] = []
+	for y in range(RIDGE_TOP - 1, RIDGE_BOTTOM + 2):
+		tiles.append(Vector2i(RIDGE_LEFT - 1, y))
+		tiles.append(Vector2i(RIDGE_RIGHT + 1, y))
+	for x in range(RIDGE_LEFT, RIDGE_RIGHT + 1):
+		tiles.append(Vector2i(x, RIDGE_TOP - 1))
+		tiles.append(Vector2i(x, RIDGE_BOTTOM + 1))
+	return tiles
+
+
 func _build_ridge() -> void:
-	# A narrow ledge sealed by cliffs; the two climb points are the only entries.
-	for y in range(31, 48):
-		for side: int in [40, 44]:
-			var tile := Vector2i(side, y)
-			if _is_water(tile):
-				continue
-			_decor.add_prop(_world, DECOR.ROCKS[(y * 3 + side) % DECOR.ROCKS.size()],
-				_tile_base(tile), 2.0, Vector2(60, 28))
-			_block_tile(tile, 1.1)
-	for x in range(41, 44):
-		for tile: Vector2i in [Vector2i(x, 49), Vector2i(x, 29)]:
-			_decor.add_prop(_world, DECOR.ROCKS[1], _tile_base(tile),
-				2.0, Vector2(60, 28))
-			_block_tile(tile, 1.0)
+	# The rocks are scenery: their own colliders are 28 px tall on 48 px tiles
+	# and stopped two rows short of the climbs, so the lane could be walked
+	# into. A full-tile collider per wall tile is what seals it.
+	for tile: Vector2i in ridge_wall_tiles():
+		if _is_water(tile):
+			continue
+		_decor.add_prop(_world, DECOR.ROCKS[(tile.y * 3 + tile.x) % DECOR.ROCKS.size()],
+			_tile_base(tile), 2.0)
+		# `_tile_base` sits 4 px above the tile's edge; the wall must reach it.
+		_decor.add_collision(_world, _tile_center(tile) + Vector2(0, TILE / 2.0),
+			Vector2(TILE, TILE), "RidgeWall")
+		_block_tile(tile, 1.1)
 	_decor.add_lantern(_world, _tile_base(Vector2i(43, 46)), 1.0)
 	_decor.add_lantern(_world, _tile_base(Vector2i(43, 32)), 1.0)
 	_decor.add_prop(_world, DECOR.GRASS_TUFTS[1], _tile_base(Vector2i(41, 44)),
