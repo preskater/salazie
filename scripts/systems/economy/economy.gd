@@ -400,6 +400,10 @@ func _check_buy(offer_id: StringName, quantity: int) -> StringName:
 		return &"buy_disabled"
 	if quantity <= 0:
 		return &"invalid_quantity"
+	# An offer without an id has no stock entry and grants nothing: it would
+	# charge the price on every call.
+	if offer_id == &"":
+		return &"unknown_offer"
 	var target := offer(offer_id)
 	if target == null:
 		return &"unknown_offer"
@@ -420,6 +424,10 @@ func _check_sell(offer_id: StringName, quantity: int) -> StringName:
 		return &"sell_disabled"
 	if quantity <= 0:
 		return &"invalid_quantity"
+	# An offer without an id has no stock entry and grants nothing: it would
+	# charge the price on every call.
+	if offer_id == &"":
+		return &"unknown_offer"
 	var target := offer(offer_id)
 	if target == null:
 		return &"unknown_offer"
