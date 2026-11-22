@@ -1570,6 +1570,7 @@ sprite_scale = 3.0
 [node name="Site_berge" parent="World" unique_id=1275906880 instance=ExtResource("32_mbt7g")]
 position = Vector2(840, 1176)
 site_id = "berge"
+fund_offer = &"building_wetland"
 title = "La berge érodée"
 description = "La rivière ronge la berge. Sans végétation, le sol part avec chaque crue."
 texture = ExtResource("23_uj7xk")
@@ -1578,6 +1579,7 @@ tint = Color(0.65, 0.82, 1, 1)
 [node name="Site_foret" parent="World" unique_id=1603212691 instance=ExtResource("32_mbt7g")]
 position = Vector2(2616, 696)
 site_id = "foret"
+fund_offer = &"item_seedling_kit"
 title = "La forêt fragilisée"
 description = "Des arbres malades laissent la pente à nu. La prochaine pluie emportera la terre."
 texture = ExtResource("21_pobhs")
@@ -1586,6 +1588,7 @@ tint = Color(0.8, 0.72, 0.52, 1)
 [node name="Site_marche" parent="World" unique_id=802918236 instance=ExtResource("32_mbt7g")]
 position = Vector2(1944, 1560)
 site_id = "marche"
+fund_offer = &"slot_refuge"
 title = "Le marché inondable"
 description = "Les étals sont installés dans le lit ancien de la rivière. Chaque orage les noie."
 texture = ExtResource("34_xerb4")

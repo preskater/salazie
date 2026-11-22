@@ -21,6 +21,12 @@ const BASE_START_MONEY := 30
 ## caught, collapsing from hunger. Only the first ones weigh on the generation
 ## result, so one hard section cannot decide the whole campaign.
 const SETBACK_CAP := 2
+## Final vote (see `support_breakdown()`).
+const SUPPORT_START := 5
+const SUPPORT_NEEDED := 6
+const RESIDENT_COUNT := 5
+const FRAGILE_SITES: Array[String] = ["berge", "foret", "marche"]
+const LANDMARKS: Array[String] = ["belvedere", "jardin"]
 
 const MAPS := {
 	1: {
@@ -502,14 +508,65 @@ func failure_events_for_map(map_id: int = -1) -> int:
 	return int(map_summary(map_id).get("failure_events", 0))
 
 
-## Support score for the final council vote. Every failure across the three
-## generations costs one point out of six.
+## Support for the final council vote, line by line. The family arrives with
+## `SUPPORT_START` minus one point per failure event of the three generations;
+## the heir earns the rest in the village. `SUPPORT_NEEDED` is out of reach
+## without acting, and still within reach after a hard family history.
+func support_breakdown() -> Dictionary:
+	var inherited := maxi(0, SUPPORT_START - total_failure_events())
+	var sites := 0
+	for site_id: String in FRAGILE_SITES:
+		if get_choice("funded_" + site_id) == "1":
+			sites += 1
+	var residents := 1 if residents_heard() >= RESIDENT_COUNT else 0
+	var landmarks := 1 if _all_set("visited_", LANDMARKS) else 0
+	var coherence := 1 if plan_is_coherent() else 0
+	return {
+		"inherited": inherited,
+		"sites": sites,
+		"residents": residents,
+		"landmarks": landmarks,
+		"coherence": coherence,
+		"total": inherited + sites + residents + landmarks + coherence,
+		"needed": SUPPORT_NEEDED,
+	}
+
+
 func mayor_support() -> int:
-	return maxi(0, 6 - total_failure_events())
+	return int(support_breakdown()["total"])
 
 
 func has_mayor_support() -> bool:
-	return mayor_support() >= 4
+	return mayor_support() >= SUPPORT_NEEDED
+
+
+func residents_heard() -> int:
+	var count := 0
+	for key: Variant in choices:
+		if String(key).begins_with("listened_") and String(choices[key]) == "1":
+			count += 1
+	return count
+
+
+## A plan convinces more when the heir already acted on it: the forest plan
+## after funding the forest or the riverbank, the tourism plan after walking
+## both landmarks, the farm plan after securing the market.
+func plan_is_coherent() -> bool:
+	match get_choice("map3_plan"):
+		"forest":
+			return get_choice("funded_foret") == "1" or get_choice("funded_berge") == "1"
+		"tourism":
+			return _all_set("visited_", LANDMARKS)
+		"farms":
+			return get_choice("funded_marche") == "1"
+	return false
+
+
+func _all_set(prefix: String, ids: Array) -> bool:
+	for id: String in ids:
+		if get_choice(prefix + id) != "1":
+			return false
+	return true
 
 
 ## Money the next farmer starts with after the escape from Map 1.

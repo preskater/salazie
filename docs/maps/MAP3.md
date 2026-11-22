@@ -55,9 +55,38 @@ shared garden `(1128, 2136)`, south bus stop `(1992, 2184)`, north bus stop `(19
 | `choose_plan` | Choose forest, tourism or family farms | — |
 | `become_mayor` | Present the plan with enough support | The council rejects the plan |
 
-`become_mayor` is resolved from the **support score**: 6 minus every failure event recorded
-across the three generations. Four points are needed. A permanent failure produces the
-secondary epilogue but does not block the ending.
+## Council vote
+
+`become_mayor` is resolved from the **support score**, shown at all times in the top-left
+corner and in the town-hall prompt. `Campaign.SUPPORT_NEEDED` (6) voices are required.
+
+| Line | Voices | How |
+|---|---|---|
+| Inherited | 5 − failure events of the three generations (min 0) | What the family did before |
+| Sites | +1 per fragile site funded (max 3) | Inspect a site, then interact again to pay for its protection |
+| Residents | +1 | Listen to all five residents (the `listen` task only needs three) |
+| Landmarks | +1 | Visit the belvédère and the shared garden |
+| Coherence | +1 | The plan matches what was done: `forest` with the forest or the bank funded, `tourism` with both landmarks visited, `farms` with the market funded |
+
+A flawless family arrives with 5 and still has to act once; a family with three failures
+arrives with 2 and needs four of the six voices available. The vote is final: a rejection
+gives the secondary epilogue and does not block the ending.
+
+## Budget
+
+`HeirMap._enter_tree()` selects the `heritier` economy and converts the heritage once:
+the euro wallet starts at the heritage, green credits at 0. A save made in the village
+already holds the heir's wallets and is left alone.
+
+| Site | Offer (`economy.tres`) | Price |
+|---|---|---|
+| Eroded bank | `building_wetland` | 80 € |
+| Fragile forest | `item_seedling_kit` | 15 € |
+| Flood-prone market | `slot_refuge` | 12 CV |
+
+Green credits are the residents' trust: +4 CV for each resident heard for the first time,
++3 CV for each landmark. The market is therefore secured by listening, not by money, and a
+small heritage can still afford the forest.
 
 ## Plans and epilogue
 
@@ -78,7 +107,8 @@ the heritage amount and the total failure count.
 heritage = floor(farm net worth × (1 − 0.1 × Map 2 failure events))
 ```
 
-The heritage is displayed in the top-left label and in the epilogue.
+The heritage is displayed in the top-left label and in the epilogue, above the remaining
+budget (`BudgetLabel`) and the support score (`SupportLabel`).
 
 ## Living world
 
@@ -107,7 +137,7 @@ The heritage is displayed in the top-left label and in the epilogue.
 | Action | Keys | Effect |
 |---|---|---|
 | `move_*` | WASD position / arrows, left stick / D-pad | Move |
-| `interact` | E, gamepad A | Talk, inspect, decide, board the shuttle, present the plan |
+| `interact` | E, gamepad A | Talk, inspect, fund a site, decide, board the shuttle, present the plan |
 | `toggle_tasks` | T / Select | Open the task list |
 | `pause` | Esc / Start | Pause menu |
 

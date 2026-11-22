@@ -10,7 +10,9 @@ func _ready() -> void:
 
 
 func get_interaction_prompt() -> String:
-	return InputHints.prompt(&"interact", "Présenter le plan au conseil")
+	# The vote is final, so the prompt says where the council stands.
+	return InputHints.prompt(&"interact", "Présenter le plan au conseil (soutien %d/%d)"
+		% [Campaign.mayor_support(), Campaign.SUPPORT_NEEDED])
 
 
 func interact(_player: Node2D) -> void:
