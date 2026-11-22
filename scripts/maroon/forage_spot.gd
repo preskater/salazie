@@ -1,6 +1,7 @@
+class_name ForageSpot
 extends Area2D
-## A wild food, water or seed pickup. Food is collected on contact; water and
-## seeds wait for `interact` so drinking and gathering stay deliberate.
+## A wild food or seed pickup. Food is collected on contact; seeds wait for
+## `interact` so gathering stays deliberate.
 ## It can advance a multi-step campaign task and store seed bonuses for Map 2.
 
 signal picked(kind: String, message: String)
@@ -8,7 +9,6 @@ signal picked(kind: String, message: String)
 @export var texture: Texture2D
 @export var tint := Color.WHITE
 @export var food_amount := 0.0
-@export var water_amount := 0.0
 @export var task_id := ""
 @export var task_progress := 1
 @export var kind := "food"
@@ -39,8 +39,6 @@ func _ready() -> void:
 func get_interaction_prompt() -> String:
 	if _used:
 		return ""
-	if water_amount > 0.0:
-		return InputHints.prompt(&"interact", "Boire")
 	if not seed_crop.is_empty():
 		return InputHints.prompt(&"interact", "Ramasser des graines")
 	return InputHints.prompt(&"interact", "Ramasser")
@@ -64,8 +62,6 @@ func _pick_up(body: Node2D) -> void:
 	if survival != null:
 		if food_amount > 0.0:
 			survival.call("add_food", food_amount)
-		if water_amount > 0.0:
-			survival.call("add_water", water_amount)
 	if not task_id.is_empty():
 		Campaign.add_task_progress(task_id, task_progress)
 	if not seed_crop.is_empty():
@@ -80,8 +76,6 @@ func _pick_up(body: Node2D) -> void:
 func _compose_message() -> String:
 	var text := pickup_message
 	if text.is_empty():
-		if water_amount > 0.0:
-			return "Vous buvez."
 		if not seed_crop.is_empty():
 			return "Graines ramassées."
 		return "Vivres trouvés."

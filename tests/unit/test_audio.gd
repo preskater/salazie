@@ -259,9 +259,9 @@ func test_footsteps_follow_the_stride() -> void:
 
 	player._tick_steps(0.01, true)
 	assert_int(_playing_voices()).is_equal(1)
-	player._tick_steps(player.STEP_INTERVAL * 0.5, true)
+	player._tick_steps(player.step_interval * 0.5, true)
 	assert_int(_playing_voices()).is_equal(1)
-	player._tick_steps(player.STEP_INTERVAL * 0.6, true)
+	player._tick_steps(player.step_interval * 0.6, true)
 	assert_int(_playing_voices()).is_equal(2)
 
 	# Standing still resets the stride: the next step is immediate.

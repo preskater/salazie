@@ -86,7 +86,7 @@ const RESPAWN_RESERVE := 35.0
 
 var _terrain: Node2D
 var _world: Node2D
-var _player: Node2D
+var _player: Player
 var _layout: RefCounted
 var _anchors: Dictionary
 var _map_size := Vector2.ZERO
@@ -106,20 +106,17 @@ var _respawning := false
 var _climbing := false
 var _near_fresh_water := false
 var _drink_cooldown := 0.0
-var _survival: Node
+var _survival: SurvivalComponent
 var _exhaustion := 0.0
 var _dialogue: DialogueBox
 var _told: Dictionary = {}
 var _stamina_bar: ProgressBar
-var _food_spots: Array[Area2D] = []
+var _food_spots: Array[ForageSpot] = []
 var _guards: Array[Dictionary] = []
 
 
 func _ready() -> void:
-	if not SceneRouter.is_gameplay:
-		SceneRouter.is_gameplay = true
-	if not GameState.playing:
-		GameState.playing = true
+	SceneRouter.bootstrap_direct_run(self)
 	GameState.farm_active = false
 	Campaign.ensure_map(1)
 	Campaign.current_map = 1
@@ -168,15 +165,16 @@ func _exit_tree() -> void:
 func save_world() -> Dictionary:
 	var used: Array[String] = []
 	for node: Node in get_tree().get_nodes_in_group("forage_spots"):
-		if is_ancestor_of(node) and bool(node.call("is_used")):
-			used.append(String(node.name))
+		var spot := node as ForageSpot
+		if spot != null and is_ancestor_of(spot) and spot.is_used():
+			used.append(String(spot.name))
 	var data := {
 		"respawn": [_respawn_position.x, _respawn_position.y],
 		"used_spots": used,
 	}
 	if _survival != null:
-		data["food"] = float(_survival.get("food"))
-		data["water"] = float(_survival.get("water"))
+		data["food"] = _survival.food
+		data["water"] = _survival.water
 	return data
 
 
@@ -184,21 +182,24 @@ func _restore_world(data: Dictionary) -> void:
 	var used: Variant = data.get("used_spots", [])
 	if used is Array:
 		for node: Node in get_tree().get_nodes_in_group("forage_spots"):
-			if is_ancestor_of(node) and (used as Array).has(String(node.name)):
-				node.call("mark_used")
+			var spot := node as ForageSpot
+			if spot != null and is_ancestor_of(spot) and (used as Array).has(String(spot.name)):
+				spot.mark_used()
 	var respawn: Variant = data.get("respawn", null)
 	if respawn is Array and (respawn as Array).size() == 2:
 		var point := Vector2(float(respawn[0]), float(respawn[1]))
 		if Rect2(Vector2.ZERO, _map_size).has_point(point):
 			_respawn_position = point
 			_player.global_position = point
-			_player.call("reset_physics_interpolation")
+			_player.reset_physics_interpolation()
 	if _survival != null:
-		for key: String in ["food", "water"]:
-			var value: Variant = data.get(key, null)
-			if value is int or value is float:
-				# Bars start full, so the saved level is reached by removing the gap.
-				_survival.call("add_" + key, float(value) - float(_survival.get(key)))
+		var food: Variant = data.get("food", null)
+		if food is int or food is float:
+			# Bars start full, so the saved level is reached by removing the gap.
+			_survival.add_food(float(food) - _survival.food)
+		var water: Variant = data.get("water", null)
+		if water is int or water is float:
+			_survival.add_water(float(water) - _survival.water)
 
 
 func _build_world() -> void:
@@ -256,15 +257,15 @@ func _add_player() -> void:
 	_player.name = "Player"
 	_player.position = _anchors["spawn"]
 	_respawn_position = _anchors["spawn"]
-	_player.set("camera_limits", Rect2i(0, 0, int(_map_size.x), int(_map_size.y)))
+	_player.camera_limits = Rect2i(0, 0, int(_map_size.x), int(_map_size.y))
 	_world.add_child(_player)
-	_survival = _player.get_node_or_null("Survival")
+	_survival = _player.get_node_or_null("Survival") as SurvivalComponent
 	if _survival != null:
-		_survival.set("food_drain", 0.35)
-		_survival.set("water_drain", 0.55)
-		_survival.connect("depleted", _on_survival_depleted)
+		_survival.food_drain = 0.35
+		_survival.water_drain = 0.55
+		_survival.depleted.connect(_on_survival_depleted)
 	# Running is a decision here: the breath lasts a few seconds.
-	_player.set("stamina_enabled", true)
+	_player.stamina_enabled = true
 
 
 func _add_ui() -> void:
@@ -431,7 +432,7 @@ func _process(delta: float) -> void:
 	_update_objective_bar()
 	_tick_exhaustion(delta)
 	if _stamina_bar != null:
-		_stamina_bar.value = float(_player.get("stamina")) * 100.0
+		_stamina_bar.value = _player.stamina * 100.0
 		_stamina_bar.modulate.a = 1.0 if _stamina_bar.value < 99.0 else 0.0
 	if _clock_label != null:
 		_clock_timer -= delta
@@ -507,15 +508,15 @@ func _drink() -> void:
 		<= WATERFALL_TASK_RADIUS
 	var first_sip_at_basin := at_basin \
 		and Campaign.task_status("find_water") == Campaign.TaskStatus.PENDING
-	var survival := _player.get_node_or_null("Survival")
+	var survival := _player.get_node_or_null("Survival") as SurvivalComponent
 	if survival != null:
 		# No sip, no wait: drinking on a full gourd would only cost the cooldown.
 		# Reaching the basin still counts, however full the gourd is.
-		var full := float(survival.get("water")) >= float(survival.get("water_max")) - 0.5
+		var full := survival.water >= survival.water_max - 0.5
 		if full and not first_sip_at_basin:
 			_notify("Votre gourde est pleine.")
 			return
-		survival.call("add_water", DRINK_WATER)
+		survival.add_water(DRINK_WATER)
 	_drink_cooldown = DRINK_COOLDOWN
 	Audio.play_sfx(&"drink")
 	if at_basin:
@@ -574,13 +575,13 @@ func _objective_target(task_id: String) -> Vector2:
 	return Vector2.ZERO
 
 
-func _nearest_spot(spots: Array[Area2D]) -> Vector2:
+func _nearest_spot(spots: Array[ForageSpot]) -> Vector2:
 	var best := Vector2.ZERO
 	var best_distance := INF
-	for spot: Area2D in spots:
+	for spot: ForageSpot in spots:
 		if not is_instance_valid(spot):
 			continue
-		if spot.has_method("is_used") and bool(spot.call("is_used")):
+		if spot.is_used():
 			continue
 		var distance := _player.global_position.distance_squared_to(spot.global_position)
 		if distance < best_distance:
@@ -613,14 +614,14 @@ func _add_guards() -> void:
 	var positions: Array = _anchors["guards"]
 	for index in positions.size():
 		var spawn: Vector2 = positions[index]
-		var guard: CharacterBody2D = GUARD_SCENE.instantiate()
+		var guard: Guard = GUARD_SCENE.instantiate()
 		guard.name = "Guard%d" % (index + 1)
 		guard.position = spawn
-		guard.set("zone_size", Vector2(360, 260))
-		guard.set("vision_range", _guard_vision())
-		guard.set("use_navigation", true)
-		guard.set("pause_on_catch", false)
-		guard.set("chase_speed", GUARD_CHASE_SPEED)
+		guard.zone_size = Vector2(360, 260)
+		guard.vision_range = _guard_vision()
+		guard.use_navigation = true
+		guard.pause_on_catch = false
+		guard.chase_speed = GUARD_CHASE_SPEED
 		_world.add_child(guard)
 		guard.caught.connect(_on_caught.bind(guard))
 		var sprite := guard.get_node_or_null("Sprite") as AnimatedSprite2D
@@ -633,7 +634,7 @@ func _add_forage() -> void:
 	var food_points: Array = _anchors["food_spots"]
 	for index in food_points.size():
 		var texture: Texture2D = load(FOOD_TEXTURES[index % FOOD_TEXTURES.size()])
-		_food_spots.append(_spawn_forage(food_points[index], texture, 28.0, 0.0,
+		_food_spots.append(_spawn_forage(food_points[index], texture, 28.0,
 			"find_food", 1, Color(1.0, 0.9, 0.75), true, "",
 			"Vivres trouvés (%d/%d)."))
 
@@ -643,32 +644,26 @@ func _add_seed_spots() -> void:
 	var crops := ["corn", "tomato", "carrot"]
 	for index in points.size():
 		var crop: String = crops[index % crops.size()]
-		_spawn_forage(points[index], load(SEED_TEXTURES[crop]), 0.0, 0.0,
+		_spawn_forage(points[index], load(SEED_TEXTURES[crop]), 0.0,
 			"gather_seeds", 1, Color(1.0, 0.96, 0.82), false, crop,
 			"Graines sauvages (%d/%d).")
 
 
-func _spawn_forage(point: Vector2, texture: Texture2D, food: float, water: float,
+func _spawn_forage(point: Vector2, texture: Texture2D, food: float,
 		task_id: String, progress: int, tint: Color,
-		auto_pickup := true, seed_crop := "", message := "") -> Area2D:
-	var spot: Area2D = FORAGE_SCENE.instantiate()
+		auto_pickup := true, seed_crop := "", message := "") -> ForageSpot:
+	var spot: ForageSpot = FORAGE_SCENE.instantiate()
 	spot.name = "Forage_%d_%d" % [int(point.x), int(point.y)]
 	spot.position = point
-	spot.set("texture", texture)
-	spot.set("food_amount", food)
-	spot.set("water_amount", water)
-	spot.set("task_id", task_id)
-	spot.set("task_progress", progress)
-	spot.set("tint", tint)
-	spot.set("auto_pickup", auto_pickup)
-	spot.set("seed_crop", seed_crop)
-	spot.set("pickup_message", message)
-	var kind := "food"
-	if not seed_crop.is_empty():
-		kind = "seed"
-	elif water > 0.0:
-		kind = "water"
-	spot.set("kind", kind)
+	spot.texture = texture
+	spot.food_amount = food
+	spot.task_id = task_id
+	spot.task_progress = progress
+	spot.tint = tint
+	spot.auto_pickup = auto_pickup
+	spot.seed_crop = seed_crop
+	spot.pickup_message = message
+	spot.kind = "seed" if not seed_crop.is_empty() else "food"
 	spot.picked.connect(_on_forage_picked)
 	_world.add_child(spot)
 	return spot
@@ -677,11 +672,11 @@ func _spawn_forage(point: Vector2, texture: Texture2D, food: float, water: float
 func _add_hide_spots() -> void:
 	var points: Array = _anchors["hide_spots"]
 	for index in points.size():
-		var spot: Area2D = HIDE_SCENE.instantiate()
+		var spot: HideSpot = HIDE_SCENE.instantiate()
 		spot.name = "Hide_%d_%d" % [int(points[index].x), int(points[index].y)]
 		spot.position = points[index]
-		spot.set("texture", load(HIDE_TEXTURES[index % HIDE_TEXTURES.size()]))
-		spot.set("tint", Color(0.72, 0.95, 0.70))
+		spot.texture = load(HIDE_TEXTURES[index % HIDE_TEXTURES.size()])
+		spot.tint = Color(0.72, 0.95, 0.70)
 		spot.hidden_completed.connect(_on_hidden_completed)
 		_world.add_child(spot)
 
@@ -689,11 +684,11 @@ func _add_hide_spots() -> void:
 func _add_climb_points() -> void:
 	var climb_points: Array = _anchors["climb_points"]
 	for spec: Dictionary in climb_points:
-		var point: Area2D = CLIMB_SCENE.instantiate()
+		var point: ClimbPoint = CLIMB_SCENE.instantiate()
 		point.name = "Climb_%d_%d" % [int(spec["position"].x), int(spec["position"].y)]
 		point.position = spec["position"]
-		point.set("label", spec["label"])
-		point.set("destination", spec["destination"])
+		point.label = spec["label"]
+		point.destination = spec["destination"]
 		point.climb_requested.connect(_on_climb_requested)
 		_world.add_child(point)
 
@@ -701,12 +696,12 @@ func _add_climb_points() -> void:
 func _add_stealth_zones() -> void:
 	var stealth_zones: Array = _anchors["stealth_zones"]
 	for spec: Dictionary in stealth_zones:
-		var zone: Area2D = STEALTH_SCENE.instantiate()
+		var zone: StealthZone = STEALTH_SCENE.instantiate()
 		zone.name = "Stealth_%d_%d" % [int(spec["position"].x), int(spec["position"].y)]
 		zone.position = spec["position"]
-		zone.set("zone_name", spec["name"])
-		zone.set("conceal_player", spec["conceal"])
-		zone.set("mute_noise", spec["mute"])
+		zone.zone_name = spec["name"]
+		zone.conceal_player = spec["conceal"]
+		zone.mute_noise = spec["mute"]
 		var collision := zone.get_node("CollisionShape2D") as CollisionShape2D
 		var rectangle := collision.shape.duplicate() as RectangleShape2D
 		rectangle.size = spec["size"]
@@ -717,32 +712,32 @@ func _add_stealth_zones() -> void:
 
 
 func _add_checkpoints() -> void:
-	var start: Area2D = CHECKPOINT_SCENE.instantiate()
+	var start: Checkpoint = CHECKPOINT_SCENE.instantiate()
 	start.name = "StartCheckpoint"
 	start.position = _anchors["spawn"]
-	start.set("checkpoint_name", "Plage")
+	start.checkpoint_name = "Plage"
 	start.reached.connect(_on_checkpoint_reached)
 	_world.add_child(start)
 
-	var mouth: Area2D = CHECKPOINT_SCENE.instantiate()
+	var mouth: Checkpoint = CHECKPOINT_SCENE.instantiate()
 	mouth.name = "RiverMouthCheckpoint"
 	mouth.position = _anchors["river_mouth_checkpoint"]
-	mouth.set("task_id", "follow_river")
-	mouth.set("checkpoint_name", "Embouchure")
+	mouth.task_id = "follow_river"
+	mouth.checkpoint_name = "Embouchure"
 	mouth.reached.connect(_on_checkpoint_reached)
 	_world.add_child(mouth)
 
-	var forest: Area2D = CHECKPOINT_SCENE.instantiate()
+	var forest: Checkpoint = CHECKPOINT_SCENE.instantiate()
 	forest.name = "ForestCheckpoint"
 	forest.position = _anchors["forest_checkpoint"]
-	forest.set("checkpoint_name", "Camp forestier")
+	forest.checkpoint_name = "Camp forestier"
 	forest.reached.connect(_on_checkpoint_reached)
 	_world.add_child(forest)
 
-	var upper: Area2D = CHECKPOINT_SCENE.instantiate()
+	var upper: Checkpoint = CHECKPOINT_SCENE.instantiate()
 	upper.name = "UpperCheckpoint"
 	upper.position = _anchors["upper_checkpoint"]
-	upper.set("checkpoint_name", "Passage nord")
+	upper.checkpoint_name = "Passage nord"
 	upper.reached.connect(_on_checkpoint_reached)
 	_world.add_child(upper)
 
@@ -844,9 +839,9 @@ func _guard_vision() -> float:
 
 func _on_phase_changed(_phase: int) -> void:
 	for entry: Dictionary in _guards:
-		var guard: CharacterBody2D = entry["guard"]
+		var guard: Guard = entry["guard"]
 		if is_instance_valid(guard):
-			guard.set("vision_range", _guard_vision())
+			guard.vision_range = _guard_vision()
 	if DayNightCycle.is_night():
 		_notify("La nuit tombe : les patrouilles voient moins loin.")
 	else:
@@ -857,12 +852,12 @@ func _on_map_resolved(_map_id: int, _summary: Dictionary) -> void:
 	_notify("Toutes les tâches sont accomplies — le refuge du col vous attend.")
 
 
-func _on_caught(guard: CharacterBody2D) -> void:
+func _on_caught(guard: Guard) -> void:
 	if _respawning or _climbing:
 		# This catch is ignored (the player is mid-climb or already being sent
 		# back). The guard already switched to its "caught" state, where it
 		# stands still for good: put it back on its round.
-		guard.call("reset_after_catch", guard.global_position)
+		guard.reset_after_catch(guard.global_position)
 		return
 	await _lose_ground("Repéré par une patrouille", "Repéré !")
 
@@ -875,9 +870,9 @@ func _on_survival_depleted(kind: StringName) -> void:
 
 
 func _is_exhausted() -> bool:
-	if _survival == null or not bool(_survival.get("active")):
+	if _survival == null or not _survival.active:
 		return false
-	return float(_survival.get("food")) <= 0.0 or float(_survival.get("water")) <= 0.0
+	return _survival.food <= 0.0 or _survival.water <= 0.0
 
 
 ## Slows an exhausted player and counts down to the collapse. Eating or
@@ -887,12 +882,12 @@ func _tick_exhaustion(delta: float) -> void:
 		return
 	if not _is_exhausted():
 		_exhaustion = 0.0
-		_player.set("speed_scale", 1.0)
+		_player.speed_scale = 1.0
 		return
-	_player.set("speed_scale", EXHAUSTED_SPEED_SCALE)
+	_player.speed_scale = EXHAUSTED_SPEED_SCALE
 	_exhaustion += delta
 	if _exhaustion >= COLLAPSE_DELAY:
-		var cause := "la soif" if float(_survival.get("water")) <= 0.0 else "la faim"
+		var cause := "la soif" if _survival.water <= 0.0 else "la faim"
 		_lose_ground("Effondré, vaincu par %s" % cause, "Vous vous effondrez.")
 
 
@@ -905,21 +900,21 @@ func _lose_ground(reason: String, headline: String) -> void:
 	var count := Campaign.record_setback(reason, 1)
 	_shake_camera(0.75)
 	await _flash_damage()
-	_player.call("stun", 1.0)
+	_player.stun(1.0)
 	if _respawn_overlay != null:
 		_respawn_overlay.color = Color(0.02, 0.02, 0.03, 0.0)
 	await _fade_respawn(1.0)
 	_player.global_position = _respawn_position
-	_player.call("set_hidden", false)
-	_player.set("speed_scale", 1.0)
+	_player.set_hidden(false)
+	_player.speed_scale = 1.0
 	_exhaustion = 0.0
 	if _survival != null:
-		_survival.call("add_food", maxf(0.0, RESPAWN_RESERVE - float(_survival.get("food"))))
-		_survival.call("add_water", maxf(0.0, RESPAWN_RESERVE - float(_survival.get("water"))))
+		_survival.add_food(maxf(0.0, RESPAWN_RESERVE - _survival.food))
+		_survival.add_water(maxf(0.0, RESPAWN_RESERVE - _survival.water))
 	for entry: Dictionary in _guards:
-		var other: CharacterBody2D = entry["guard"]
+		var other: Guard = entry["guard"]
 		if is_instance_valid(other):
-			other.call("reset_after_catch", entry["spawn"], RESPAWN_GRACE)
+			other.reset_after_catch(entry["spawn"], RESPAWN_GRACE)
 	if count <= Campaign.SETBACK_CAP:
 		_notify("%s Retour au dernier checkpoint — la génération suivante en paiera le prix."
 			% headline)
@@ -930,9 +925,9 @@ func _lose_ground(reason: String, headline: String) -> void:
 
 
 func _shake_camera(amount: float) -> void:
-	var camera := _player.get_node_or_null("Camera2D")
-	if camera != null and camera.has_method("add_trauma"):
-		camera.call("add_trauma", amount)
+	var camera := _player.get_node_or_null("Camera2D") as ShakeCamera2D
+	if camera != null:
+		camera.add_trauma(amount)
 
 
 func _flash_damage() -> void:

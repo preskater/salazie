@@ -55,11 +55,7 @@ func _enter_tree() -> void:
 
 
 func _ready() -> void:
-	# Allow opening Farm.tscn directly for debugging, without going through the menu.
-	if not SceneRouter.is_gameplay:
-		SceneRouter.is_gameplay = true
-	if not GameState.playing:
-		GameState.playing = true
+	SceneRouter.bootstrap_direct_run(self)
 	GameState.farm_active = true
 	# The farm day drives the sky (GameState.sync_sky); the cycle must not also
 	# run on its own.

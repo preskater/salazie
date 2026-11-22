@@ -1,3 +1,4 @@
+class_name Checkpoint
 extends Area2D
 ## A safe point that updates the respawn position and can complete a task when
 ## the player reaches it for the first time.

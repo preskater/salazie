@@ -44,6 +44,10 @@ func _spawn(scene: PackedScene) -> Node:
 	add_child(map)
 	await get_tree().process_frame
 	await get_tree().physics_frame
+	# A map is normally entered through the router: start the session it would
+	# have started, so saving works and no autosave fires from a menu state.
+	SceneRouter.is_gameplay = true
+	GameState.playing = true
 	return map
 
 

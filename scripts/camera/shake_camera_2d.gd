@@ -18,6 +18,9 @@ var _base_rotation := 0.0
 func _ready() -> void:
 	_base_offset = offset
 	_base_rotation = rotation
+	# Camera2D ignores its own rotation by default: without this the roll is
+	# computed and never seen.
+	ignore_rotation = false
 
 
 func add_trauma(amount: float) -> void:

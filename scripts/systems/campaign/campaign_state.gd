@@ -60,35 +60,30 @@ const TASKS := {
 			"label": "Trouver la rivière",
 			"hint": "Quittez la plage et remontez l'estuaire jusqu'au premier pont.",
 			"target": 1,
-			"retryable": false,
 		},
 		{
 			"id": "find_water",
 			"label": "Boire à la rivière",
 			"hint": "Buvez au bassin, sous la cascade.",
 			"target": 1,
-			"retryable": false,
 		},
 		{
 			"id": "find_food",
 			"label": "Rassembler des vivres",
 			"hint": "Ramassez 3 coquillages, baies ou champignons sauvages.",
 			"target": 3,
-			"retryable": false,
 		},
 		{
 			"id": "reach_refuge",
 			"label": "Rejoindre le refuge du col",
 			"hint": "Atteignez la cabane au sommet du sentier.",
 			"target": 1,
-			"retryable": false,
 		},
 		{
 			"id": "gather_seeds",
 			"label": "Ramasser des graines sauvages",
 			"hint": "Ramassez 3 graines pour la prochaine génération (optionnel).",
 			"target": 3,
-			"retryable": false,
 			"optional": true,
 		},
 	],
@@ -98,35 +93,30 @@ const TASKS := {
 			"label": "Préparer une parcelle",
 			"hint": "Préparez une parcelle du potager ({interact}).",
 			"target": 1,
-			"retryable": false,
 		},
 		{
 			"id": "plant_seed",
 			"label": "Planter une graine",
 			"hint": "Choisissez une graine ({select_seed}) puis plantez ({interact}).",
 			"target": 1,
-			"retryable": false,
 		},
 		{
 			"id": "harvest_crop",
 			"label": "Récolter une culture",
 			"hint": "Récoltez une culture mûre ({interact}).",
 			"target": 1,
-			"retryable": false,
 		},
 		{
 			"id": "sell_produce",
 			"label": "Vendre au marché",
 			"hint": "Vendez votre récolte au marché du hameau ({interact}).",
 			"target": 1,
-			"retryable": false,
 		},
 		{
 			"id": "earn_100",
 			"label": "Faire prospérer la ferme",
 			"hint": "Réunissez 100 G, argent et biens compris, avant le jour 6.",
 			"target": 1,
-			"retryable": false,
 		},
 	],
 	3: [
@@ -135,21 +125,18 @@ const TASKS := {
 			"label": "Écouter les habitants",
 			"hint": "Parlez à 3 habitants du village.",
 			"target": 3,
-			"retryable": false,
 		},
 		{
 			"id": "assess",
 			"label": "Évaluer les zones fragiles",
 			"hint": "Inspectez la berge, la forêt et le marché.",
 			"target": 3,
-			"retryable": false,
 		},
 		{
 			"id": "choose_plan",
 			"label": "Choisir un plan pour Salazie",
 			"hint": "Prenez position au point de décision.",
 			"target": 1,
-			"retryable": false,
 			"critical": true,
 		},
 		{
@@ -157,7 +144,6 @@ const TASKS := {
 			"label": "Convaincre le conseil",
 			"hint": "Présentez votre plan à la mairie.",
 			"target": 1,
-			"retryable": false,
 			"critical": true,
 		},
 	],
@@ -261,10 +247,6 @@ func task_last_failure(task_id: String, map_id: int = -1) -> String:
 	return String((failures[-1] as Dictionary).get("reason", ""))
 
 
-func task_retryable(task_id: String, map_id: int = -1) -> bool:
-	return bool(task_definition(task_id, map_id).get("retryable", false))
-
-
 ## Marks a task as done. A task that is already done is left untouched.
 func complete_task(task_id: String, map_id: int = -1) -> bool:
 	var id := _active_map(map_id)
@@ -303,8 +285,9 @@ func add_task_progress(task_id: String, amount: int = 1, map_id: int = -1) -> bo
 	return false
 
 
-## Records a failure. The task stays FAILED until `retry_task()` is called or
-## the map is left; the failure itself is never erased.
+## Records a failure. A failed task stays failed for good: a generation that
+## misses its deadline does not get another go. The failure itself is never
+## erased.
 func fail_task(task_id: String, reason: String = "", map_id: int = -1) -> bool:
 	var id := _active_map(map_id)
 	ensure_map(id)
@@ -324,23 +307,6 @@ func fail_task(task_id: String, reason: String = "", map_id: int = -1) -> bool:
 	state["failures"] = failures
 	tasks[id][task_id] = state
 	task_status_changed.emit(id, task_id, TaskStatus.FAILED)
-	_refresh_result(id)
-	return true
-
-
-## Puts a retryable failed task back in the pending pool. The failure history
-## stays in the generation result.
-func retry_task(task_id: String, map_id: int = -1) -> bool:
-	var id := _active_map(map_id)
-	if not task_retryable(task_id, id):
-		return false
-	var state := _task_state(task_id, id)
-	if int(state.get("status", TaskStatus.PENDING)) != TaskStatus.FAILED:
-		return false
-	state["status"] = TaskStatus.PENDING
-	state["progress"] = 0
-	tasks[id][task_id] = state
-	task_status_changed.emit(id, task_id, TaskStatus.PENDING)
 	_refresh_result(id)
 	return true
 
@@ -367,14 +333,6 @@ func setbacks_for_map(map_id: int = -1) -> int:
 
 func is_map_resolved(map_id: int = -1) -> bool:
 	return int(map_summary(map_id).get("pending", 0)) == 0
-
-
-func is_map_complete(map_id: int = -1) -> bool:
-	return is_map_resolved(map_id)
-
-
-func can_leave_map(map_id: int = -1) -> bool:
-	return is_map_resolved(map_id)
 
 
 func map_summary(map_id: int = -1) -> Dictionary:
@@ -414,7 +372,6 @@ func map_summary(map_id: int = -1) -> Dictionary:
 			"target": maxi(1, int(definition.get("target", 1))),
 			"attempts": int(state.get("attempts", 0)),
 			"failures": failures.duplicate(true),
-			"retryable": bool(definition.get("retryable", false)),
 			"critical": bool(definition.get("critical", false)),
 			"optional": is_optional,
 		}

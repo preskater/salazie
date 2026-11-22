@@ -80,8 +80,8 @@ enforces this. The engine default font is kept because the UI pack does not ship
 polls:
 
 - compact row: `Tâches — X faites · Y échouées · Z en cours`;
-- expanded rows: `✓` done, `✗` failed with the last reason and `[Réessayer]` when the task
-  can be retried, `○` pending with `(progress/target)` for multi-step tasks;
+- expanded rows: `✓` done, `✗` failed with the last reason, `○` pending with
+  `(progress/target)` for multi-step tasks;
 - result footer once the map is resolved: rank and next-generation label;
 - `T` or gamepad Select toggles the panel.
 
@@ -210,8 +210,8 @@ ignored one by one, so a damaged block never prevents a load.
 }
 ```
 
-Task statuses are `0` pending, `1` done and `2` failed. A retry returns the status to `0`
-but keeps the failure list.
+Task statuses are `0` pending, `1` done and `2` failed. A failure is final: it keeps the
+failure list and the task is not put back in the pending pool.
 
 - Writes are atomic: `savegame.json.tmp` → `savegame.json`, with the previous file rotated
   to `savegame.json.bak`.

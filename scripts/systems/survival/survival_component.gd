@@ -1,3 +1,4 @@
+class_name SurvivalComponent
 extends Node
 ## Tracks food and water while the player is in a survival scenario.
 ## Emits signals instead of being polled by the HUD.

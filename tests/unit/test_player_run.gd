@@ -57,11 +57,11 @@ func test_concealment_counts_every_source() -> void:
 	player.add_cover(bush)
 	player.remove_cover(bush)
 	assert_bool(player.concealed).is_true()
-	assert_float(player.ANIMATIONS.modulate.a).is_equal_approx(0.55, 0.001)
+	assert_float(player.animations.modulate.a).is_equal_approx(0.55, 0.001)
 
 	player.remove_cover(cave)
 	assert_bool(player.concealed).is_false()
-	assert_float(player.ANIMATIONS.modulate.a).is_equal(1.0)
+	assert_float(player.animations.modulate.a).is_equal(1.0)
 
 
 func test_noise_masking_counts_every_source() -> void:
@@ -107,16 +107,16 @@ func test_breath_runs_out_and_has_to_come_back() -> void:
 	var player := _spawn_player()
 	player.stamina_enabled = true
 
-	assert_bool(player.tick_stamina(player.STAMINA_SECONDS * 0.5, true)).is_true()
+	assert_bool(player.tick_stamina(player.stamina_seconds * 0.5, true)).is_true()
 	assert_float(player.stamina).is_equal_approx(0.5, 0.001)
-	assert_bool(player.tick_stamina(player.STAMINA_SECONDS, true)).is_true()
+	assert_bool(player.tick_stamina(player.stamina_seconds, true)).is_true()
 	assert_float(player.stamina).is_equal(0.0)
 	assert_bool(player.winded).is_true()
 
 	# Holding the key does not help: the breath must come back first.
 	assert_bool(player.tick_stamina(0.5, true)).is_false()
 	assert_float(player.stamina).is_greater(0.0)
-	player.tick_stamina(player.STAMINA_RECOVERY_SECONDS * player.STAMINA_RESUME, false)
+	player.tick_stamina(player.stamina_recovery_seconds * player.stamina_resume, false)
 	assert_bool(player.tick_stamina(0.01, true)).is_true()
 	assert_bool(player.winded).is_false()
 
