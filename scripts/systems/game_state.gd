@@ -355,6 +355,12 @@ func _emit_state_changed() -> void:
 	seed_changed.emit(selected_seed)
 
 
+## True when `from_dict()` would accept the payload. Lets the save system check
+## every block before it applies any of them.
+func can_restore(data: Dictionary) -> bool:
+	return _is_valid_state(data)
+
+
 func _is_valid_state(data: Dictionary) -> bool:
 	if not data.has("money") or not _is_number(data["money"]):
 		return false

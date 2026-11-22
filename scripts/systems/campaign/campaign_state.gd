@@ -547,10 +547,15 @@ func to_dict() -> Dictionary:
 	}
 
 
+## True when `from_dict()` would accept the payload.
+func can_restore(data: Dictionary) -> bool:
+	return not data.is_empty()
+
+
 ## Applies a save payload. Returns false and leaves the campaign untouched when
-## the payload is not a dictionary.
+## the payload is empty.
 func from_dict(data: Dictionary) -> bool:
-	if data.is_empty():
+	if not can_restore(data):
 		return false
 	var next_tasks: Dictionary = {}
 	for map_id: int in MAP_ORDER:

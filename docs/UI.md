@@ -214,8 +214,13 @@ but keeps the failure list.
 
 - Writes are atomic: `savegame.json.tmp` → `savegame.json`, with the previous file rotated
   to `savegame.json.bak`.
-- Loading tries the primary file, then the backup. Invalid JSON, missing fields, or a newer
-  `version` are refused without mutating the current state.
+- Loading tries the primary file, then the backup. A candidate is used only when the whole
+  payload would be accepted: `GameState.can_restore()` and `Campaign.can_restore()` are
+  checked before anything is applied, so a refused load never mutates the current state and
+  an unloadable primary falls through to a healthy backup. **Continuer** is enabled only
+  when such a candidate exists, and says `Sauvegarde illisible` if the load still fails.
+- A finished story (`campaign.finished`) turns the entry into **Revoir l'épilogue** and
+  resumes on the ending screen.
 - Version 1 payloads without the `economy` block still load; `money` is applied to the
   active generation's primary currency.
 - JSON numbers load as floats; `GameState.to_dict()` / `from_dict()` and

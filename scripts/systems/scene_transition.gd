@@ -23,6 +23,9 @@ signal transition_finished
 @export_multiline var default_subtitle := ""
 
 var is_transitioning := false
+## Swaps the current scene. Tests replace it so a transition can be followed
+## without tearing down the test runner's own scene.
+var scene_changer := Callable()
 
 @onready var _backdrop: ColorRect = $Backdrop
 @onready var _text: CenterContainer = $Text
@@ -35,23 +38,26 @@ func _ready() -> void:
 
 ## Fades out, displays `title` and `subtitle` over the black screen, swaps to
 ## `scene_path`, then fades back in. Callers that need to wait can `await` it.
-func change_scene(scene_path: String, title := default_title, subtitle := default_subtitle) -> void:
+## Returns false when the scene was not swapped.
+func change_scene(scene_path: String, title := default_title, subtitle := default_subtitle) -> bool:
 	if is_transitioning:
-		return
+		return false
 	if not ResourceLoader.exists(scene_path):
 		push_error("SceneTransition: scene not found: %s" % scene_path)
-		return
+		return false
 	await cover(title, subtitle)
 	await _hold()
-	var error := get_tree().change_scene_to_file(scene_path)
+	var error: Error = scene_changer.call(scene_path) if scene_changer.is_valid() \
+		else get_tree().change_scene_to_file(scene_path)
 	if error != OK:
 		push_error("SceneTransition: failed to load %s (error %d)" % [scene_path, error])
 		await reveal()
-		return
+		return false
 	scene_changed.emit(scene_path)
 	await get_tree().process_frame
 	await get_tree().process_frame
 	await reveal()
+	return true
 
 ## Fades to black and shows the given text. Exposed for scripted transitions
 ## and tests; `reveal()` ends it.

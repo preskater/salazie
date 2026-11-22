@@ -62,7 +62,9 @@ func _leave() -> void:
 		if overlay != null:
 			overlay.show_result(Campaign.map_summary(), Campaign.next_map_label(), _carry_note())
 			await overlay.confirmed
-	await SceneRouter.go_to_next_map()
+	if not await SceneRouter.go_to_next_map():
+		# Refused (a transition was already running): the exit must answer again.
+		_triggered = false
 
 
 func _carry_note() -> String:

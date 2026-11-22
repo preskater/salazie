@@ -166,3 +166,49 @@ func test_task_list_action_exists() -> void:
 func test_game_scene_path_exists() -> void:
 	assert_bool(ResourceLoader.exists(SceneRouter.GAME_SCENE)).is_true()
 	assert_bool(ResourceLoader.exists(SceneRouter.MAIN_MENU_SCENE)).is_true()
+
+
+func test_a_finished_story_offers_its_epilogue() -> void:
+	# Regression (#25).
+	Campaign.reset()
+	Campaign.current_map = 3
+	Campaign.finished = true
+	assert_bool(SaveGame.save_game()).is_true()
+	# At the menu nothing autosaves; the reset must not rewrite the file.
+	GameState.playing = false
+	Campaign.reset()
+	var menu := _spawn_main_menu()
+
+	assert_bool((menu.get_node("%ContinueButton") as Button).disabled).is_false()
+	assert_str((menu.get_node("%ContinueButton") as Button).text).contains("épilogue")
+	assert_str((menu.get_node("%ContinueInfo") as Label).text).contains("terminée")
+
+
+func test_continue_reports_a_save_that_cannot_be_read() -> void:
+	# Regression (#24): the button did nothing and said nothing.
+	assert_bool(SaveGame.save_game()).is_true()
+	var menu := _spawn_main_menu()
+	var file := FileAccess.open(SaveGame.save_path, FileAccess.WRITE)
+	file.store_string("{")
+	file.close()
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(SaveGame.save_path + ".bak"))
+
+	(menu.get_node("%ContinueButton") as Button).pressed.emit()
+
+	assert_bool((menu.get_node("%ContinueButton") as Button).disabled).is_true()
+	assert_str((menu.get_node("%ContinueInfo") as Label).text).is_equal("Aucune sauvegarde")
+
+
+func test_pause_menu_refuses_to_open_outside_gameplay_or_when_paused() -> void:
+	var pause: CanvasLayer = auto_free(load(PAUSE_MENU_SCENE).instantiate())
+	add_child(pause)
+
+	SceneRouter.is_gameplay = false
+	pause.call("open")
+	assert_bool(pause.visible).is_false()
+
+	SceneRouter.is_gameplay = true
+	get_tree().paused = true
+	pause.call("open")
+	assert_bool(pause.visible).is_false()
+	get_tree().paused = false

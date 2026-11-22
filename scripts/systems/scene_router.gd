@@ -13,6 +13,10 @@ const ENDING_SCENE := "res://scenes/ui/ending/ending_screen.tscn"
 const FADE_TIME := 0.25
 
 var is_gameplay := false
+## Swaps the current scene. Tests replace it so a transition can be followed
+## without tearing down the test runner's own scene.
+var scene_changer := Callable()
+var fade_time := FADE_TIME
 
 var _transitioning := false
 var _fade_layer: CanvasLayer
@@ -27,40 +31,55 @@ func _ready() -> void:
 	get_tree().root.close_requested.connect(_on_close_requested)
 
 
-func start_new_game() -> void:
+## True while a fade or a scene swap is running. The pause menu must not open
+## in that window.
+func is_transitioning() -> bool:
+	return _transitioning or SceneTransition.is_transitioning
+
+
+func start_new_game() -> bool:
 	if _transitioning:
-		return
+		return false
 	Campaign.reset()
 	SaveGame.clear_world()
 	GameState.reset(Campaign.starting_money_for_map(1))
 	GameState.farm_active = false
 	GameState.playing = true
-	is_gameplay = true
 	_set_day_night_active(true, true)
 	var ok := await _change_scene(Campaign.current_scene_path())
 	if not ok:
 		GameState.playing = false
+		_set_day_night_active(false)
+		return false
+	# Only now: `is_gameplay` is what lets the pause menu open.
+	is_gameplay = true
+	SaveGame.save_game()
+	return true
+
+
+## Resumes the saved game. Returns false when no save could be loaded, so the
+## menu can say so. A finished story resumes on its epilogue.
+func continue_game() -> bool:
+	if _transitioning:
+		return false
+	if not SaveGame.load_game():
+		return false
+	if Campaign.finished:
+		GameState.playing = false
 		is_gameplay = false
 		_set_day_night_active(false)
-		return
-	SaveGame.save_game()
-
-
-func continue_game() -> void:
-	if _transitioning:
-		return
-	if not SaveGame.load_game():
-		return
+		return await _change_scene(ENDING_SCENE)
 	GameState.playing = true
 	GameState.farm_active = Campaign.current_map == 2
-	is_gameplay = true
 	_set_day_night_active(true, true)
 	DayNightCycle.from_dict(SaveGame.read_cycle())
 	var ok := await _change_scene(Campaign.current_scene_path())
 	if not ok:
 		GameState.playing = false
-		is_gameplay = false
 		_set_day_night_active(false)
+		return false
+	is_gameplay = true
+	return true
 
 
 ## Leaves the current map for the next generation. The caller must have
@@ -84,9 +103,15 @@ func go_to_next_map() -> bool:
 		int(summary.get("done", 0)),
 		int(summary.get("failed", 0)),
 	]
-	await SceneTransition.change_scene(
+	var swapped := await SceneTransition.change_scene(
 		Campaign.current_scene_path(), Campaign.map_title(), subtitle)
 	_transitioning = false
+	if not swapped:
+		# The campaign already moved on and was saved, so Continue resumes on
+		# the new map. Staying on the old one would show a generation that is
+		# over; the menu is the only consistent place left.
+		await go_to_main_menu()
+		return false
 	is_gameplay = true
 	scene_changed.emit(get_tree().current_scene)
 	transition_finished.emit()
@@ -130,7 +155,8 @@ func _change_scene(path: String) -> bool:
 	_transitioning = true
 	get_tree().paused = false
 	await _fade(1.0)
-	var err := get_tree().change_scene_to_file(path)
+	var err: Error = scene_changer.call(path) if scene_changer.is_valid() \
+		else get_tree().change_scene_to_file(path)
 	if err != OK:
 		push_error("Could not change scene to %s (error %d)." % [path, err])
 		await _fade(0.0)
@@ -197,7 +223,7 @@ func _fade(target_alpha: float) -> void:
 	_fade_rect.mouse_filter = Control.MOUSE_FILTER_STOP
 	var tween := create_tween()
 	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
-	tween.tween_property(_fade_rect, "modulate:a", target_alpha, FADE_TIME)
+	tween.tween_property(_fade_rect, "modulate:a", target_alpha, fade_time)
 	await tween.finished
 	if target_alpha <= 0.001:
 		_fade_rect.visible = false
