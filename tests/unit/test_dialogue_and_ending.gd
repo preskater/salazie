@@ -357,3 +357,21 @@ func test_interact_or_accept_dismisses_the_line() -> void:
 	box._unhandled_input(_action(&"interact"))
 	box.hide_line()
 	assert_int(closes.size()).is_equal(2)
+
+
+func test_queued_lines_follow_each_other() -> void:
+	var box := _spawn_dialogue()
+
+	box.queue_line("Le marron", "Première.")
+	box.queue_line("Le marron", "Deuxième.")
+	box.queue_line("Le marron", "Troisième.")
+
+	assert_str(box.get_text()).is_equal("Première.")
+	assert_int(box.pending_lines()).is_equal(2)
+	box.hide_line()
+	assert_str(box.get_text()).is_equal("Deuxième.")
+	assert_bool(box.visible).is_true()
+	box.hide_line()
+	box.hide_line()
+	assert_bool(box.visible).is_false()
+	assert_int(box.pending_lines()).is_equal(0)

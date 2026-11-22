@@ -314,6 +314,18 @@ the bridge rows.
 - A hide spot shows a soft green ring at its base and a `Caché` label while the
   player is concealed; the label switches to `Caché !` after the hide delay.
 
+## Story and stamina
+
+- `MaroonMap.STORY` holds what the maroon thinks at each step: two opening lines, one at
+  each checkpoint beyond the beach, one on first reaching the cabin. They are shown through
+  the shared `DialogueBox` (`queue_line`), once per visit, and can be dismissed with
+  `interact`.
+- Running spends breath (`player.stamina_enabled`, on this map only): 5 s of sprint
+  (`STAMINA_SECONDS`), 8 s to recover (`STAMINA_RECOVERY_SECONDS`), and a winded player must
+  get back to 30 % before running again. `MaroonUI/Root/StaminaBar` shows it while it is not
+  full. With guards chasing between walking and running speed, a sprint is an escape to
+  spend wisely, not a way to cross the map.
+
 ## Result and carry-over
 
 - Map result: done / failed / failure events / rank.

@@ -504,6 +504,7 @@ func test_a_notification_fades_after_its_delay_and_the_next_one_shows_again() ->
 	var timers := map.find_children("*", "Timer", false, false)
 	assert_int(timers.size()).is_equal(1)
 	var timer := timers[0] as Timer
+	map.call("_notify", "Vivres trouvés.")
 	assert_bool(notification.visible).is_true()
 	assert_bool(timer.is_stopped()).is_false()
 	assert_float(timer.wait_time).is_equal(4.0)
