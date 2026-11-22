@@ -7,18 +7,6 @@ extends Node
 
 signal device_changed(using_gamepad: bool)
 
-## Rows of the controls screen, in display order. `move` is the four movement
-## actions shown as one entry.
-const CONTROLS: Array[Dictionary] = [
-	{"action": "move", "label": "Se déplacer"},
-	{"action": "run", "label": "Courir"},
-	{"action": "interact", "label": "Interagir"},
-	{"action": "select_seed", "label": "Choisir une graine"},
-	{"action": "toggle_inventory", "label": "Inventaire"},
-	{"action": "toggle_prices", "label": "Prix du marché"},
-	{"action": "toggle_tasks", "label": "Liste des tâches"},
-	{"action": "pause", "label": "Pause"},
-]
 const MOVE_ACTIONS: Array[StringName] = [&"move_up", &"move_left", &"move_down", &"move_right"]
 const UNBOUND := "?"
 
@@ -127,12 +115,17 @@ func gamepad_label(action: StringName) -> String:
 		return "%s / %s" % [gamepad_label(&"seed_previous"), gamepad_label(&"seed_next")]
 	for event: InputEvent in _events(action):
 		if event is InputEventJoypadButton:
-			var index := (event as InputEventJoypadButton).button_index
-			return String(BUTTON_NAMES.get(index, "Bouton %d" % index))
+			return button_label((event as InputEventJoypadButton).button_index)
 		if event is InputEventJoypadMotion:
 			var axis := (event as InputEventJoypadMotion).axis
 			return String(AXIS_NAMES.get(axis, "Axe %d" % axis))
 	return UNBOUND
+
+
+func button_label(index: int) -> String:
+	if index < 0:
+		return UNBOUND
+	return String(BUTTON_NAMES.get(index, "Bouton %d" % index))
 
 
 ## Name printed on the keycap for the player's layout.

@@ -214,15 +214,21 @@ func test_controls_screen_lists_every_action_for_both_devices() -> void:
 
 	var rows: Array = screen.call("get_row_texts")
 
-	assert_int(rows.size()).is_equal(InputHints.CONTROLS.size() + 2)
 	var by_label := {}
 	for row: Array in rows:
 		by_label[row[0]] = row
 		assert_str(String(row[1])).is_not_empty()
 		assert_str(String(row[2])).is_not_empty()
 	assert_array(by_label["Courir"]).is_equal(["Courir", "Maj", "X"])
-	assert_array(by_label["Se déplacer"]).is_equal(["Se déplacer", "WASD", "Stick gauche"])
+	assert_array(by_label["Aller en haut"]).is_equal(["Aller en haut", "W", "Croix ↑"])
+	assert_array(by_label["Choisir une graine"]).is_equal(["Choisir une graine", "1 à 4", "LB / RB"])
 	assert_array(by_label["Retour / fermer"]).is_equal(["Retour / fermer", "Échap", "B"])
+	# Every action the player may rebind has its row.
+	var listed := (screen.get("ROWS") as Array).map(
+		func(entry: Dictionary) -> StringName: return StringName(String(entry["action"])))
+	for action: StringName in Settings.REBINDABLE:
+		assert_bool(listed.has(action)).override_failure_message(
+			"%s has no row" % action).is_true()
 
 
 func test_controls_screen_follows_a_changed_binding() -> void:

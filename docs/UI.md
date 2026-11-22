@@ -299,8 +299,24 @@ No script or scene spells a key. The `InputHints` autoload
   `DisplayServer.keyboard_get_label_from_physical()`, so the movement hint reads `ZQSD` on
   AZERTY. The headless and Web display servers cannot report a layout; US names are used.
 
-The **Commandes** screen is generated from `InputHints.CONTROLS`, one row per action with
-its keyboard and gamepad label. Rebinding is not implemented yet (#23).
+### Rebinding
+
+The **Commandes** screen (pause menu) lists every action with its keyboard key and its
+gamepad button. Selecting a cell waits for the next key or button and gives it to the
+action; **Échap** cancels; *Rétablir les commandes par défaut* restores everything.
+
+- Rebindable: the four `move_*`, `run`, `interact`, `toggle_inventory`, `toggle_prices`,
+  `toggle_tasks`, `pause` (`Settings.REBINDABLE`). For each, the **main key** and the
+  **main gamepad button** change; arrow keys, the left stick, the right trigger and the
+  `ui_*` menu actions keep their defaults, so a bad binding can never lock the menus.
+- A key or button already held by another rebindable action is **swapped** with it: no
+  action is ever left unbound.
+- The keys of `select_seed_1..4` are reserved and refused.
+- Overrides are stored in `user://settings.cfg` under `[input]` (`<action>/key` is a
+  physical keycode, `<action>/button` a joypad button index) and applied at boot by
+  `Settings.apply_bindings()`, which rebuilds each action from the project defaults.
+  Out-of-range or reserved values in the file are ignored.
+- Prompts follow at once, since `InputHints` reads the InputMap.
 
 ## Files
 
@@ -310,7 +326,7 @@ its keyboard and gamepad label. Rebinding is not implemented yet (#23).
 | `scenes/preloads/pause_menu.tscn` / `scripts/ui/menus/pause_menu.gd` | Global pause overlay |
 | `scripts/ui/menus/menu_stack.gd` | Screen stack, focus, back navigation |
 | `scenes/ui/menus/screens/settings_screen.tscn` / `scripts/ui/menus/screens/settings_screen.gd` | Audio and display options |
-| `scenes/ui/menus/screens/controls_screen.tscn` / `scripts/ui/menus/screens/controls_screen.gd` | Controls reference generated from the InputMap |
+| `scenes/ui/menus/screens/controls_screen.tscn` / `scripts/ui/menus/screens/controls_screen.gd` | Controls reference and rebinding, generated from the InputMap |
 | `scripts/systems/input/input_hints.gd` | Autoload: action labels per device and layout |
 | `scenes/ui/menus/screens/credits_screen.tscn` / `scripts/ui/menus/screens/credits_screen.gd` | Credits |
 | `scenes/ui/menus/screens/confirm_screen.tscn` / `scripts/ui/menus/screens/confirm_screen.gd` | Confirmation panel |
@@ -377,7 +393,7 @@ Current status: **155/155 gdUnit4 tests pass**.
 - Building and slot ownership is recorded by the economy but does not build anything in the
   world yet.
 - No audio assets yet; music/SFX volumes are ready but silent.
-- No key rebinding (#23) and no language selector (#54).
+- No language selector (#54).
 - Display options are ignored in headless mode and may behave differently in a browser.
 - The title screen uses the engine default font because the UI pack has no font asset; there
   is no dedicated logo.
