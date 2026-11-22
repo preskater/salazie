@@ -179,7 +179,8 @@ func test_a_strike_reports_what_the_barn_saved() -> void:
 	var plot := _plot(map, "Plot_32_35")
 	plot.from_dict({"state": CropPlot.State.READY, "crop": "carrot", "growth": 99.0})
 	# One short leg starting on the garden always passes over the plot.
-	map.cyclone.global_position = plot.global_position
+	# A travel zone the size of the plot: the storm cannot miss it.
+	map.cyclone_zone = Rect2(plot.global_position - Vector2(4, 4), Vector2(8, 8))
 	map.cyclone_speed = 10.0
 	var messages: Array[String] = []
 	var on_notify := func(text: String) -> void: messages.append(text)

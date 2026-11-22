@@ -1,33 +1,49 @@
 extends Node2D
-
-@onready var field: Area2D = $Area2D
-@export_range(0.2, 3.0, 0.05) var falloff_power := 0.7  
-
-@export_group("Aspiration")
-@export var pull_radius := 70.0        # portée du vent
-@export var pull_speed := 380.0        # px/s vers le centre, au maximum
-@export var swirl_speed := 300.0       # px/s tangent (la rotation)
-@export var spin := 1.0                # 1 = sens horaire à l'écran, -1 = antihoraire
-
-@export_group("Éjection")
-@export var eject_radius := 14.0       # rayon du "cœur" (l'œil)
-@export var eject_speed := 330.0
-@export var eject_spin := 0.5          # part de tangent dans l'éjection
-@export var eject_cooldown := 1.2
-@export var eject_grace := 0.6
+## A storm funnel: it pulls bodies towards its eye, swirls them and throws them
+## out. Whoever owns it decides when it is `active`; an idle cyclone is hidden
+## and pulls nothing.
 
 signal body_ejected(body: Node2D)
 
-var _cooldown := {}                    # body -> temps restant
-var _grace := {}                       # body -> temps restant
+@onready var field: Area2D = $Area2D
+@export_range(0.2, 3.0, 0.05) var falloff_power := 0.7
+
+@export_group("Pull")
+@export var pull_radius := 70.0        # reach of the wind
+@export var pull_speed := 380.0        # px/s towards the eye, at most
+@export var swirl_speed := 300.0       # px/s along the tangent
+@export var spin := 1.0                # 1 = clockwise on screen, -1 = the other way
+
+@export_group("Ejection")
+@export var eject_radius := 14.0       # radius of the eye
+@export var eject_speed := 330.0
+@export var eject_spin := 0.5          # share of tangent in the throw
+@export var eject_cooldown := 1.2
+@export var eject_grace := 0.6
+
+var active := true
+
+var _cooldown := {}                    # body -> seconds left
+var _grace := {}                       # body -> seconds left
 
 func _ready() -> void:
 	add_to_group("cyclones")
 
+
+## Shows or hides the storm and switches its wind with it.
+func set_active(value: bool) -> void:
+	active = value
+	visible = value
+	set_physics_process(value)
+	field.set_deferred("monitoring", value)
+	if not value:
+		_cooldown.clear()
+		_grace.clear()
+
 func get_wind_at(pos: Vector2) -> Vector2:
 	var to_center := global_position - pos
 	var d := to_center.length()
-	if d > pull_radius or d < 0.001:
+	if not active or d > pull_radius or d < 0.001:
 		return Vector2.ZERO
 
 	var dir := to_center / d
@@ -55,7 +71,7 @@ func _physics_process(delta: float) -> void:
 			body.add_wind(get_wind_at(body.global_position))
 
 func _tick(d: Dictionary, delta: float) -> void:
-	for k in d.keys():          # keys() renvoie une copie → erase() est sûr
+	for k in d.keys():          # keys() is a copy, so erase() is safe
 		d[k] -= delta
 		if d[k] <= 0.0:
 			d.erase(k)
