@@ -243,3 +243,73 @@ func test_metadata_survives_hand_edited_values() -> void:
 	metadata = SaveGame.read_metadata()
 	assert_int(int(metadata["map"])).is_equal(3)
 	assert_bool(bool(metadata["finished"])).is_false()
+
+
+# --- #59 -----------------------------------------------------------------------
+
+func test_the_backup_stays_a_while_behind() -> void:
+	# Regression: every save rotated the backup, which was then seconds old.
+	GameState.money = 10
+	SaveGame.save_game()
+	GameState.money = 20
+	SaveGame.save_game()
+	GameState.money = 30
+	SaveGame.save_game()
+	GameState.money = 40
+	SaveGame.save_game()
+
+	var backup: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(TEST_PATH + ".bak"))
+	assert_int(int(backup["money"])).is_equal(10)
+	assert_int(int(SaveGame.read_metadata()["money"])).is_equal(40)
+
+
+func test_an_old_backup_is_replaced() -> void:
+	GameState.money = 10
+	SaveGame.save_game()
+	GameState.money = 20
+	SaveGame.save_game()
+	SaveGame.backup_interval = 0.0
+
+	GameState.money = 30
+	SaveGame.save_game()
+
+	SaveGame.backup_interval = SaveGame.BACKUP_INTERVAL
+	var backup: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(TEST_PATH + ".bak"))
+	assert_int(int(backup["money"])).is_equal(20)
+
+
+func test_a_write_interrupted_before_the_rename_is_recovered() -> void:
+	GameState.money = 55
+	SaveGame.save_game()
+	DirAccess.rename_absolute(ProjectSettings.globalize_path(TEST_PATH),
+		ProjectSettings.globalize_path(TEST_PATH + ".tmp"))
+	GameState.money = 0
+
+	assert_bool(SaveGame.load_game()).is_true()
+
+	assert_int(GameState.money).is_equal(55)
+
+
+func test_autosave_only_writes_while_a_game_is_running() -> void:
+	GameState.playing = false
+	assert_bool(SaveGame.autosave()).is_false()
+	assert_bool(SaveGame.has_valid_save()).is_false()
+
+	GameState.playing = true
+	GameState.money = 66
+	assert_bool(SaveGame.autosave()).is_true()
+	assert_int(int(SaveGame.read_metadata()["money"])).is_equal(66)
+
+	var timer: Timer = SaveGame.get_node("AutosaveTimer")
+	assert_float(timer.wait_time).is_equal(SaveGame.AUTOSAVE_INTERVAL)
+	assert_bool(timer.is_stopped()).is_false()
+
+
+func test_losing_focus_saves_the_game() -> void:
+	# The last thing a browser tells a page before the tab may be closed.
+	GameState.playing = true
+	GameState.money = 71
+
+	SaveGame.notification(NOTIFICATION_APPLICATION_FOCUS_OUT)
+
+	assert_int(int(SaveGame.read_metadata()["money"])).is_equal(71)

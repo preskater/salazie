@@ -212,6 +212,9 @@ func test_a_save_whose_place_is_taken_by_a_folder_reports_the_failure() -> void:
 	DirAccess.remove_absolute(folder)
 	assert_bool(saved).is_false()
 	assert_bool(still_a_folder).is_true()
+	# The progress is not lost: the temporary file is a candidate on load.
+	assert_bool(SaveGame.has_valid_save()).is_true()
+	SaveGame.delete_save()
 	assert_bool(SaveGame.has_valid_save()).is_false()
 
 
