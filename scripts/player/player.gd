@@ -26,6 +26,10 @@ var noise_muted := false
 var speed_scale := 1.0
 
 var _noise_timer := 0.0
+## Everything that currently conceals the player or masks their steps. Several
+## sources overlap (a bush inside a cave), so each one is counted on its own.
+var _cover_sources: Dictionary = {}
+var _quiet_sources: Dictionary = {}
 
 func _ready() -> void:
 	add_to_group("player")
@@ -82,8 +86,42 @@ func emit_noise() -> void:
 		return
 	get_tree().call_group("guards", "hear_noise", global_position, RUN_NOISE_RADIUS)
 
+## Direct switch, counted as one more source next to the zones.
 func set_noise_muted(value: bool) -> void:
-	noise_muted = value
+	_set_source(_quiet_sources, self, value)
+
+
+## A zone starts or stops masking the player's steps.
+func add_quiet(source: Object) -> void:
+	_set_source(_quiet_sources, source, true)
+
+
+func remove_quiet(source: Object) -> void:
+	_set_source(_quiet_sources, source, false)
+
+
+## A hide spot or a stealth zone starts or stops concealing the player.
+func add_cover(source: Object) -> void:
+	_set_source(_cover_sources, source, true)
+
+
+func remove_cover(source: Object) -> void:
+	_set_source(_cover_sources, source, false)
+
+
+func _set_source(sources: Dictionary, source: Object, active: bool) -> void:
+	if active:
+		sources[source.get_instance_id()] = true
+	else:
+		sources.erase(source.get_instance_id())
+	# A zone freed with the player inside can never say it stopped covering.
+	for id: int in sources.keys():
+		if not is_instance_id_valid(id):
+			sources.erase(id)
+	noise_muted = not _quiet_sources.is_empty()
+	concealed = not _cover_sources.is_empty()
+	if ANIMATIONS != null:
+		ANIMATIONS.modulate.a = 0.55 if concealed else 1.0
 
 func play_walk_animation(direction):
 	if direction.x  > 0:
@@ -115,9 +153,8 @@ func add_wind(v: Vector2) -> void:
 	wind += v
 
 
-## Marks the player as concealed by a hide spot. Guards ignore a hidden player
-## unless the player makes noise or stands almost on top of them.
+## Direct switch, counted as one more source next to the hide spots and zones.
+## Guards ignore a concealed player unless the player makes noise or stands
+## almost on top of them.
 func set_hidden(value: bool) -> void:
-	concealed = value
-	if ANIMATIONS != null:
-		ANIMATIONS.modulate.a = 0.55 if concealed else 1.0
+	_set_source(_cover_sources, self, value)

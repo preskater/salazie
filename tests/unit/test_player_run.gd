@@ -44,3 +44,60 @@ func test_speed_scale_slows_walking_and_running() -> void:
 	assert_float(player.get_current_speed()).is_equal_approx(150.0, 0.001)
 	player.is_running = true
 	assert_float(player.get_current_speed()).is_equal_approx(255.0, 0.001)
+
+
+func test_concealment_counts_every_source() -> void:
+	# Regression (#20): leaving a bush inside a cave revealed the player for
+	# the rest of the cave.
+	var player := _spawn_player()
+	var cave: Node = auto_free(Node.new())
+	var bush: Node = auto_free(Node.new())
+
+	player.add_cover(cave)
+	player.add_cover(bush)
+	player.remove_cover(bush)
+	assert_bool(player.concealed).is_true()
+	assert_float(player.ANIMATIONS.modulate.a).is_equal_approx(0.55, 0.001)
+
+	player.remove_cover(cave)
+	assert_bool(player.concealed).is_false()
+	assert_float(player.ANIMATIONS.modulate.a).is_equal(1.0)
+
+
+func test_noise_masking_counts_every_source() -> void:
+	var player := _spawn_player()
+	var spray: Node = auto_free(Node.new())
+	var alcove: Node = auto_free(Node.new())
+
+	player.add_quiet(spray)
+	player.add_quiet(alcove)
+	player.remove_quiet(alcove)
+	assert_bool(player.noise_muted).is_true()
+	player.remove_quiet(spray)
+	assert_bool(player.noise_muted).is_false()
+
+
+func test_direct_switches_do_not_cancel_a_zone() -> void:
+	var player := _spawn_player()
+	var cave: Node = auto_free(Node.new())
+	player.add_cover(cave)
+	player.add_quiet(cave)
+
+	player.set_hidden(true)
+	player.set_hidden(false)
+	player.set_noise_muted(true)
+	player.set_noise_muted(false)
+
+	assert_bool(player.concealed).is_true()
+	assert_bool(player.noise_muted).is_true()
+
+
+func test_a_freed_source_stops_covering() -> void:
+	var player := _spawn_player()
+	var bush := Node.new()
+	player.add_cover(bush)
+	bush.free()
+
+	player.remove_cover(player)
+
+	assert_bool(player.concealed).is_false()

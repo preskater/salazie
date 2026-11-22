@@ -785,3 +785,46 @@ func test_the_intro_line_survives_the_start_checkpoint() -> void:
 
 	map.call("_on_checkpoint_reached", map.get_node("World/ForestCheckpoint").global_position)
 	assert_str(notification.text).contains("Checkpoint")
+
+
+func test_a_bush_inside_the_cave_does_not_cancel_the_cave() -> void:
+	# Regression (#20).
+	var map := await _spawn_map()
+	var player: Node2D = map.get_node("World/Player")
+	var cave: Area2D = null
+	for node: Node in get_tree().get_nodes_in_group("stealth_zones"):
+		if String(node.get("zone_name")) == "la grotte":
+			cave = node as Area2D
+	var bush: Area2D = get_tree().get_nodes_in_group("hide_spots")[0]
+
+	cave.call("_on_body_entered", player)
+	bush.call("_on_body_entered", player)
+	bush.call("_on_body_exited", player)
+
+	assert_bool(bool(player.get("concealed"))).is_true()
+	assert_bool(bool(player.get("noise_muted"))).is_true()
+	cave.call("_on_body_exited", player)
+	assert_bool(bool(player.get("concealed"))).is_false()
+	assert_bool(bool(player.get("noise_muted"))).is_false()
+
+
+func test_props_block_sight_but_water_and_bounds_do_not() -> void:
+	# Regression (#19).
+	var map := await _spawn_map()
+	var props := 0
+	for node: Node in get_tree().get_nodes_in_group("navigation_obstacles"):
+		var body := node as StaticBody2D
+		if body == null or not map.is_ancestor_of(body):
+			continue
+		if body.name == "WorldCollision":
+			assert_int(body.collision_layer & 2).is_equal(0)
+			continue
+		props += 1
+		assert_int(body.collision_layer & 2).override_failure_message(
+			"%s does not block sight" % body.get_path()).is_equal(2)
+		assert_int(body.collision_layer & 1).is_equal(1)
+	assert_int(props).is_greater(50)
+	assert_int((map.get_node("Bounds") as StaticBody2D).collision_layer & 2).is_equal(0)
+	assert_int((map.get_node("World/Player") as CollisionObject2D).collision_layer & 2).is_equal(0)
+	var guard: Node = map.get_node("World/Guard1")
+	assert_int((guard.get_node("VisionRay") as RayCast2D).collision_mask).is_equal(2)

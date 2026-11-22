@@ -23,28 +23,20 @@ func _on_body_entered(body: Node2D) -> void:
 		return
 	_player = body
 	if conceal_player:
-		body.call("set_hidden", true)
+		body.call("add_cover", self)
 	if mute_noise:
-		body.call("set_noise_muted", true)
+		body.call("add_quiet", self)
 	entered.emit(zone_name)
 
 
 func _on_body_exited(body: Node2D) -> void:
 	if body != _player:
 		return
-	# Zones can nest (the alcove sits inside the waterfall spray).
-	if conceal_player and not _other_zone_covers(body, "conceal_player"):
-		body.call("set_hidden", false)
-	if mute_noise and not _other_zone_covers(body, "mute_noise"):
-		body.call("set_noise_muted", false)
+	# Zones nest (the alcove sits inside the waterfall spray, a bush inside the
+	# cave): the player counts its sources, so only this one is withdrawn.
+	if conceal_player:
+		body.call("remove_cover", self)
+	if mute_noise:
+		body.call("remove_quiet", self)
 	_player = null
 	exited.emit(zone_name)
-
-
-func _other_zone_covers(body: Node2D, property: String) -> bool:
-	for zone: Node in get_tree().get_nodes_in_group("stealth_zones"):
-		if zone == self or not (zone is Area2D):
-			continue
-		if bool(zone.get(property)) and (zone as Area2D).overlaps_body(body):
-			return true
-	return false
