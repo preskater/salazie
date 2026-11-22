@@ -9,6 +9,8 @@ const FARM_SIZE := Vector2(4608.0, 3264.0)
 const CYCLONE_MARGIN := 300.0
 const MAP_EXIT_SCENE := preload("res://scenes/world/map_exit.tscn")
 const TASK_LIST_SCENE := preload("res://scenes/ui/tasks/task_list.tscn")
+## Seed the seller advances to a farmer who has nothing left to plant or sell.
+const RELIEF_CROP := "carrot"
 const SIGN_TEXTURE := "res://sprites/farm_48x48/singles/Props_and_Buildings/Sign_1_48x48.png"
 
 @export var economy_generation: StringName = &"cultivateur"
@@ -24,6 +26,7 @@ const SIGN_TEXTURE := "res://sprites/farm_48x48/singles/Props_and_Buildings/Sign
 @onready var cyclone: Node2D = $World/Cyclone
 
 var _target: Node = null
+var _relief_announced := false
 
 
 func _find_player() -> Node2D:
@@ -60,6 +63,14 @@ func _ready() -> void:
 		if npc:
 			npc.dialogue_requested.connect(hud.show_dialogue)
 			npc.player = player
+	var seller := get_node_or_null("World/NPCSeller") as FarmNPC
+	if seller != null:
+		# Connected after the HUD so the relief line replaces the usual one.
+		seller.dialogue_requested.connect(_on_seller_talked)
+	# Deferred: planting spends the seed before the plot starts growing, and the
+	# farmer must not look ruined in between.
+	GameState.inventory_changed.connect(_check_relief, CONNECT_DEFERRED)
+	GameState.money_changed.connect(_check_relief.unbind(1), CONNECT_DEFERRED)
 	GameState.plot_prepared.connect(_on_plot_prepared)
 	GameState.crop_planted.connect(_on_crop_planted)
 	GameState.crop_harvested.connect(_on_crop_harvested)
@@ -69,6 +80,7 @@ func _ready() -> void:
 	Campaign.task_status_changed.connect(_on_task_status_changed)
 	_refresh_objective()
 	GameState.announce("Map 2 — Le cultivateur : préparez la terre, cultivez, vendez au marché.")
+	_check_relief()
 	if GameState.day >= PROSPERITY_DEADLINE_DAY:
 		_check_prosperity_deadline(GameState.day)
 
@@ -202,6 +214,7 @@ func _strike_cyclone() -> void:
 			"Le cyclone a détruit %d récolte(s) mûre(s)." % destroyed)
 	else:
 		GameState.announce("Le cyclone est passé sans toucher les cultures mûres.")
+	_check_relief()
 
 
 ## Builds a slow polyline whose heading changes at every leg, bouncing off the
@@ -268,6 +281,45 @@ func _check_prosperity_deadline(day: int) -> void:
 	GameState.announce("Le délai du marché est passé : la ferme termine la génération en difficulté.")
 
 
+## True when the farmer can neither plant, harvest, sell nor buy: no seed, no
+## produce, nothing in the ground and not enough money for the cheapest seed.
+## Without help the remaining tasks could never be resolved.
+func is_destitute() -> bool:
+	for crop: String in GameState.CROP_ORDER:
+		if GameState.seed_count(crop) > 0 or GameState.produce_count(crop) > 0:
+			return false
+		if GameState.money >= int(GameState.CROPS[crop]["seed_price"]):
+			return false
+	for node: Node in get_tree().get_nodes_in_group("crops"):
+		var plot := node as CropPlot
+		if plot != null and (plot.state == CropPlot.State.GROWING
+				or plot.state == CropPlot.State.READY):
+			return false
+	return true
+
+
+func _check_relief() -> void:
+	if not is_destitute():
+		_relief_announced = false
+		return
+	if _relief_announced:
+		return
+	_relief_announced = true
+	GameState.announce("Plus rien à planter ni à vendre : allez voir la Marchande.")
+	_refresh_objective()
+
+
+func _on_seller_talked(speaker: String, _text: String) -> void:
+	if not is_destitute():
+		return
+	GameState.add_seeds(RELIEF_CROP, 1)
+	GameState.select_seed(RELIEF_CROP)
+	hud.show_dialogue(speaker,
+		"Les temps sont durs pour tout le monde. Tenez, une graine de %s : vous me revaudrez ça au marché."
+			% String(GameState.CROPS[RELIEF_CROP]["label"]).to_lower())
+	_refresh_objective()
+
+
 func _on_task_status_changed(_map_id: int, _task_id: String, _status: int) -> void:
 	_refresh_objective()
 
@@ -284,6 +336,8 @@ func _objective_text() -> String:
 	var summary := Campaign.map_summary()
 	if int(summary.get("pending", 0)) == 0:
 		return "Map 2 terminée — prenez la route vers la ville, à l'est du hameau."
+	if is_destitute():
+		return "Objectif : demandez une graine à la Marchande du hameau."
 	for definition: Dictionary in Campaign.TASKS[2]:
 		var task_id := String(definition.get("id", ""))
 		if Campaign.task_status(task_id) == Campaign.TaskStatus.PENDING:
