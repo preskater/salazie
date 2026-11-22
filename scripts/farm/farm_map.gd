@@ -79,10 +79,44 @@ func _ready() -> void:
 	GameState.day_changed.connect(_on_day_changed)
 	Campaign.task_status_changed.connect(_on_task_status_changed)
 	_refresh_objective()
+	_restore_world(SaveGame.register_world(2, save_world))
 	GameState.announce("Map 2 — Le cultivateur : préparez la terre, cultivez, vendez au marché.")
 	_check_relief()
 	if GameState.day >= PROSPERITY_DEADLINE_DAY:
 		_check_prosperity_deadline(GameState.day)
+
+
+func _exit_tree() -> void:
+	SaveGame.unregister_world(2)
+
+
+## What the farm needs to come back as it was left: every plot and the farmer.
+func save_world() -> Dictionary:
+	var plots := {}
+	for node: Node in get_tree().get_nodes_in_group("crops"):
+		var plot := node as CropPlot
+		if plot != null and is_ancestor_of(plot):
+			plots[String(plot.name)] = plot.to_dict()
+	return {
+		"plots": plots,
+		"player": [player.global_position.x, player.global_position.y],
+	}
+
+
+func _restore_world(data: Dictionary) -> void:
+	var plots: Variant = data.get("plots", {})
+	if plots is Dictionary:
+		for node: Node in get_tree().get_nodes_in_group("crops"):
+			var plot := node as CropPlot
+			var saved: Variant = (plots as Dictionary).get(String(node.name), null)
+			if plot != null and is_ancestor_of(plot) and saved is Dictionary:
+				plot.from_dict(saved as Dictionary)
+	var position_data: Variant = data.get("player", null)
+	if position_data is Array and (position_data as Array).size() == 2:
+		var point := Vector2(float(position_data[0]), float(position_data[1]))
+		if Rect2(Vector2.ZERO, FARM_SIZE).has_point(point):
+			player.global_position = point
+			player.reset_physics_interpolation()
 
 
 func _process(_delta: float) -> void:

@@ -31,6 +31,7 @@ func start_new_game() -> void:
 	if _transitioning:
 		return
 	Campaign.reset()
+	SaveGame.clear_world()
 	GameState.reset(Campaign.starting_money_for_map(1))
 	GameState.farm_active = false
 	GameState.playing = true
@@ -54,6 +55,7 @@ func continue_game() -> void:
 	GameState.farm_active = Campaign.current_map == 2
 	is_gameplay = true
 	_set_day_night_active(true, true)
+	DayNightCycle.from_dict(SaveGame.read_cycle())
 	var ok := await _change_scene(Campaign.current_scene_path())
 	if not ok:
 		GameState.playing = false

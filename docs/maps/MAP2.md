@@ -249,7 +249,8 @@ map, menu, settings, save and UI-asset suites in `tests/unit/`.
 
 ## Known limits
 
-- One autosave slot managed by `SaveGame`; state still resets if the save file is deleted.
+- One autosave slot managed by `SaveGame`. Plots and the farmer's position are part of the
+  save (`FarmMap.save_world()`); the cyclone's position and the animals are not.
 - Buildings and slots bought at the market are recorded as owned assets only; they do not
   appear in the world or unlock new plots yet.
 - Animals are decorative; they do not produce eggs or milk and do not react to the player.

@@ -92,6 +92,28 @@ func _harvest() -> void:
 	_sync_visual()
 
 
+func to_dict() -> Dictionary:
+	return {"state": int(state), "crop": crop_type, "growth": growth}
+
+
+## Restores a saved plot. An unknown crop or state leaves the plot as built.
+func from_dict(data: Dictionary) -> void:
+	var raw_state: Variant = data.get("state", null)
+	var crop := String(data.get("crop", crop_type))
+	if not (raw_state is int or raw_state is float) or not GameState.CROPS.has(crop):
+		return
+	var next := int(raw_state)
+	if next < State.EMPTY or next > State.READY:
+		return
+	crop_type = crop
+	state = next as State
+	var raw_growth: Variant = data.get("growth", 0.0)
+	growth = maxf(0.0, float(raw_growth)) if (raw_growth is int or raw_growth is float) else 0.0
+	_shown_stage = -1
+	_ensure_textures()
+	_sync_visual()
+
+
 ## The cyclone only takes ripe crops; the plot keeps its tilled soil.
 func destroy_crop() -> bool:
 	if state != State.READY:
