@@ -169,46 +169,31 @@ their `lines` export. `FarmMap` assigns each NPC the player reference on ready.
 
 ### Cyclone
 
-`World/Cyclone` is the shared storm effect (`scenes/world/fx/cyclone.tscn`). On the farm it
-moves on a schedule:
+`World/Cyclone` is the shared storm effect (`scenes/world/fx/cyclone.tscn`). Between two
+strikes it is **idle**: hidden, not processed, and its wind is zero (`set_active(false)`).
 
-- every third farm day (60 s per day, so every **3 minutes**) it crosses the farm along a
-  **6-leg path** for **30 s** (`cyclone_legs = 6`, `cyclone_leg_time = 5`), at **200 px/s**
-  (`cyclone_speed`);
-- at every leg the heading turns by up to **60°** (`cyclone_turn_deg`), so the storm visibly
-  changes direction; when a leg would leave the playable area it bounces off the 300 px
-  margin;
-- the day before, `GameState.announce` warns the player to harvest ripe crops;
-- after each leg, every `READY` crop within 220 px of that **segment** is destroyed: the
-  plot returns to `TILLED`, the harvest is lost, and the HUD reports the total count once
-  the crossing ends. Growing crops are left alone.
+- Every third farm day (`GameState.day_advanced`, so a load or a reset never calls it) it
+  enters from a random point on the border of **`cyclone_zone`**
+  (`Rect2(1150, 1300, 1350, 900)`, the garden and its surroundings) and crosses it along a
+  **6-leg path** for **30 s** (`cyclone_legs = 6`, `cyclone_leg_time = 5`) at **120 px/s**
+  (`cyclone_speed`).
+- At every leg the heading turns by up to **60°** (`cyclone_turn_deg`) and bounces off the
+  sides of the zone, so the storm stays over the fields and never wanders over the house,
+  the market or the spawn.
+- The day before, `GameState.announce` warns the player to harvest ripe crops.
+- Damage is resolved **where the funnel is**, every physics frame: a `READY` crop within
+  220 px (`CYCLONE_STEAL_RADIUS`) is destroyed (the plot returns to `TILLED`) or, with a
+  barn, brought in as produce. Growing crops are left alone. The HUD reports the total once
+  the crossing ends.
+- A second strike cannot start while one is running.
 
 `CropPlot.destroy_crop()` refuses anything that is not `READY`. Tests live in
 `tests/unit/test_farm_cyclone.gd`.
 
-> **À vérifier en jeu** — les valeurs actuelles sont un point de départ, pas un
-> équilibrage validé : 30 s de traversée (`cyclone_legs = 6` × `cyclone_leg_time = 5`)
-> et 200 px/s (`cyclone_speed`). Il faut les tester manette en main : trop lent, le
-> joueur a tout le temps de récolter et la menace disparaît ; trop rapide, le cyclone
-> devient illisible. Les trois réglages à ajuster sont `cyclone_legs`,
-> `cyclone_leg_time` et `cyclone_speed`, plus `cyclone_turn_deg` pour l'ampleur des
-> virages.
-
-### Zone de voyage
-
-Aujourd'hui le cyclone rebondit sur une marge de 300 px autour de **toute** la map
-(`FARM_SIZE`), donc il peut traverser la maison, le spawn ou le marché, où il n'a
-aucun intérêt de gameplay. Il faudrait sans doute lui donner une **zone de voyage
-dédiée** :
-
-- un `Rect2` exporté (`cyclone_zone`) centré sur les champs et le verger ;
-- tirage du point de départ et des caps à l'intérieur de ce rectangle, pas de
-  `FARM_SIZE` ;
-- rebond sur les bords de la zone au lieu des bords de la map.
-
-Les 8 parcelles sont groupées entre x = 1560–1704 et y = 1728–1776 ; une zone du type
-`Rect2(1150, 1300, 1350, 900)` laisserait le cyclone balayer le potager et ses abords
-sans entrer dans la cour. Coordonnées à confirmer visuellement.
+> **À vérifier en jeu** — la durée (30 s), la vitesse (120 px/s), l'ampleur des virages et
+> le rectangle `cyclone_zone` sont des réglages raisonnés, pas un équilibrage validé manette
+> en main. Trop lent, le joueur a tout le temps de récolter ; trop rapide, le cyclone devient
+> illisible.
 
 ## Animation resource rules
 
@@ -270,6 +255,5 @@ map, menu, settings, save and UI-asset suites in `tests/unit/`.
 - The day-6 prosperity deadline is the only failure source on this map.
 - The cyclone only destroys ripe crops; it never fails a task and the destroyed harvest is
   not counted in the generation result.
-- Cyclone duration (30 s), speed (200 px/s) and turning are unverified tuning values, and
-  the storm still roams the whole farm instead of a dedicated travel zone.
+- Cyclone duration, speed, turning and travel zone are unverified tuning values.
 - Audio is synthesised placeholder material; see [AUDIO.md](../AUDIO.md).

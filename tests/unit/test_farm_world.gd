@@ -410,7 +410,8 @@ func test_a_strike_reports_the_crops_it_destroyed() -> void:
 	map.cyclone_speed = 10.0
 	var plot := _plot(map, "Plot_32_35")
 	plot.from_dict({"state": CropPlot.State.READY, "crop": "carrot", "growth": 99.0})
-	map.cyclone.global_position = plot.global_position
+	# A travel zone the size of the plot: the storm cannot miss it.
+	map.cyclone_zone = Rect2(plot.global_position - Vector2(4, 4), Vector2(8, 8))
 	var produce := GameState.produce_count("carrot")
 	var messages := _listen()
 

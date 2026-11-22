@@ -6,7 +6,6 @@ const PROSPERITY_DEADLINE_DAY := 6
 const CYCLONE_EVERY_DAYS := 3
 const CYCLONE_STEAL_RADIUS := 220.0
 const FARM_SIZE := Vector2(4608.0, 3264.0)
-const CYCLONE_MARGIN := 300.0
 const MAP_EXIT_SCENE := preload("res://scenes/world/map_exit.tscn")
 const TASK_LIST_SCENE := preload("res://scenes/ui/tasks/task_list.tscn")
 ## Seed the seller advances to a farmer who has nothing left to plant or sell.
@@ -18,11 +17,16 @@ const BARN_ASSET := &"barn"
 const SIGN_TEXTURE := "res://sprites/farm_48x48/singles/Props_and_Buildings/Sign_1_48x48.png"
 
 @export var economy_generation: StringName = &"cultivateur"
-## One leg of the storm path: 6 legs × 5 s = a 30 s crossing at 200 px/s.
+## One leg of the storm path: 6 legs × 5 s = a 30 s crossing at 120 px/s, legs
+## of 600 px inside a zone 1350 px wide.
 @export var cyclone_leg_time := 5.0
 @export var cyclone_legs := 6
-@export var cyclone_speed := 200.0
+@export var cyclone_speed := 120.0
 @export var cyclone_turn_deg := 60.0
+## Where the storm travels: the garden and its surroundings. It enters from an
+## edge of this rectangle and bounces off its sides, so it threatens the crops
+## instead of wandering over the house, the market or the spawn.
+@export var cyclone_zone := Rect2(1150.0, 1300.0, 1350.0, 900.0)
 
 @onready var player: Node2D = _find_player()
 @onready var hud: FarmHUD = $HUD
@@ -32,6 +36,8 @@ const SIGN_TEXTURE := "res://sprites/farm_48x48/singles/Props_and_Buildings/Sign
 var _target: Node = null
 var _relief_announced := false
 var _sheltered := 0
+var _destroyed := 0
+var _striking := false
 
 
 func _find_player() -> Node2D:
@@ -83,6 +89,10 @@ func _ready() -> void:
 	GameState.money_changed.connect(_on_money_changed)
 	Economy.ownership_changed.connect(_on_ownership_changed)
 	GameState.day_changed.connect(_on_day_changed)
+	# `day_changed` also fires when the state is merely refreshed (load, reset);
+	# the storm only follows days that really pass.
+	GameState.day_advanced.connect(_on_day_advanced)
+	cyclone.call("set_active", false)
 	Campaign.task_status_changed.connect(_on_task_status_changed)
 	_refresh_objective()
 	_restore_world(SaveGame.register_world(2, save_world))
@@ -250,6 +260,8 @@ func _on_day_changed(day: int) -> void:
 	_check_prosperity_deadline(day)
 	_refresh_objective()
 
+
+func _on_day_advanced(day: int) -> void:
 	# Warn the day before so the player can harvest ripe crops in time.
 	if (day + 1) % CYCLONE_EVERY_DAYS == 0:
 		GameState.announce("Un cyclone approche demain — rentrez vos récoltes mûres.")
@@ -257,20 +269,33 @@ func _on_day_changed(day: int) -> void:
 		_strike_cyclone()
 
 
+## While the storm crosses, what it touches is resolved where it is now: a ripe
+## crop falls when the funnel reaches it, not at the end of a five-second leg.
+func _physics_process(_delta: float) -> void:
+	if _striking:
+		_destroyed += _destroy_ripe_crops_on_path(
+			cyclone.global_position, cyclone.global_position)
+
+
 func _strike_cyclone() -> void:
-	if cyclone == null:
+	if cyclone == null or _striking:
 		return
-	var path := _cyclone_path(cyclone.global_position)
+	_striking = true
+	_destroyed = 0
+	var sheltered_before := _sheltered
+	var path := _cyclone_path(_cyclone_entry_point())
+	cyclone.global_position = path[0]
+	cyclone.call("set_active", true)
 	GameState.announce("Le cyclone traverse la ferme !")
 	Audio.play_ambience(&"wind")
-	var destroyed := 0
-	var sheltered_before := _sheltered
 	for index in range(1, path.size()):
 		var tween := create_tween()
 		tween.tween_property(cyclone, "global_position", path[index], cyclone_leg_time)
 		await tween.finished
-		destroyed += _destroy_ripe_crops_on_path(path[index - 1], path[index])
+	_striking = false
+	cyclone.call("set_active", false)
 	Audio.stop_ambience()
+	var destroyed := _destroyed
 	var sheltered := _sheltered - sheltered_before
 	if sheltered > 0:
 		GameState.announce(
@@ -283,8 +308,25 @@ func _strike_cyclone() -> void:
 	_check_relief()
 
 
+## A random point on the border of the travel zone.
+func _cyclone_entry_point() -> Vector2:
+	var along := randf()
+	match randi() % 4:
+		0:
+			return Vector2(lerpf(cyclone_zone.position.x, cyclone_zone.end.x, along),
+				cyclone_zone.position.y)
+		1:
+			return Vector2(lerpf(cyclone_zone.position.x, cyclone_zone.end.x, along),
+				cyclone_zone.end.y)
+		2:
+			return Vector2(cyclone_zone.position.x,
+				lerpf(cyclone_zone.position.y, cyclone_zone.end.y, along))
+	return Vector2(cyclone_zone.end.x,
+		lerpf(cyclone_zone.position.y, cyclone_zone.end.y, along))
+
+
 ## Builds a slow polyline whose heading changes at every leg, bouncing off the
-## farm margins so the storm never leaves the playable area.
+## sides of `cyclone_zone` so the storm stays over the fields.
 func _cyclone_path(from: Vector2) -> PackedVector2Array:
 	var points := PackedVector2Array([from])
 	var pos := from
@@ -294,16 +336,16 @@ func _cyclone_path(from: Vector2) -> PackedVector2Array:
 		heading = _next_heading(heading)
 		var next := pos + Vector2.RIGHT.rotated(heading) * step_length
 		var bounced := false
-		if next.x < CYCLONE_MARGIN or next.x > FARM_SIZE.x - CYCLONE_MARGIN:
+		if next.x < cyclone_zone.position.x or next.x > cyclone_zone.end.x:
 			heading = PI - heading
 			bounced = true
-		if next.y < CYCLONE_MARGIN or next.y > FARM_SIZE.y - CYCLONE_MARGIN:
+		if next.y < cyclone_zone.position.y or next.y > cyclone_zone.end.y:
 			heading = -heading
 			bounced = true
 		if bounced:
 			next = pos + Vector2.RIGHT.rotated(heading) * step_length
-		next.x = clampf(next.x, CYCLONE_MARGIN, FARM_SIZE.x - CYCLONE_MARGIN)
-		next.y = clampf(next.y, CYCLONE_MARGIN, FARM_SIZE.y - CYCLONE_MARGIN)
+		next.x = clampf(next.x, cyclone_zone.position.x, cyclone_zone.end.x)
+		next.y = clampf(next.y, cyclone_zone.position.y, cyclone_zone.end.y)
 		points.append(next)
 		pos = next
 	return points
