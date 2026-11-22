@@ -13,6 +13,14 @@ extends CharacterBody2D
 @export var STEP_INTERVAL := 0.34
 @export var RUN_STEP_INTERVAL := 0.22
 
+@export_group("Stamina")
+## Off by default: only the escape of Map 1 makes running a limited resource.
+@export var stamina_enabled := false
+@export var STAMINA_SECONDS := 5.0
+@export var STAMINA_RECOVERY_SECONDS := 8.0
+## Breath needed before a winded player can run again.
+@export var STAMINA_RESUME := 0.3
+
 @export_group("Running")
 @export var RUN_MULTIPLIER := 1.7
 @export var RUN_NOISE_RADIUS := 260.0
@@ -31,6 +39,9 @@ var speed_scale := 1.0
 
 var _noise_timer := 0.0
 var _step_timer := 0.0
+## 1 is a full breath, 0 is spent.
+var stamina := 1.0
+var winded := false
 ## Everything that currently conceals the player or masks their steps. Several
 ## sources overlap (a bush inside a cave), so each one is counted on its own.
 var _cover_sources: Dictionary = {}
@@ -55,6 +66,7 @@ func _physics_process(delta: float) -> void:
 	knockback = knockback.move_toward(Vector2.ZERO, KNOCKBACK_DECAY * delta)
 
 	is_running = control_lock <= 0.0 and input_dir != Vector2.ZERO and Input.is_action_pressed("run")
+	is_running = tick_stamina(delta, is_running)
 	
 	if control_lock > 0.0:
 		control_lock -= delta
@@ -85,6 +97,24 @@ func _tick_noise(delta: float) -> void:
 	if _noise_timer <= 0.0:
 		_noise_timer = NOISE_INTERVAL
 		emit_noise()
+
+## Spends breath while running and gives it back otherwise. Returns whether the
+## player may actually run this frame: once spent, the breath has to come back
+## to `STAMINA_RESUME` first, so holding the key does not stutter.
+func tick_stamina(delta: float, wants_to_run: bool) -> bool:
+	if not stamina_enabled:
+		return wants_to_run
+	if winded and stamina >= STAMINA_RESUME:
+		winded = false
+	var running := wants_to_run and not winded
+	if running:
+		stamina = maxf(0.0, stamina - delta / STAMINA_SECONDS)
+		if stamina <= 0.0:
+			winded = true
+	else:
+		stamina = minf(1.0, stamina + delta / STAMINA_RECOVERY_SECONDS)
+	return running
+
 
 ## One footstep per stride while the player walks under their own control.
 func _tick_steps(delta: float, walking: bool) -> void:

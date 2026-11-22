@@ -780,8 +780,12 @@ func test_the_intro_line_survives_the_start_checkpoint() -> void:
 	await get_tree().physics_frame
 	await get_tree().physics_frame
 	var notification := map.get_node("MaroonUI/Root/Notification") as Label
+	var dialogue: DialogueBox = map.get_node("DialogueBox")
 
-	assert_str(notification.text).contains("Le marron")
+	# The map opens on the maroon's own words; no checkpoint message covers them.
+	assert_bool(dialogue.visible).is_true()
+	assert_str(dialogue.get_text()).contains("La mer est derrière moi")
+	assert_str(notification.text).not_contains("Checkpoint")
 
 	map.call("_on_checkpoint_reached", map.get_node("World/ForestCheckpoint").global_position)
 	assert_str(notification.text).contains("Checkpoint")
@@ -972,3 +976,56 @@ func test_patrols_see_less_far_at_night() -> void:
 	assert_float(float(guard.get("vision_range"))).is_equal(MaroonMap.GUARD_VISION_DAY)
 	assert_str(notification.text).contains("jour")
 	assert_float(MaroonMap.GUARD_VISION_NIGHT).is_less(MaroonMap.GUARD_VISION_DAY)
+
+
+# --- #52 -----------------------------------------------------------------------
+
+func test_the_escape_is_told_in_the_maroons_words() -> void:
+	var map := await _spawn_map()
+	var dialogue: DialogueBox = map.get_node("DialogueBox")
+
+	# Two opening lines: the second waits for the first to be read.
+	assert_int(dialogue.pending_lines()).is_equal(1)
+	dialogue.hide_line()
+	assert_str(dialogue.get_text()).contains("rivière")
+	dialogue.hide_line()
+	assert_bool(dialogue.visible).is_false()
+
+	map.call("_on_checkpoint_reached", map.get_node("World/ForestCheckpoint").global_position)
+	assert_str(dialogue.get_text()).contains("camp abandonné")
+	dialogue.hide_line()
+
+	# Each beat is told once.
+	map.call("_on_checkpoint_reached", map.get_node("World/UpperCheckpoint").global_position)
+	dialogue.hide_line()
+	map.call("_on_checkpoint_reached", map.get_node("World/ForestCheckpoint").global_position)
+	assert_bool(dialogue.visible).is_false()
+
+	map.call("_on_refuge_blocked")
+	assert_str(dialogue.get_text()).contains("cabane")
+	map.call("_tell_story", "nothing_like_this")
+	assert_int(dialogue.pending_lines()).is_equal(0)
+
+
+func test_every_story_beat_has_something_to_say() -> void:
+	for beat: String in MaroonMap.STORY:
+		assert_int((MaroonMap.STORY[beat] as Array).size()).is_greater(0)
+		for line: String in MaroonMap.STORY[beat]:
+			assert_str(line).is_not_empty()
+	for key: String in ["intro", "river_mouth_checkpoint", "forest_checkpoint",
+			"upper_checkpoint", "refuge"]:
+		assert_bool(MaroonMap.STORY.has(key)).is_true()
+
+
+func test_running_is_limited_by_breath_on_this_map() -> void:
+	var map := await _spawn_map()
+	var player: Node = map.get_node("World/Player")
+	var bar: ProgressBar = map.get_node("MaroonUI/Root/StaminaBar")
+	assert_bool(bool(player.get("stamina_enabled"))).is_true()
+	assert_float(bar.modulate.a).is_equal(0.0)
+
+	player.set("stamina", 0.4)
+	map.call("_process", 0.0)
+
+	assert_float(bar.value).is_equal_approx(40.0, 0.5)
+	assert_float(bar.modulate.a).is_equal(1.0)
