@@ -652,10 +652,15 @@ func from_dict(data: Dictionary) -> bool:
 			river_state["status"] = TaskStatus.DONE
 			river_state["progress"] = maxi(1, int(river_state.get("progress", 0)))
 			tasks[1]["follow_river"] = river_state
-	var raw_results: Variant = data.get("results", {})
-	results = (raw_results as Dictionary).duplicate(true) if raw_results is Dictionary else {}
 	var raw_choices: Variant = data.get("choices", {})
 	choices = (raw_choices as Dictionary).duplicate(true) if raw_choices is Dictionary else {}
+	_reconcile_village_progress()
+	# Results are derived data. Rebuilding them keeps integer map ids: JSON
+	# brought them back as strings, next to which new integer entries piled up.
+	results = {}
+	for map_id: int in MAP_ORDER:
+		if is_map_resolved(map_id):
+			results[map_id] = map_summary(map_id).duplicate(true)
 	bonus_seeds = _read_bonus_seeds(data.get("bonus_seeds", {}))
 	setbacks = _read_setbacks(data.get("setbacks", {}))
 	heritage = maxi(0, int(data.get("heritage", 0)))
@@ -702,6 +707,26 @@ func _refresh_result(map_id: int) -> void:
 
 func _active_map(map_id: int) -> int:
 	return current_map if map_id < 0 else clampi(map_id, 1, 3)
+
+
+## Map 3 counts residents and sites twice: as a task progress and as one flag
+## per resident or site. A save where they disagree could leave `assess` one
+## short with every site already flagged, and no site left to inspect.
+func _reconcile_village_progress() -> void:
+	var assessed := 0
+	for site_id: String in FRAGILE_SITES:
+		if get_choice("assessed_" + site_id) == "1":
+			assessed += 1
+	for entry: Array in [["listen", residents_heard()], ["assess", assessed]]:
+		var task_id: String = entry[0]
+		var state: Dictionary = tasks[3].get(task_id, {})
+		if state.is_empty() or int(state.get("status", TaskStatus.PENDING)) != TaskStatus.PENDING:
+			continue
+		var target := task_target(task_id, 3)
+		state["progress"] = mini(target, maxi(int(state.get("progress", 0)), int(entry[1])))
+		if int(state["progress"]) >= target:
+			state["status"] = TaskStatus.DONE
+		tasks[3][task_id] = state
 
 
 func _sanitize_state(_default_state: Dictionary, raw: Dictionary) -> Dictionary:

@@ -94,13 +94,15 @@ func test_the_pause_action_opens_the_menu_and_freezes_the_game() -> void:
 
 func test_the_subtitle_sums_up_the_generation_the_day_and_the_money() -> void:
 	var pause := _spawn_pause()
+	Campaign.current_map = 2
 	GameState.day = 4
 	GameState.money = 63
 
 	_press(pause, &"pause")
 
 	assert_str((pause.get_node("%Subtitle") as Label).text).is_equal(
-		"%s · Jour 4 · 63 G" % Campaign.map_title())
+		"Le cultivateur · Jour 4 · 63 G")
+	Campaign.current_map = 1
 
 
 func test_opening_the_menu_saves_the_game() -> void:

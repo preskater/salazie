@@ -73,9 +73,12 @@ func _refresh_continue() -> void:
 	elif has_save:
 		continue_button.text = CONTINUE_TEXT
 		var map_id := int(metadata.get("map", 2))
-		var title := String(Campaign.map_title(map_id))
-		continue_info.text = "Gén. %d · %s · Jour %d · %d G" % [
-			map_id, title, int(metadata["day"]), int(metadata["money"])]
+		var summary := String(metadata.get("summary", ""))
+		if summary.is_empty():
+			# A save written before the summary existed only knew the farm.
+			summary = "%s · Jour %d · %d G" % [String(Campaign.map_title(map_id)),
+				int(metadata["day"]), int(metadata["money"])]
+		continue_info.text = "Gén. %d · %s" % [map_id, summary]
 	else:
 		continue_button.text = CONTINUE_TEXT
 		continue_info.text = "Aucune sauvegarde"

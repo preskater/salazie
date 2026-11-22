@@ -122,6 +122,8 @@ func _advance_day() -> void:
 	day_advanced.emit(day)
 
 func price_trend(crop: String) -> int:
+	if not prices.has(crop) or not previous_prices.has(crop):
+		return 0
 	return signi(int(prices[crop]) - int(previous_prices[crop]))
 
 func select_seed(crop: String) -> void:
@@ -189,10 +191,24 @@ func format_wallets() -> String:
 	return " · ".join(parts)
 
 
+## One line for the pause menu and the Continue entry: where the player is and
+## what they hold. The farm counts its own days; a generation without an
+## economy (the maroon) shows no money at all.
+func status_line() -> String:
+	var parts: PackedStringArray = [Campaign.map_title()]
+	if Campaign.current_map == 2:
+		parts.append("Jour %d" % day)
+	if is_economy_enabled():
+		parts.append(format_wallets())
+	return " · ".join(parts)
+
+
 func is_economy_enabled() -> bool:
 	return _uses_economy()
 
 func add_seeds(crop: String, amount: int) -> void:
+	if not CROPS.has(crop) or amount <= 0:
+		return
 	seeds[crop] = seed_count(crop) + amount
 	inventory_changed.emit()
 
@@ -218,6 +234,8 @@ func add_produce(crop: String, amount: int) -> void:
 
 func sell(crop: String, amount: int) -> int:
 	if not _uses_economy():
+		return 0
+	if not prices.has(crop):
 		return 0
 	var have := produce_count(crop)
 	amount = mini(amount, have)
@@ -272,7 +290,9 @@ func reset(starting_money := -1) -> void:
 ## Replaces the purse without resetting the rest of the farm state.
 func set_money(value: int) -> void:
 	money = maxi(0, value)
-	money_changed.emit(money)
+	# With the economy on, the wallet already announced the new balance.
+	if not _uses_economy():
+		money_changed.emit(money)
 
 
 ## Plain data only: no nodes, resources or engine objects.

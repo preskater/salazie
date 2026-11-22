@@ -55,8 +55,15 @@ func select_generation(generation_id: StringName, reset_state := true) -> bool:
 	var generation := config.find_generation(generation_id)
 	if generation == null:
 		if generation_id != &"":
-			push_warning("Unknown economy generation '%s'; falling back." % generation_id)
-		generation = _first_generation()
+			push_warning("Unknown economy generation '%s'." % generation_id)
+		# A typo must not swap the running economy for the first one in the
+		# file, which is the disabled one. The fallback only serves a start
+		# with nothing selected yet.
+		if _generation != null and config.find_generation(_generation_id) == _generation:
+			return false
+		generation = config.find_generation(config.default_generation)
+		if generation == null:
+			generation = _first_generation()
 	if generation == null:
 		return false
 	var changed := generation.id != _generation_id
@@ -137,7 +144,8 @@ func balance(currency_id: StringName) -> int:
 
 
 func can_afford(currency_id: StringName, amount: int) -> bool:
-	return is_enabled() and is_currency_active(currency_id) and balance(currency_id) >= amount
+	return amount >= 0 and is_enabled() and is_currency_active(currency_id) \
+		and balance(currency_id) >= amount
 
 
 func set_balance(currency_id: StringName, amount: int) -> bool:
@@ -253,7 +261,9 @@ func trade(give: Dictionary, receive: Dictionary) -> bool:
 	if _generation == null or not _generation.allow_trade:
 		transaction_failed.emit(&"trade_disabled")
 		return false
-	if give.is_empty() and receive.is_empty():
+	# A trade has two sides: with only a "receive" it would hand out money or
+	# assets for nothing.
+	if give.is_empty() or receive.is_empty():
 		transaction_failed.emit(&"empty_trade")
 		return false
 	var verdict := _check_side(give, true)
@@ -326,8 +336,9 @@ func from_dict(data: Dictionary) -> bool:
 	if owned is Dictionary:
 		for key: Variant in (owned as Dictionary):
 			var asset_id := StringName(String(key))
-			if asset_id != &"":
-				_owned[asset_id] = maxi(0, int((owned as Dictionary)[key]))
+			var count: Variant = (owned as Dictionary)[key]
+			if _is_known_asset(asset_id) and (count is int or count is float):
+				_owned[asset_id] = maxi(0, int(count))
 	var stock: Variant = data.get("stock", {})
 	if stock is Dictionary:
 		for key: Variant in (stock as Dictionary):
@@ -460,7 +471,17 @@ func _check_side(side: Dictionary, giving: bool) -> StringName:
 		return &"invalid_trade_entry"
 	if giving and owned_count(asset_id) < amount:
 		return &"not_owned"
+	if not giving and not _is_known_asset(asset_id):
+		return &"unknown_offer"
 	return &""
+
+
+## An asset exists when an offer of the current generation grants it.
+func _is_known_asset(asset_id: StringName) -> bool:
+	for entry: EconomyOffer in offers():
+		if entry.asset_id() == asset_id:
+			return true
+	return false
 
 
 func _apply_side(side: Dictionary, giving: bool) -> void:

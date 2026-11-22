@@ -45,6 +45,7 @@ func read_metadata() -> Dictionary:
 		"map": clampi(_int_or(campaign.get("current_map", 2), 2), 1, 3),
 		"finished": campaign.get("finished", false) is bool and bool(campaign["finished"]),
 		"saved_at": String(data.get("saved_at", "")),
+		"summary": String(data.get("summary", "")),
 	}
 
 
@@ -115,6 +116,8 @@ func save_game() -> bool:
 	data["cycle"] = DayNightCycle.to_dict()
 	data["version"] = SAVE_VERSION
 	data["saved_at"] = Time.get_datetime_string_from_system()
+	# What the Continue entry shows, written by the game that knows its units.
+	data["summary"] = GameState.status_line()
 	return _write_atomic(save_path, data)
 
 

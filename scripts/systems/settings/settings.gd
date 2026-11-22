@@ -57,11 +57,14 @@ func load_settings() -> void:
 	var config := ConfigFile.new()
 	if config.load(config_path) != OK:
 		return
-	master_volume = clampf(float(config.get_value(SECTION_AUDIO, "master", master_volume)), 0.0, 1.0)
-	music_volume = clampf(float(config.get_value(SECTION_AUDIO, "music", music_volume)), 0.0, 1.0)
-	sfx_volume = clampf(float(config.get_value(SECTION_AUDIO, "sfx", sfx_volume)), 0.0, 1.0)
-	window_mode = clampi(int(config.get_value(SECTION_DISPLAY, "window_mode", window_mode)), WINDOWED, FULLSCREEN)
-	vsync_enabled = bool(config.get_value(SECTION_DISPLAY, "vsync", vsync_enabled))
+	master_volume = clampf(_number(config, SECTION_AUDIO, "master", master_volume), 0.0, 1.0)
+	music_volume = clampf(_number(config, SECTION_AUDIO, "music", music_volume), 0.0, 1.0)
+	sfx_volume = clampf(_number(config, SECTION_AUDIO, "sfx", sfx_volume), 0.0, 1.0)
+	window_mode = clampi(int(_number(config, SECTION_DISPLAY, "window_mode", window_mode)),
+		WINDOWED, FULLSCREEN)
+	var vsync: Variant = config.get_value(SECTION_DISPLAY, "vsync", vsync_enabled)
+	if vsync is bool:
+		vsync_enabled = vsync
 	var stored: Variant = config.get_value(SECTION_DISPLAY, "resolution", [resolution.x, resolution.y])
 	if stored is Array and (stored as Array).size() == 2:
 		var candidate := Vector2i(int(stored[0]), int(stored[1]))
@@ -77,6 +80,13 @@ func load_settings() -> void:
 		var button: Variant = config.get_value(SECTION_INPUT, "%s/button" % action, -1)
 		if button is int and int(button) >= 0 and int(button) < JOY_BUTTON_MAX:
 			button_bindings[action] = int(button)
+
+
+## A hand-edited file can hold anything; `float("x")` or `float([1])` would
+## raise a script error at boot.
+func _number(config: ConfigFile, section: String, key: String, fallback: float) -> float:
+	var value: Variant = config.get_value(section, key, fallback)
+	return float(value) if (value is int or value is float) else fallback
 
 
 func save_settings() -> void:
