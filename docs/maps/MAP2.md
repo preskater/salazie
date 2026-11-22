@@ -156,8 +156,9 @@ children of `World`, so Y-sorting is handled by their feet.
 
 `NPCSeller` (“Marchande”, blue tint) and `NPCVillager` (“Habitant”, warm tint) use the farmer
 `sprite_frames`. They idle and walk in four directions, patrol within 18 px of their home
-point, and turn to face the player when within 96 px. Talking (E) plays a random line from
-their `lines` export. `FarmMap` assigns each NPC the player reference on ready.
+point, and turn to face the player when within 96 px. Talking plays their `lines` in order, looping
+(`FarmNPC.next_line()`). The seller first gives today's market tip
+(`FarmMap.market_tip()`: the crop that pays best against its usual price). `FarmMap` assigns each NPC the player reference on ready.
 
 ### Crops and ambient details
 

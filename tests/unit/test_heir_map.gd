@@ -298,7 +298,10 @@ func test_council_rejects_the_plan_without_enough_support() -> void:
 
 	assert_bool(Campaign.has_mayor_support()).is_false()
 	assert_int(Campaign.task_status("become_mayor")).is_equal(Campaign.TaskStatus.FAILED)
-	assert_str((map.get_node("DialogueBox") as DialogueBox).get_text()).contains("refusé")
+	# The verdict heads the report instead of hiding behind it as a dialogue line.
+	var report: GenerationResult = map.get_node("GenerationResult")
+	assert_str((report.get("_footer") as Label).text).contains("refuse")
+	assert_bool((map.get_node("DialogueBox") as DialogueBox).visible).is_false()
 
 
 func test_player_can_interact_while_the_bus_drives_away() -> void:
