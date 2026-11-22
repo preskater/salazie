@@ -217,6 +217,16 @@ Workflow: `.github/workflows/godot-ci.yml`
   the ending and the sandbox, each log scanned for errors), then saves the `.godot` cache.
 - `build`: matrix over Linux, Windows, macOS and Web; each job restores the import cache, exports one platform, and uploads a `salazie-<platform>` artifact. It needs `prepare` and `test`.
 
+- `release`: only on a `v*` tag, after `build` and `coverage`; zips the four artifacts and
+  publishes a GitHub Release with generated notes.
+
+To release: set `config/version` in `project.godot`, merge, then push a matching tag
+(`git tag v0.2.0 && git push origin v0.2.0`). Tagging is the user's call; agents do not tag.
+
+The macOS build carries an **ad-hoc signature** (`codesign/codesign=1`, Godot's built-in
+signer, which runs on Linux). Without any signature an Apple Silicon Mac refuses to start
+the app. It is not notarised: on first launch the player still has to right-click → Open.
+
 macOS uses the **universal** template and requires `rendering/textures/vram_compression/import_etc2_astc=true`. Do not switch the preset back to `x86_64`: Godot issue #121170 makes single-architecture macOS export fail with `Requested template binary "godot_macos_release.x86_64" not found`.
 
 Godot exit codes are unreliable:
