@@ -43,3 +43,15 @@ func test_failed_council_vote_produces_a_secondary_epilogue() -> void:
 	var text := String(ending.call("get_epilogue_text"))
 	assert_str(text).contains("ne vous suit pas")
 	assert_str(text).contains("échecs")
+
+
+func test_ending_never_starts_paused() -> void:
+	# Regression (#29): the ending could load with the tree paused and its only
+	# button frozen.
+	get_tree().paused = true
+	var ending: Control = ENDING_SCENE.instantiate()
+	add_child(auto_free(ending))
+
+	assert_bool(get_tree().paused).is_false()
+	assert_int(ending.process_mode).is_equal(Node.PROCESS_MODE_ALWAYS)
+	assert_object(get_viewport().gui_get_focus_owner()).is_not_null()
