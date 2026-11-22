@@ -664,3 +664,20 @@ func test_a_file_that_is_not_an_economy_is_refused() -> void:
 	assert_bool(economy.reload_config(SHIPPED_CONFIG)).is_true()
 	assert_str(String(economy.current_generation_id())).is_equal("cultivateur")
 	assert_int(economy.balance(&"gourde")).is_equal(30)
+
+
+func test_an_offer_without_an_id_cannot_be_bought() -> void:
+	# Regression: it charged its price on every call, ignored its stock and
+	# granted nothing.
+	var generation := _generation()
+	var offers: Array[EconomyOffer] = generation.offers.duplicate()
+	offers.append(_offer(&"", &"gourde", 40, 20))
+	generation.offers = offers
+	var economy := _economy(generation)
+	var before: int = economy.balance(&"gourde")
+
+	assert_bool(economy.buy(&"")).is_false()
+	assert_int(economy.sell(&"")).is_equal(0)
+
+	assert_int(economy.balance(&"gourde")).is_equal(before)
+	assert_str(_reasons()).contains("unknown_offer")
