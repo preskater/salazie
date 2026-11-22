@@ -75,7 +75,7 @@ the heritage amount and the total failure count.
 `SceneRouter` sets `Campaign.heritage` when entering the map:
 
 ```text
-heritage = floor(farm money × (1 − 0.1 × Map 2 failure events))
+heritage = floor(farm net worth × (1 − 0.1 × Map 2 failure events))
 ```
 
 The heritage is displayed in the top-left label and in the epilogue.

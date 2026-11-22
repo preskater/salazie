@@ -11,6 +11,10 @@ const MAP_EXIT_SCENE := preload("res://scenes/world/map_exit.tscn")
 const TASK_LIST_SCENE := preload("res://scenes/ui/tasks/task_list.tscn")
 ## Seed the seller advances to a farmer who has nothing left to plant or sell.
 const RELIEF_CROP := "carrot"
+const PROSPERITY_GOAL := 100
+## Asset bought at the market (`grant_id` in economy.tres): with a barn, ripe
+## crops caught by the cyclone are brought in instead of destroyed.
+const BARN_ASSET := &"barn"
 const SIGN_TEXTURE := "res://sprites/farm_48x48/singles/Props_and_Buildings/Sign_1_48x48.png"
 
 @export var economy_generation: StringName = &"cultivateur"
@@ -27,6 +31,7 @@ const SIGN_TEXTURE := "res://sprites/farm_48x48/singles/Props_and_Buildings/Sign
 
 var _target: Node = null
 var _relief_announced := false
+var _sheltered := 0
 
 
 func _find_player() -> Node2D:
@@ -76,6 +81,7 @@ func _ready() -> void:
 	GameState.crop_harvested.connect(_on_crop_harvested)
 	GameState.produce_sold.connect(_on_produce_sold)
 	GameState.money_changed.connect(_on_money_changed)
+	Economy.ownership_changed.connect(_on_ownership_changed)
 	GameState.day_changed.connect(_on_day_changed)
 	Campaign.task_status_changed.connect(_on_task_status_changed)
 	_refresh_objective()
@@ -221,11 +227,22 @@ func _on_produce_sold(_crop: String, _amount: int, _total: int) -> void:
 	_refresh_objective()
 
 
-func _on_money_changed(value: int) -> void:
-	if value >= 100 and Campaign.task_status("earn_100") == Campaign.TaskStatus.PENDING:
+func _on_money_changed(_value: int) -> void:
+	_check_prosperity()
+
+
+func _on_ownership_changed(_asset_id: StringName, _amount: int) -> void:
+	_check_prosperity()
+
+
+## Prosperity is wealth, not cash in hand: investing in a barn or more land
+## must not push the goal further away.
+func _check_prosperity() -> void:
+	if GameState.net_worth() >= PROSPERITY_GOAL \
+			and Campaign.task_status("earn_100") == Campaign.TaskStatus.PENDING:
 		Campaign.complete_task("earn_100")
-		GameState.announce(
-			"Objectif atteint : %s — la ferme prospère !" % GameState.format_money(100))
+		GameState.announce("Objectif atteint : %s de patrimoine — la ferme prospère !"
+			% GameState.format_money(PROSPERITY_GOAL))
 	_refresh_objective()
 
 
@@ -246,12 +263,17 @@ func _strike_cyclone() -> void:
 	var path := _cyclone_path(cyclone.global_position)
 	GameState.announce("Le cyclone traverse la ferme !")
 	var destroyed := 0
+	var sheltered_before := _sheltered
 	for index in range(1, path.size()):
 		var tween := create_tween()
 		tween.tween_property(cyclone, "global_position", path[index], cyclone_leg_time)
 		await tween.finished
 		destroyed += _destroy_ripe_crops_on_path(path[index - 1], path[index])
-	if destroyed > 0:
+	var sheltered := _sheltered - sheltered_before
+	if sheltered > 0:
+		GameState.announce(
+			"La grange a mis %d récolte(s) mûre(s) à l'abri du cyclone." % sheltered)
+	elif destroyed > 0:
 		GameState.announce(
 			"Le cyclone a détruit %d récolte(s) mûre(s)." % destroyed)
 	else:
@@ -289,16 +311,22 @@ func _next_heading(heading: float) -> float:
 	return heading + deg_to_rad(randf_range(-cyclone_turn_deg, cyclone_turn_deg))
 
 
-## Destroys every READY crop within `CYCLONE_STEAL_RADIUS` of the storm path.
+## Destroys every READY crop within `CYCLONE_STEAL_RADIUS` of the storm path,
+## or brings it into the barn when the farmer owns one. Returns the number of
+## crops lost.
 func _destroy_ripe_crops_on_path(from: Vector2, to: Vector2) -> int:
 	var destroyed := 0
+	var has_barn := Economy.owned_count(BARN_ASSET) > 0
 	for node: Node in get_tree().get_nodes_in_group("crops"):
 		var plot := node as CropPlot
 		if plot == null:
 			continue
 		if _distance_to_segment(plot.global_position, from, to) > CYCLONE_STEAL_RADIUS:
 			continue
-		if plot.destroy_crop():
+		if has_barn:
+			if plot.shelter_crop():
+				_sheltered += 1
+		elif plot.destroy_crop():
 			destroyed += 1
 	return destroyed
 
@@ -319,7 +347,7 @@ func _check_prosperity_deadline(day: int) -> void:
 		return
 	Campaign.fail_task("earn_100",
 		"Délai dépassé : %s non atteints avant le jour %d"
-			% [GameState.format_money(100), PROSPERITY_DEADLINE_DAY])
+			% [GameState.format_money(PROSPERITY_GOAL), PROSPERITY_DEADLINE_DAY])
 	GameState.announce("Le délai du marché est passé : la ferme termine la génération en difficulté.")
 
 

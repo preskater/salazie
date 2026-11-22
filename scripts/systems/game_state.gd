@@ -152,6 +152,13 @@ func spend_money(amount: int) -> bool:
 	return true
 
 
+## Money plus the purchase value of what was bought with it.
+func net_worth() -> int:
+	if not _uses_economy():
+		return money
+	return money + Economy.owned_value(_currency_id)
+
+
 func currency_id() -> StringName:
 	return _currency_id
 
