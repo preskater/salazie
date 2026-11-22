@@ -40,7 +40,31 @@ const HIDE_TEXTURES := [
 ## A gourd of river water is worth one sip, and the volcanic silt needs ten
 ## seconds to settle before the next one. At 1 water/s against a drain of
 ## 0.55/s, staying by the river is safe but slow: water is a reason to stop.
+const DIALOGUE_SCENE := preload("res://scenes/ui/dialogue/dialogue_box.tscn")
+const NARRATOR := "Le marron"
+## What the maroon thinks at each step of the escape. Narrative text: French.
+const STORY := {
+	"intro": [
+		"La mer est derrière moi. Les chasseurs longent encore la côte.",
+		"La rivière descend du cirque. En la remontant, je trouverai le col, et un abri.",
+	],
+	"river_mouth_checkpoint": [
+		"L'eau est douce ici. Tant que je suis la rivière, je ne me perdrai pas.",
+	],
+	"forest_checkpoint": [
+		"Un camp abandonné. D'autres sont passés avant moi : le chemin existe.",
+	],
+	"upper_checkpoint": [
+		"L'air fraîchit. Le col n'est plus loin, et les patrouilles montent rarement jusqu'ici.",
+	],
+	"refuge": [
+		"Une cabane. Il me faut encore de quoi tenir avant de m'y enfermer.",
+	],
+}
 const ECONOMY_GENERATION := &"marron"
+## Patrols see less far in the dark: night is the time to move.
+const GUARD_VISION_DAY := 300.0
+const GUARD_VISION_NIGHT := 200.0
 const DRINK_WATER := 10.0
 const DRINK_COOLDOWN := 10.0
 const DRINK_REACH_TILES := 2
@@ -84,6 +108,9 @@ var _near_fresh_water := false
 var _drink_cooldown := 0.0
 var _survival: Node
 var _exhaustion := 0.0
+var _dialogue: DialogueBox
+var _told: Dictionary = {}
+var _stamina_bar: ProgressBar
 var _food_spots: Array[Area2D] = []
 var _guards: Array[Dictionary] = []
 
@@ -113,9 +140,10 @@ func _ready() -> void:
 	_add_refuge()
 	_build_navigation()
 	Campaign.map_resolved.connect(_on_map_resolved)
+	DayNightCycle.phase_changed.connect(_on_phase_changed)
 	Campaign.task_status_changed.connect(_on_task_status_changed)
 	_restore_world(SaveGame.register_world(1, save_world))
-	_notify("Map 1 — Le marron : de la mer au col, remontez la rivière et rejoignez le refuge.")
+	_tell_story("intro")
 
 
 func map_size() -> Vector2:
@@ -235,6 +263,8 @@ func _add_player() -> void:
 		_survival.set("food_drain", 0.35)
 		_survival.set("water_drain", 0.55)
 		_survival.connect("depleted", _on_survival_depleted)
+	# Running is a decision here: the breath lasts a few seconds.
+	_player.set("stamina_enabled", true)
 
 
 func _add_ui() -> void:
@@ -247,6 +277,9 @@ func _add_ui() -> void:
 	var result: CanvasLayer = RESULT_SCENE.instantiate()
 	result.name = "GenerationResult"
 	add_child(result)
+	_dialogue = DIALOGUE_SCENE.instantiate()
+	_dialogue.name = "DialogueBox"
+	add_child(_dialogue)
 
 	# Screen-space UI: a CanvasLayer keeps it fixed while the camera scrolls.
 	var ui := CanvasLayer.new()
@@ -274,6 +307,21 @@ func _add_ui() -> void:
 	hint.add_theme_constant_override("outline_size", 6)
 	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(hint)
+
+	# Breath left for running; it only shows while it is not full.
+	_stamina_bar = ProgressBar.new()
+	_stamina_bar.name = "StaminaBar"
+	_stamina_bar.show_percentage = false
+	_stamina_bar.max_value = 100.0
+	_stamina_bar.value = 100.0
+	_stamina_bar.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
+	_stamina_bar.offset_left = 18.0
+	_stamina_bar.offset_top = -66.0
+	_stamina_bar.offset_right = 198.0
+	_stamina_bar.offset_bottom = -52.0
+	_stamina_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_stamina_bar.modulate.a = 0.0
+	root.add_child(_stamina_bar)
 
 	_clock_label = Label.new()
 	_clock_label.name = "ClockLabel"
@@ -382,6 +430,9 @@ func _process(delta: float) -> void:
 	_update_interaction_target()
 	_update_objective_bar()
 	_tick_exhaustion(delta)
+	if _stamina_bar != null:
+		_stamina_bar.value = float(_player.get("stamina")) * 100.0
+		_stamina_bar.modulate.a = 1.0 if _stamina_bar.value < 99.0 else 0.0
 	if _clock_label != null:
 		_clock_timer -= delta
 		if _clock_timer <= 0.0:
@@ -566,7 +617,7 @@ func _add_guards() -> void:
 		guard.name = "Guard%d" % (index + 1)
 		guard.position = spawn
 		guard.set("zone_size", Vector2(360, 260))
-		guard.set("vision_range", 300.0)
+		guard.set("vision_range", _guard_vision())
 		guard.set("use_navigation", true)
 		guard.set("pause_on_catch", false)
 		guard.set("chase_speed", GUARD_CHASE_SPEED)
@@ -762,10 +813,23 @@ func _on_checkpoint_reached(point: Vector2) -> void:
 		return
 	_respawn_position = point
 	_notify("Checkpoint atteint.")
+	for key: String in ["river_mouth_checkpoint", "forest_checkpoint", "upper_checkpoint"]:
+		if point.is_equal_approx(_anchors[key]):
+			_tell_story(key)
 
 
 func _on_refuge_blocked() -> void:
 	_notify("Le refuge est proche, mais des tâches restent à accomplir.")
+	_tell_story("refuge")
+
+
+## Says the lines of a story beat, once per visit of the map.
+func _tell_story(beat: String) -> void:
+	if _told.has(beat) or not STORY.has(beat):
+		return
+	_told[beat] = true
+	for line: String in STORY[beat]:
+		_dialogue.queue_line(NARRATOR, line)
 
 
 func _on_task_status_changed(_map_id: int, _task_id: String, _status: int) -> void:
@@ -774,6 +838,21 @@ func _on_task_status_changed(_map_id: int, _task_id: String, _status: int) -> vo
 
 ## One message for the event: `task_status_changed` fires in the same frame and
 ## used to show a second line that this one replaced at once.
+func _guard_vision() -> float:
+	return GUARD_VISION_NIGHT if DayNightCycle.is_night() else GUARD_VISION_DAY
+
+
+func _on_phase_changed(_phase: int) -> void:
+	for entry: Dictionary in _guards:
+		var guard: CharacterBody2D = entry["guard"]
+		if is_instance_valid(guard):
+			guard.set("vision_range", _guard_vision())
+	if DayNightCycle.is_night():
+		_notify("La nuit tombe : les patrouilles voient moins loin.")
+	else:
+		_notify("Le jour se lève : les patrouilles voient de nouveau loin.")
+
+
 func _on_map_resolved(_map_id: int, _summary: Dictionary) -> void:
 	_notify("Toutes les tâches sont accomplies — le refuge du col vous attend.")
 

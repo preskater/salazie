@@ -46,6 +46,9 @@ buy more seeds. Prices change when the day changes.
 - Start: money carried from Map 1 (**30 G** minus 5 G per failure event, minimum 15 G),
   day 1, seeds `corn ×2, pumpkin ×1, tomato ×2, carrot ×1`
 - Day length: **60 s**; prices reroll each day by about **±25 %** around the base price
+- One clock: the sky is driven by the farm day (`GameState.sync_sky()` →
+  `DayNightCycle.set_progress()`), dawn to night within those 60 s; the cycle does not run
+  on its own here
 - Selling pays the current daily price; buying a seed costs its `seed_price`
 - The `gourde` wallet, its starting balance and the `OBJETS & PROPRIÉTÉS` offers come from
   `game_resources/economy/economy.tres`; see [ECONOMY.md](../ECONOMY.md)

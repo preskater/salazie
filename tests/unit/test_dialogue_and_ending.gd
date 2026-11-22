@@ -249,7 +249,7 @@ func test_a_flawless_family_is_remembered_without_fault() -> void:
 	assert_str(text).contains("vous devenez maire")
 	assert_str(text).contains("Trois générations sans faute")
 	assert_str(String(ending.call("get_stats_text"))).is_equal(
-		"Héritage familial : 0 G · Échecs enregistrés : 0")
+		"Héritage familial : 0 G · Échecs en chemin : 0")
 
 
 func test_a_few_failures_do_not_erase_what_was_built() -> void:
@@ -259,12 +259,13 @@ func test_a_few_failures_do_not_erase_what_was_built() -> void:
 
 	var text := String(ending.call("get_epilogue_text"))
 	assert_str(text).contains("Quelques échecs ont marqué le chemin")
-	assert_str(String(ending.call("get_stats_text"))).contains("Échecs enregistrés : 2")
+	assert_str(String(ending.call("get_stats_text"))).contains("Échecs en chemin : 2")
 
 
 func test_many_failures_weigh_on_every_generation() -> void:
 	Campaign.heritage = 45
 	Campaign.fail_task("find_water", "Repéré", 1)
+	Campaign.fail_task("find_food", "Rien trouvé", 1)
 	Campaign.fail_task("earn_100", "Jour 6 passé", 2)
 	Campaign.fail_task("become_mayor", "Le conseil a rejeté le plan", 3)
 	var ending := _spawn_ending()
@@ -274,7 +275,7 @@ func test_many_failures_weigh_on_every_generation() -> void:
 	assert_str(text).contains("Le conseil ne vous suit pas")
 	assert_bool(text.contains("Quelques échecs")).is_false()
 	assert_str(String(ending.call("get_stats_text"))).is_equal(
-		"Héritage familial : 45 G · Échecs enregistrés : 3")
+		"Héritage familial : 45 G · Échecs en chemin : 3")
 
 
 func test_an_heir_without_plan_is_told_the_farm_story() -> void:
@@ -356,3 +357,21 @@ func test_interact_or_accept_dismisses_the_line() -> void:
 	box._unhandled_input(_action(&"interact"))
 	box.hide_line()
 	assert_int(closes.size()).is_equal(2)
+
+
+func test_queued_lines_follow_each_other() -> void:
+	var box := _spawn_dialogue()
+
+	box.queue_line("Le marron", "Première.")
+	box.queue_line("Le marron", "Deuxième.")
+	box.queue_line("Le marron", "Troisième.")
+
+	assert_str(box.get_text()).is_equal("Première.")
+	assert_int(box.pending_lines()).is_equal(2)
+	box.hide_line()
+	assert_str(box.get_text()).is_equal("Deuxième.")
+	assert_bool(box.visible).is_true()
+	box.hide_line()
+	box.hide_line()
+	assert_bool(box.visible).is_false()
+	assert_int(box.pending_lines()).is_equal(0)

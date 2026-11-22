@@ -17,6 +17,7 @@ var _panel: PanelContainer
 var _speaker: Label
 var _text: Label
 var _timer: Timer
+var _queue: Array[Dictionary] = []
 
 
 func _ready() -> void:
@@ -33,6 +34,19 @@ func show_line(speaker: String, text: String) -> void:
 	_timer.start(reading_time(text))
 
 
+## Shows the line now, or after the ones already waiting. Used for a few lines
+## that belong together, such as the opening of a map.
+func queue_line(speaker: String, text: String) -> void:
+	if visible:
+		_queue.append({"speaker": speaker, "text": text})
+	else:
+		show_line(speaker, text)
+
+
+func pending_lines() -> int:
+	return _queue.size()
+
+
 ## How long a line stays without input: about 16 characters a second, which is
 ## a comfortable reading pace, within sensible bounds.
 func reading_time(text: String) -> float:
@@ -45,6 +59,9 @@ func hide_line() -> void:
 	_timer.stop()
 	hide()
 	closed.emit()
+	if not _queue.is_empty():
+		var next: Dictionary = _queue.pop_front()
+		show_line(String(next["speaker"]), String(next["text"]))
 
 
 func _unhandled_input(event: InputEvent) -> void:

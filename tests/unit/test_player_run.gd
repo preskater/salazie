@@ -101,3 +101,34 @@ func test_a_freed_source_stops_covering() -> void:
 	player.remove_cover(player)
 
 	assert_bool(player.concealed).is_false()
+
+
+func test_breath_runs_out_and_has_to_come_back() -> void:
+	var player := _spawn_player()
+	player.stamina_enabled = true
+
+	assert_bool(player.tick_stamina(player.STAMINA_SECONDS * 0.5, true)).is_true()
+	assert_float(player.stamina).is_equal_approx(0.5, 0.001)
+	assert_bool(player.tick_stamina(player.STAMINA_SECONDS, true)).is_true()
+	assert_float(player.stamina).is_equal(0.0)
+	assert_bool(player.winded).is_true()
+
+	# Holding the key does not help: the breath must come back first.
+	assert_bool(player.tick_stamina(0.5, true)).is_false()
+	assert_float(player.stamina).is_greater(0.0)
+	player.tick_stamina(player.STAMINA_RECOVERY_SECONDS * player.STAMINA_RESUME, false)
+	assert_bool(player.tick_stamina(0.01, true)).is_true()
+	assert_bool(player.winded).is_false()
+
+	player.tick_stamina(1000.0, false)
+	assert_float(player.stamina).is_equal(1.0)
+
+
+func test_breath_is_unlimited_where_stamina_is_off() -> void:
+	var player := _spawn_player()
+	assert_bool(player.stamina_enabled).is_false()
+
+	assert_bool(player.tick_stamina(1000.0, true)).is_true()
+	assert_bool(player.tick_stamina(1.0, false)).is_false()
+
+	assert_float(player.stamina).is_equal(1.0)

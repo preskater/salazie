@@ -50,6 +50,8 @@ Two optional routes parallel the main trail through the gorge.
   withdraw only themselves on exit. The player is concealed or muted while at
   least one source remains, so a bush inside the cave and the alcove inside the
   spray nest correctly.
+- Night: patrols see 200 px instead of 300 (`GUARD_VISION_NIGHT` / `GUARD_VISION_DAY`),
+  switched on `DayNightCycle.phase_changed` with a notification.
 - Line of sight: props (rocks, trees, walls, the cabin) are on physics layers
   `world` (1) and `vision_blockers` (2); the guard's `VisionRay` masks layer 2.
   Water and the map bounds are on layer 1 only: they stop movement, not sight.
@@ -311,6 +313,18 @@ the bridge rows.
   fades.
 - A hide spot shows a soft green ring at its base and a `Caché` label while the
   player is concealed; the label switches to `Caché !` after the hide delay.
+
+## Story and stamina
+
+- `MaroonMap.STORY` holds what the maroon thinks at each step: two opening lines, one at
+  each checkpoint beyond the beach, one on first reaching the cabin. They are shown through
+  the shared `DialogueBox` (`queue_line`), once per visit, and can be dismissed with
+  `interact`.
+- Running spends breath (`player.stamina_enabled`, on this map only): 5 s of sprint
+  (`STAMINA_SECONDS`), 8 s to recover (`STAMINA_RECOVERY_SECONDS`), and a winded player must
+  get back to 30 % before running again. `MaroonUI/Root/StaminaBar` shows it while it is not
+  full. With guards chasing between walking and running speed, a sprint is an escape to
+  spend wisely, not a way to cross the map.
 
 ## Result and carry-over
 

@@ -61,6 +61,10 @@ func _ready() -> void:
 	if not GameState.playing:
 		GameState.playing = true
 	GameState.farm_active = true
+	# The farm day drives the sky (GameState.sync_sky); the cycle must not also
+	# run on its own.
+	DayNightCycle.running = false
+	DayNightCycle.tint_enabled = true
 	Campaign.ensure_map(2)
 	Campaign.current_map = 2
 	var survival := player.get_node_or_null("Survival")

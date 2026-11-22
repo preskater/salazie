@@ -40,7 +40,7 @@ La liste des tâches est visible en permanence en haut de l'écran. **T** ou **S
 
 ## Cycle jour/nuit
 
-Chaque map alterne une phase de jour et une phase de nuit. Le cycle est décoratif : ce sont les tâches qui débloquent la génération suivante. Le nombre de nuits reste configurable dans `scenes/preloads/day_night_cycle.tscn`, via `nights_required_for_next_map`.
+Chaque map alterne une phase de jour et une phase de nuit. Ce sont les tâches, et non le nombre de nuits, qui débloquent la génération suivante. Sur la map 1, les patrouilles voient moins loin la nuit : c'est le moment d'avancer. Sur la ferme, le ciel suit le jour de la ferme (60 s), celui qui fait changer les prix et approcher le cyclone.
 
 ## Transitions entre maps
 
