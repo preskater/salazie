@@ -219,15 +219,57 @@ func apply_audio() -> void:
 	_set_bus_volume("SFX", sfx_volume)
 
 
+## True where the game owns its window. A browser owns the canvas: it sizes
+## it, refuses fullscreen without a click and has no VSync switch.
+func controls_window() -> bool:
+	return DisplayServer.get_name() != "headless" and not OS.has_feature("web")
+
+
 func apply_display() -> void:
-	if DisplayServer.get_name() == "headless":
+	apply_window()
+	apply_vsync()
+
+
+## Window mode and size. Kept apart from VSync so that toggling VSync does not
+## undo a window the player resized by hand.
+func apply_window() -> void:
+	if not controls_window():
 		return
-	var mode := DisplayServer.WINDOW_MODE_FULLSCREEN if window_mode == FULLSCREEN else DisplayServer.WINDOW_MODE_WINDOWED
+	var mode := DisplayServer.WINDOW_MODE_FULLSCREEN if window_mode == FULLSCREEN \
+		else DisplayServer.WINDOW_MODE_WINDOWED
 	DisplayServer.window_set_mode(mode)
-	if window_mode == WINDOWED:
-		DisplayServer.window_set_size(resolution)
+	if window_mode != WINDOWED:
+		return
+	var screen := DisplayServer.screen_get_usable_rect(DisplayServer.window_get_current_screen())
+	var size := fitting_resolution(resolution, screen.size)
+	DisplayServer.window_set_size(size)
+	# Centred, or a window as large as the screen ends up half outside it.
+	DisplayServer.window_set_position(screen.position + (screen.size - size) / 2)
+
+
+func apply_vsync() -> void:
+	if not controls_window():
+		return
 	DisplayServer.window_set_vsync_mode(
 		DisplayServer.VSYNC_ENABLED if vsync_enabled else DisplayServer.VSYNC_DISABLED)
+
+
+## Resolutions that fit on a screen of `screen_size`. The smallest is always
+## offered so the list is never empty.
+func available_resolutions(screen_size: Vector2i) -> Array[Vector2i]:
+	var result: Array[Vector2i] = []
+	for candidate: Vector2i in RESOLUTIONS:
+		if candidate.x <= screen_size.x and candidate.y <= screen_size.y:
+			result.append(candidate)
+	if result.is_empty():
+		result.append(RESOLUTIONS[0])
+	return result
+
+
+## `wanted` if the screen can show it, otherwise the largest that fits.
+func fitting_resolution(wanted: Vector2i, screen_size: Vector2i) -> Vector2i:
+	var fitting := available_resolutions(screen_size)
+	return wanted if fitting.has(wanted) else fitting[-1]
 
 
 func set_master_volume(value: float) -> void:
@@ -250,7 +292,7 @@ func set_sfx_volume(value: float) -> void:
 
 func set_window_mode(value: int) -> void:
 	window_mode = clampi(value, WINDOWED, FULLSCREEN)
-	apply_display()
+	apply_window()
 	settings_changed.emit()
 
 
@@ -258,13 +300,13 @@ func set_resolution(value: Vector2i) -> void:
 	if not RESOLUTIONS.has(value):
 		return
 	resolution = value
-	apply_display()
+	apply_window()
 	settings_changed.emit()
 
 
 func set_vsync_enabled(value: bool) -> void:
 	vsync_enabled = value
-	apply_display()
+	apply_vsync()
 	settings_changed.emit()
 
 

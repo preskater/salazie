@@ -44,9 +44,22 @@ func _build_options() -> void:
 	window_mode_option.add_item("Fenêtré", Settings.WINDOWED)
 	window_mode_option.add_item("Plein écran", Settings.FULLSCREEN)
 	resolution_option.clear()
+	# Only what the screen can show; ids stay indices into Settings.RESOLUTIONS.
+	var offered := Settings.available_resolutions(_screen_size())
 	for index in Settings.RESOLUTIONS.size():
 		var value: Vector2i = Settings.RESOLUTIONS[index]
-		resolution_option.add_item("%d × %d" % [value.x, value.y], index)
+		if offered.has(value) or value == Settings.resolution:
+			resolution_option.add_item("%d × %d" % [value.x, value.y], index)
+	# In a browser the page owns the canvas: these rows would do nothing.
+	var windowed_platform := not OS.has_feature("web")
+	(resolution_option.get_parent() as Control).visible = windowed_platform
+	(vsync_toggle.get_parent() as Control).visible = windowed_platform
+
+
+func _screen_size() -> Vector2i:
+	if DisplayServer.get_name() == "headless":
+		return Settings.RESOLUTIONS[-1]
+	return DisplayServer.screen_get_usable_rect(DisplayServer.window_get_current_screen()).size
 
 
 func _refresh() -> void:
@@ -55,7 +68,8 @@ func _refresh() -> void:
 	music_slider.value = Settings.music_volume * 100.0
 	sfx_slider.value = Settings.sfx_volume * 100.0
 	window_mode_option.select(Settings.window_mode)
-	resolution_option.select(Settings.RESOLUTIONS.find(Settings.resolution))
+	resolution_option.select(resolution_option.get_item_index(
+		Settings.RESOLUTIONS.find(Settings.resolution)))
 	vsync_toggle.button_pressed = Settings.vsync_enabled
 	resolution_option.disabled = Settings.window_mode != Settings.WINDOWED
 	_update_value_labels()

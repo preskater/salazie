@@ -127,8 +127,11 @@ running. Day/night remains decorative: the next generation is unlocked by the ta
 Audio is applied to the `Master`, `Music` and `SFX` buses in `audio/default_bus_layout.tres`.
 The sliders drive the `Master`, `Music` and `SFX` buses used by the `Audio` autoload; see
 [AUDIO.md](AUDIO.md).
-Display changes are skipped when `DisplayServer.get_name() == "headless"`, which keeps
-CI and the gdUnit4 runner safe.
+Window mode, resolution and VSync are only applied where the game owns its window
+(`Settings.controls_window()`): not headless, and not on Web, where the page sizes the
+canvas and the resolution and VSync rows are hidden. The resolution list is limited to what
+the screen can show, a saved resolution that no longer fits falls back to the largest that
+does, and the window is centred after a resize. Toggling VSync no longer resets the window.
 
 The options screen applies changes immediately and saves after a short debounce, on
 **Retour**, and when leaving the screen with `ui_cancel`. `Réinitialiser` restores the
@@ -213,8 +216,12 @@ ignored one by one, so a damaged block never prevents a load.
 Task statuses are `0` pending, `1` done and `2` failed. A retry returns the status to `0`
 but keeps the failure list.
 
-- Writes are atomic: `savegame.json.tmp` → `savegame.json`, with the previous file rotated
-  to `savegame.json.bak`.
+- Writes are atomic: `savegame.json.tmp` → `savegame.json`. The previous file becomes
+  `savegame.json.bak` only when the existing backup is older than 5 minutes
+  (`BACKUP_INTERVAL`), so the backup is always a state from a little while ago and not from
+  the previous second. Loading tries the primary, then a leftover `.tmp`, then the backup.
+- A timer autosaves every 60 s while a game is running (`AUTOSAVE_INTERVAL`), and so does
+  losing window focus: a browser tab can be closed without any other notice.
 - Loading tries the primary file, then the backup. A candidate is used only when the whole
   payload would be accepted: `GameState.can_restore()` and `Campaign.can_restore()` are
   checked before anything is applied, so a refused load never mutates the current state and

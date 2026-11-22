@@ -436,3 +436,33 @@ func test_showing_the_screen_again_picks_up_settings_changed_elsewhere() -> void
 	# Refreshing the controls is not a player change.
 	assert_int(_changes).is_equal(0)
 	assert_bool((screen.get_node("%SaveTimer") as Timer).is_stopped()).is_true()
+
+
+# --- #47 -----------------------------------------------------------------------
+
+func test_only_resolutions_the_screen_can_show_are_offered() -> void:
+	assert_array(Settings.available_resolutions(Vector2i(1920, 1080))) \
+		.is_equal(Array(Settings.RESOLUTIONS))
+	assert_array(Settings.available_resolutions(Vector2i(1728, 1000))) \
+		.is_equal([Vector2i(1280, 720), Vector2i(1600, 900)])
+	# A screen smaller than every preset still gets the smallest one.
+	assert_array(Settings.available_resolutions(Vector2i(1024, 600))) \
+		.is_equal([Vector2i(1280, 720)])
+
+
+func test_a_resolution_too_large_for_the_screen_falls_back_to_one_that_fits() -> void:
+	assert_vector(Settings.fitting_resolution(Vector2i(1920, 1080), Vector2i(1728, 1000))) \
+		.is_equal(Vector2i(1600, 900))
+	assert_vector(Settings.fitting_resolution(Vector2i(1280, 720), Vector2i(1728, 1000))) \
+		.is_equal(Vector2i(1280, 720))
+
+
+func test_the_headless_runner_never_touches_a_window() -> void:
+	assert_bool(Settings.controls_window()).is_false()
+	Settings.set_vsync_enabled(false)
+	Settings.set_window_mode(Settings.FULLSCREEN)
+	Settings.set_resolution(Vector2i(1600, 900))
+
+	assert_int(Settings.window_mode).is_equal(Settings.FULLSCREEN)
+	assert_vector(Settings.resolution).is_equal(Vector2i(1600, 900))
+	assert_bool(Settings.vsync_enabled).is_false()

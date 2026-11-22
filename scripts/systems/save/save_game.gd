@@ -10,7 +10,14 @@ extends Node
 const SAVE_VERSION := 3
 const SAVE_PATH := "user://savegame.json"
 
+## Seconds a backup is kept before the next save replaces it.
+const BACKUP_INTERVAL := 300.0
+## Seconds between two autosaves while playing. A browser tab can be closed
+## without any notice, so progress is never older than this.
+const AUTOSAVE_INTERVAL := 60.0
+
 var save_path := SAVE_PATH
+var backup_interval := BACKUP_INTERVAL
 ## World block waiting to be handed to its map, keyed by map id.
 var world: Dictionary = {}
 
@@ -25,6 +32,26 @@ func _ready() -> void:
 	Campaign.map_resolved.connect(
 		func(_map_id: int, _summary: Dictionary) -> void: _on_campaign_changed())
 	Campaign.choices_changed.connect(_on_campaign_changed)
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	var timer := Timer.new()
+	timer.name = "AutosaveTimer"
+	timer.wait_time = AUTOSAVE_INTERVAL
+	timer.autostart = true
+	timer.timeout.connect(autosave)
+	add_child(timer)
+
+
+## Saves when a game is running. Also called when the window loses focus,
+## which is the last thing a browser tells a page before it may be closed.
+func autosave() -> bool:
+	if not GameState.playing or SceneRouter.is_transitioning():
+		return false
+	return save_game()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_WM_WINDOW_FOCUS_OUT:
+		autosave()
 
 
 func has_valid_save() -> bool:
@@ -176,11 +203,17 @@ func _write_atomic(path: String, data: Dictionary) -> bool:
 		return false
 	if FileAccess.file_exists(path):
 		var backup := path + ".bak"
-		_remove(backup)
-		var backup_err := DirAccess.rename_absolute(
-			ProjectSettings.globalize_path(path), ProjectSettings.globalize_path(backup))
-		if backup_err != OK:
-			push_warning("Could not rotate the previous save to %s (error %d)." % [backup, backup_err])
+		if _backup_is_due(backup):
+			_remove(backup)
+			var backup_err := DirAccess.rename_absolute(
+				ProjectSettings.globalize_path(path), ProjectSettings.globalize_path(backup))
+			if backup_err != OK:
+				push_warning("Could not rotate the previous save to %s (error %d)."
+					% [backup, backup_err])
+		else:
+			# The backup is recent enough to be worth keeping: it must stay a
+			# few minutes behind, or it is no rollback at all.
+			_remove(path)
 	var err := DirAccess.rename_absolute(
 		ProjectSettings.globalize_path(tmp), ProjectSettings.globalize_path(path))
 	if err != OK:
@@ -189,12 +222,24 @@ func _write_atomic(path: String, data: Dictionary) -> bool:
 	return true
 
 
+## The game saves on every task, pause and day: rotating the backup each time
+## left a copy that was seconds old. It is replaced only once it is older than
+## `BACKUP_INTERVAL`, so it always holds a state from a little while ago.
+func _backup_is_due(backup: String) -> bool:
+	if not FileAccess.file_exists(backup):
+		return true
+	var age := Time.get_unix_time_from_system() - float(FileAccess.get_modified_time(backup))
+	return age >= backup_interval
+
+
 ## First candidate that can really be loaded: the primary file, then its
 ## backup. A primary that parses but that the game would refuse (wrong types,
 ## an economy generation that no longer exists) falls through to the backup
 ## instead of leaving Continue enabled on a save that does nothing.
 func _read_valid_data() -> Dictionary:
-	for path: String in [save_path, save_path + ".bak"]:
+	# The temporary file is the newest state when a crash fell between the
+	# removal of the old primary and the rename of the new one.
+	for path: String in [save_path, save_path + ".tmp", save_path + ".bak"]:
 		var data := _read_candidate(path)
 		if not data.is_empty() and _is_valid_payload(data) and _is_loadable(data):
 			return data
