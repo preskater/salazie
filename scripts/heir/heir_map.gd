@@ -23,7 +23,7 @@ const DIALOGUE_SCENE := preload("res://scenes/ui/dialogue/dialogue_box.tscn")
 const DECISION_SCENE := preload("res://scenes/ui/decision/decision_panel.tscn")
 
 var _world: Node2D
-var _player: Node2D
+var _player: Player
 var _dialogue: DialogueBox
 var _decision_panel: DecisionPanel
 var _notification_label: Label
@@ -88,8 +88,7 @@ func _restore_world(data: Dictionary) -> void:
 	if position_data is Array and (position_data as Array).size() == 2:
 		var point := Vector2(float(position_data[0]), float(position_data[1]))
 		if Rect2(Vector2.ZERO, MAP_SIZE).has_point(point):
-			_player.global_position = point
-			_player.reset_physics_interpolation()
+			_player.teleport_to(point)
 
 
 func _add_player() -> void:

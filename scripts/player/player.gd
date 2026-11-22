@@ -90,6 +90,14 @@ func _physics_process(delta: float) -> void:
 func get_current_speed() -> float:
 	return speed * (run_multiplier if is_running else 1.0) * speed_scale
 
+
+## Moves the body without dragging the view across the map: physics
+## interpolation and the camera smoothing are reset to the new position.
+func teleport_to(point: Vector2) -> void:
+	global_position = point
+	reset_physics_interpolation()
+	camera.reset_smoothing()
+
 func _tick_noise(delta: float) -> void:
 	if not is_running:
 		_noise_timer = 0.0

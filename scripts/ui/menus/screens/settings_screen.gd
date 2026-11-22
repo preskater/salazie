@@ -13,6 +13,11 @@ signal back_requested()
 @onready var window_mode_option: OptionButton = %WindowModeOption
 @onready var resolution_option: OptionButton = %ResolutionOption
 @onready var vsync_toggle: CheckBox = %VsyncToggle
+@onready var ui_scale_option: OptionButton = %UiScaleOption
+@onready var pause_focus_toggle: CheckBox = %PauseFocusToggle
+@onready var reduced_shake_toggle: CheckBox = %ReducedShakeToggle
+@onready var reduced_flash_toggle: CheckBox = %ReducedFlashToggle
+@onready var fullscreen_hint: Label = %FullscreenHint
 @onready var reset_button: Button = %ResetButton
 @onready var back_button: Button = %BackButton
 @onready var save_timer: Timer = %SaveTimer
@@ -27,9 +32,14 @@ func _ready() -> void:
 	window_mode_option.item_selected.connect(_on_window_mode_selected)
 	resolution_option.item_selected.connect(_on_resolution_selected)
 	vsync_toggle.toggled.connect(_on_vsync_toggled)
+	ui_scale_option.item_selected.connect(_on_ui_scale_selected)
+	pause_focus_toggle.toggled.connect(_on_pause_focus_toggled)
+	reduced_shake_toggle.toggled.connect(_on_reduced_shake_toggled)
+	reduced_flash_toggle.toggled.connect(_on_reduced_flash_toggled)
 	reset_button.pressed.connect(_on_reset_pressed)
 	back_button.pressed.connect(_on_back_pressed)
 	save_timer.timeout.connect(Settings.save_settings)
+	InputHints.device_changed.connect(_on_device_changed)
 	_build_options()
 	_refresh()
 
@@ -54,6 +64,11 @@ func _build_options() -> void:
 	var windowed_platform := not OS.has_feature("web")
 	(resolution_option.get_parent() as Control).visible = windowed_platform
 	(vsync_toggle.get_parent() as Control).visible = windowed_platform
+	(ui_scale_option.get_parent() as Control).visible = windowed_platform
+	fullscreen_hint.visible = windowed_platform
+	ui_scale_option.clear()
+	for index in Settings.UI_SCALES.size():
+		ui_scale_option.add_item("%d %%" % int(round(Settings.UI_SCALES[index] * 100.0)), index)
 
 
 func _refresh() -> void:
@@ -66,6 +81,11 @@ func _refresh() -> void:
 		Settings.RESOLUTIONS.find(Settings.resolution)))
 	vsync_toggle.button_pressed = Settings.vsync_enabled
 	resolution_option.disabled = Settings.window_mode != Settings.WINDOWED
+	ui_scale_option.select(Settings.UI_SCALES.find(Settings.ui_scale))
+	pause_focus_toggle.button_pressed = Settings.pause_on_focus_loss
+	reduced_shake_toggle.button_pressed = Settings.reduced_shake
+	reduced_flash_toggle.button_pressed = Settings.reduced_flash
+	_update_fullscreen_hint()
 	_update_value_labels()
 	_refreshing = false
 
@@ -116,6 +136,45 @@ func _on_vsync_toggled(pressed: bool) -> void:
 		return
 	Settings.set_vsync_enabled(pressed)
 	_schedule_save()
+
+
+func _on_ui_scale_selected(index: int) -> void:
+	if _refreshing:
+		return
+	var scale_index := ui_scale_option.get_item_id(index)
+	if scale_index >= 0 and scale_index < Settings.UI_SCALES.size():
+		Settings.set_ui_scale(Settings.UI_SCALES[scale_index])
+	_schedule_save()
+
+
+func _on_pause_focus_toggled(pressed: bool) -> void:
+	if _refreshing:
+		return
+	Settings.set_pause_on_focus_loss(pressed)
+	_schedule_save()
+
+
+func _on_reduced_shake_toggled(pressed: bool) -> void:
+	if _refreshing:
+		return
+	Settings.set_reduced_shake(pressed)
+	_schedule_save()
+
+
+func _on_reduced_flash_toggled(pressed: bool) -> void:
+	if _refreshing:
+		return
+	Settings.set_reduced_flash(pressed)
+	_schedule_save()
+
+
+func _on_device_changed(_gamepad: bool) -> void:
+	_update_fullscreen_hint()
+
+
+## The shortcut is a keyboard one; `label()` falls back to it on a gamepad.
+func _update_fullscreen_hint() -> void:
+	fullscreen_hint.text = "Plein écran : %s" % InputHints.label(&"toggle_fullscreen")
 
 
 func _on_reset_pressed() -> void:

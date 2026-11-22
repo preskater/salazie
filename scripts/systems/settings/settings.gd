@@ -9,6 +9,7 @@ signal bindings_changed()
 const SETTINGS_PATH := "user://settings.cfg"
 const SECTION_AUDIO := "audio"
 const SECTION_DISPLAY := "display"
+const SECTION_ACCESSIBILITY := "accessibility"
 const SECTION_INPUT := "input"
 ## Actions the player may rebind: their main key and their main gamepad button.
 ## Arrow keys, the stick and the menu actions keep their defaults, so a bad
@@ -36,6 +37,14 @@ const DEFAULT_MUSIC := 0.7
 const DEFAULT_SFX := 0.8
 const DEFAULT_WINDOW_MODE := WINDOWED
 
+## Offered display scales. One of these only: a hand-edited file cannot zoom the
+## view to an arbitrary factor.
+const UI_SCALES: Array[float] = [1.0, 1.25, 1.5]
+## Share of the trauma a shake camera keeps when the comfort option is on.
+const REDUCED_SHAKE_SHARE := 0.35
+## Share of the peak alpha a damage flash keeps when the comfort option is on.
+const REDUCED_FLASH_SHARE := 0.3
+
 var config_path := SETTINGS_PATH
 var master_volume := DEFAULT_MASTER
 var music_volume := DEFAULT_MUSIC
@@ -43,6 +52,11 @@ var sfx_volume := DEFAULT_SFX
 var window_mode := DEFAULT_WINDOW_MODE
 var resolution: Vector2i = RESOLUTIONS[0]
 var vsync_enabled := true
+## Comfort options, all off by default so the game looks as designed.
+var ui_scale := 1.0
+var pause_on_focus_loss := false
+var reduced_shake := false
+var reduced_flash := false
 ## Overrides only: action -> physical keycode / gamepad button index.
 var key_bindings: Dictionary = {}
 var button_bindings: Dictionary = {}
@@ -54,8 +68,21 @@ var screen_size_override := Vector2i.ZERO
 
 
 func _ready() -> void:
+	# The fullscreen shortcut must work while the tree is paused by the menu.
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	load_settings()
 	apply_all()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if handles_fullscreen_shortcut(event):
+		toggle_fullscreen()
+		get_viewport().set_input_as_handled()
+
+
+## Whether `event` asks for the fullscreen toggle and the game owns a window.
+func handles_fullscreen_shortcut(event: InputEvent) -> bool:
+	return event.is_action_pressed(&"toggle_fullscreen") and controls_window()
 
 
 func load_settings() -> void:
@@ -75,6 +102,12 @@ func load_settings() -> void:
 		var candidate := Vector2i(int(stored[0]), int(stored[1]))
 		if RESOLUTIONS.has(candidate):
 			resolution = candidate
+	ui_scale = _allowed_scale(config.get_value(SECTION_ACCESSIBILITY, "ui_scale", ui_scale),
+		ui_scale)
+	pause_on_focus_loss = _flag(config, SECTION_ACCESSIBILITY, "pause_on_focus_loss",
+		pause_on_focus_loss)
+	reduced_shake = _flag(config, SECTION_ACCESSIBILITY, "reduced_shake", reduced_shake)
+	reduced_flash = _flag(config, SECTION_ACCESSIBILITY, "reduced_flash", reduced_flash)
 	key_bindings = {}
 	button_bindings = {}
 	for action: StringName in REBINDABLE:
@@ -94,6 +127,19 @@ func _number(config: ConfigFile, section: String, key: String, fallback: float) 
 	return float(value) if (value is int or value is float) else fallback
 
 
+## A boolean from a hand-edited file, or the fallback when it is not one.
+func _flag(config: ConfigFile, section: String, key: String, fallback: bool) -> bool:
+	var value: Variant = config.get_value(section, key, fallback)
+	return value if value is bool else fallback
+
+
+## Only the scales the options screen offers are accepted; anything else keeps
+## the value already in memory, like a missing key.
+func _allowed_scale(value: Variant, fallback: float) -> float:
+	var candidate := float(value) if (value is int or value is float) else fallback
+	return candidate if UI_SCALES.has(candidate) else fallback
+
+
 func save_settings() -> void:
 	var config := ConfigFile.new()
 	config.set_value(SECTION_AUDIO, "master", master_volume)
@@ -102,6 +148,10 @@ func save_settings() -> void:
 	config.set_value(SECTION_DISPLAY, "window_mode", window_mode)
 	config.set_value(SECTION_DISPLAY, "resolution", [resolution.x, resolution.y])
 	config.set_value(SECTION_DISPLAY, "vsync", vsync_enabled)
+	config.set_value(SECTION_ACCESSIBILITY, "ui_scale", ui_scale)
+	config.set_value(SECTION_ACCESSIBILITY, "pause_on_focus_loss", pause_on_focus_loss)
+	config.set_value(SECTION_ACCESSIBILITY, "reduced_shake", reduced_shake)
+	config.set_value(SECTION_ACCESSIBILITY, "reduced_flash", reduced_flash)
 	for action: StringName in key_bindings:
 		config.set_value(SECTION_INPUT, "%s/key" % action, int(key_bindings[action]))
 	for action: StringName in button_bindings:
@@ -250,6 +300,18 @@ func screen_size() -> Vector2i:
 func apply_display() -> void:
 	apply_window()
 	apply_vsync()
+	apply_ui_scale()
+
+
+## Scales the whole rendered view, so the 14–15 px HUD labels of the default
+## 1280 × 720 canvas can be read on a small screen. A UI-only scale would need
+## the interface in its own SubViewport; this project stretches the canvas.
+func apply_ui_scale() -> void:
+	if not controls_window():
+		return
+	var window := get_window()
+	if window != null:
+		window.content_scale_factor = ui_scale
 
 
 ## Window mode and size. Kept apart from VSync so that toggling VSync does not
@@ -332,6 +394,46 @@ func set_vsync_enabled(value: bool) -> void:
 	settings_changed.emit()
 
 
+func set_ui_scale(value: float) -> void:
+	if not UI_SCALES.has(value):
+		return
+	ui_scale = value
+	apply_ui_scale()
+	settings_changed.emit()
+
+
+func set_pause_on_focus_loss(value: bool) -> void:
+	pause_on_focus_loss = value
+	settings_changed.emit()
+
+
+func set_reduced_shake(value: bool) -> void:
+	reduced_shake = value
+	settings_changed.emit()
+
+
+func set_reduced_flash(value: bool) -> void:
+	reduced_flash = value
+	settings_changed.emit()
+
+
+## Share of a shake amplitude the comfort option keeps.
+func shake_share() -> float:
+	return REDUCED_SHAKE_SHARE if reduced_shake else 1.0
+
+
+## Share of a flash's peak alpha the comfort option keeps.
+func flash_share() -> float:
+	return REDUCED_FLASH_SHARE if reduced_flash else 1.0
+
+
+## Swaps windowed and fullscreen, from the `toggle_fullscreen` action. The
+## choice is remembered, so the next boot opens the same way.
+func toggle_fullscreen() -> void:
+	set_window_mode(FULLSCREEN if window_mode == WINDOWED else WINDOWED)
+	save_settings()
+
+
 func reset_defaults() -> void:
 	master_volume = DEFAULT_MASTER
 	music_volume = DEFAULT_MUSIC
@@ -339,6 +441,10 @@ func reset_defaults() -> void:
 	window_mode = DEFAULT_WINDOW_MODE
 	resolution = RESOLUTIONS[0]
 	vsync_enabled = true
+	ui_scale = 1.0
+	pause_on_focus_loss = false
+	reduced_shake = false
+	reduced_flash = false
 	key_bindings = {}
 	button_bindings = {}
 	apply_all()

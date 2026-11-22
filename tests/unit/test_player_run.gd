@@ -5,8 +5,8 @@ const GUARD_SCENE := "res://scenes/world/ai/guard/guard.tscn"
 const GUARD_SCRIPT := preload("res://scripts/world/ai/guard/guard.gd")
 
 
-func _spawn_player() -> CharacterBody2D:
-	var player: CharacterBody2D = auto_free(load(PLAYER_SCENE).instantiate())
+func _spawn_player() -> Player:
+	var player := auto_free(load(PLAYER_SCENE).instantiate()) as Player
 	add_child(player)
 	player.set_physics_process(false)
 	return player
@@ -132,3 +132,15 @@ func test_breath_is_unlimited_where_stamina_is_off() -> void:
 	assert_bool(player.tick_stamina(1.0, false)).is_false()
 
 	assert_float(player.stamina).is_equal(1.0)
+
+
+# --- #55 -----------------------------------------------------------------------
+
+func test_teleporting_moves_the_body_and_keeps_the_camera_smoothing() -> void:
+	var player := _spawn_player()
+	var camera := player.get_node("Camera2D") as Camera2D
+
+	player.teleport_to(Vector2(640, 480))
+
+	assert_vector(player.global_position).is_equal(Vector2(640, 480))
+	assert_bool(camera.position_smoothing_enabled).is_true()

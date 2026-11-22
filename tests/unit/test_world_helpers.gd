@@ -553,3 +553,23 @@ func test_falling_leaves_without_frames_stay_still() -> void:
 
 	assert_bool(leaves.is_playing()).is_false()
 	assert_float(leaves.speed_scale).is_equal(1.0)
+
+
+func test_the_reduced_shake_option_softens_the_view_and_stops_a_run() -> void:
+	var camera: ShakeCamera2D = auto_free(ShakeCamera2D.new())
+	add_child(camera)
+	camera.set_process(false)
+
+	camera.add_trauma(1.0)
+	camera.call("_process", 0.0)
+	var full := camera.offset.length()
+
+	# Turning the option on stops the shake already running.
+	Settings.set_reduced_shake(true)
+	assert_float(camera.trauma).is_equal(0.0)
+	camera.add_trauma(1.0)
+	camera.call("_process", 0.0)
+
+	assert_float(camera.offset.length()).is_less(full)
+	assert_float(camera.offset.length()).is_greater(0.0)
+	Settings.set_reduced_shake(false)

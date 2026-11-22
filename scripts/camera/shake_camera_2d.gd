@@ -21,6 +21,13 @@ func _ready() -> void:
 	# Camera2D ignores its own rotation by default: without this the roll is
 	# computed and never seen.
 	ignore_rotation = false
+	Settings.settings_changed.connect(_on_settings_changed)
+
+
+## Turning the comfort option on stops a shake already running.
+func _on_settings_changed() -> void:
+	if Settings.reduced_shake:
+		trauma = 0.0
 
 
 func add_trauma(amount: float) -> void:
@@ -35,7 +42,7 @@ func _process(delta: float) -> void:
 		return
 
 	trauma = maxf(0.0, trauma - decay * delta)
-	var amount := trauma * trauma
+	var amount := trauma * trauma * Settings.shake_share()
 	var t := Time.get_ticks_msec() * 0.001
 	offset = _base_offset + Vector2(sin(t * 47.0), cos(t * 53.0)) * max_offset * amount
 	rotation = _base_rotation + sin(t * 31.0) * max_roll * amount

@@ -10,6 +10,7 @@ const SETTINGS_PATH := "user://test_pause_menu_flows.cfg"
 
 var _original_save_path := ""
 var _original_settings_path := ""
+var _original_pause_focus := false
 var _swaps: Array[String] = []
 
 
@@ -20,6 +21,8 @@ func before_test() -> void:
 	_original_settings_path = Settings.config_path
 	Settings.config_path = SETTINGS_PATH
 	_remove_file(SETTINGS_PATH)
+	_original_pause_focus = Settings.pause_on_focus_loss
+	Settings.pause_on_focus_loss = false
 	_swaps = []
 	var recorder := func(path: String) -> Error:
 		_swaps.append(path)
@@ -47,6 +50,7 @@ func after_test() -> void:
 	SaveGame.save_path = _original_save_path
 	_remove_file(SETTINGS_PATH)
 	Settings.config_path = _original_settings_path
+	Settings.pause_on_focus_loss = _original_pause_focus
 	Campaign.reset()
 	GameState.reset()
 	DayNightCycle.running = false
@@ -394,6 +398,22 @@ func test_the_menu_stays_open_when_a_gameplay_scene_is_announced() -> void:
 	_press(pause, &"pause")
 
 	SceneRouter.scene_changed.emit(null)
+
+	assert_bool(pause.visible).is_true()
+	assert_bool(get_tree().paused).is_true()
+
+
+# --- #55 -----------------------------------------------------------------------
+
+func test_focus_loss_pauses_only_when_the_option_is_on() -> void:
+	var pause := _spawn_pause()
+
+	pause.notification(NOTIFICATION_APPLICATION_FOCUS_OUT)
+	assert_bool(pause.visible).is_false()
+	assert_bool(get_tree().paused).is_false()
+
+	Settings.pause_on_focus_loss = true
+	pause.notification(NOTIFICATION_APPLICATION_FOCUS_OUT)
 
 	assert_bool(pause.visible).is_true()
 	assert_bool(get_tree().paused).is_true()
