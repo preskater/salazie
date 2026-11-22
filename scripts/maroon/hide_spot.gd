@@ -1,6 +1,7 @@
+class_name HideSpot
 extends Area2D
 ## A leafy hide spot. The player is concealed while inside; after a short delay
-## the hide task is completed. Leaving early cancels the attempt.
+## the hide is complete. Leaving early cancels the attempt.
 
 signal hidden_completed()
 signal hidden_cancelled()

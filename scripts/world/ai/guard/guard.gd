@@ -1,3 +1,4 @@
+class_name Guard
 extends CharacterBody2D
 ## Map 1 patrol guard.
 ## Patrols a rectangular zone, hears the player running, watches a 60 degree cone
@@ -39,7 +40,7 @@ const CONCEALED_SIGHT_DISTANCE := 32.0
 @export var give_up_delay := 3.0
 @export var give_up_cooldown := 1.5
 @export var leash_margin := 40.0
-@export var pause_on_catch := true
+@export var pause_on_catch := false
 ## Draws the patrol zone in game. For tuning only.
 @export var debug_draw_zone := false
 

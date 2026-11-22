@@ -10,16 +10,16 @@ const WARN_COLOR := Color(0.90, 0.18, 0.18)
 @onready var food_bar: ProgressBar = %FoodBar
 @onready var water_bar: ProgressBar = %WaterBar
 
-var _survival: Node = null
+var _survival: SurvivalComponent = null
 var _food_fill: StyleBoxTexture
 var _water_fill: StyleBoxTexture
 
 func _ready() -> void:
-	_survival = get_tree().get_first_node_in_group("survival")
+	_survival = get_tree().get_first_node_in_group("survival") as SurvivalComponent
 	if _survival == null:
 		# The player may be instanced after the HUD: retry once on the next frame.
 		await get_tree().process_frame
-		_survival = get_tree().get_first_node_in_group("survival")
+		_survival = get_tree().get_first_node_in_group("survival") as SurvivalComponent
 
 	if _survival == null or not _survival.active:
 		visible = false

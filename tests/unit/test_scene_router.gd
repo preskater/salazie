@@ -74,6 +74,19 @@ func _resolve_map(map_id: int) -> void:
 
 # --- New game ----------------------------------------------------------------
 
+func test_only_a_scene_run_on_its_own_bootstraps_a_gameplay_session() -> void:
+	var added: Node = auto_free(Node.new())
+	add_child(added)
+
+	assert_bool(SceneRouter.bootstrap_direct_run(added)).is_false()
+	assert_bool(GameState.playing).is_false()
+	assert_bool(SceneRouter.is_gameplay).is_false()
+
+	assert_bool(SceneRouter.bootstrap_direct_run(get_tree().current_scene)).is_true()
+	assert_bool(GameState.playing).is_true()
+	assert_bool(SceneRouter.is_gameplay).is_true()
+
+
 func test_new_game_starts_on_map_one_and_saves() -> void:
 	Campaign.current_map = 3
 	Campaign.record_setback("ancien", 1)

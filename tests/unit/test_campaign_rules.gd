@@ -49,7 +49,6 @@ func test_an_unknown_task_cannot_be_changed() -> void:
 	assert_bool(Campaign.complete_task("build_a_casino")).is_false()
 	assert_bool(Campaign.add_task_progress("build_a_casino", 2)).is_false()
 	assert_bool(Campaign.fail_task("build_a_casino", "Refusé")).is_false()
-	assert_bool(Campaign.retry_task("build_a_casino")).is_false()
 
 	assert_array(changes).is_empty()
 	assert_dict(Campaign.task_definition("build_a_casino")).is_empty()
@@ -114,14 +113,12 @@ func test_progress_beyond_the_target_is_capped() -> void:
 	assert_int(Campaign.task_target("find_food")).is_equal(3)
 
 
-func test_no_task_can_be_retried_in_the_current_campaign() -> void:
-	# Every task is defined as non-retryable: a failure stays a failure.
+func test_a_failure_stays_on_the_record() -> void:
+	# A generation that misses its goal keeps the failure: there is no retry.
 	for map_id: int in Campaign.MAP_ORDER:
 		for definition: Dictionary in Campaign.TASKS[map_id]:
 			var task_id := String(definition["id"])
 			Campaign.fail_task(task_id, "Échec", map_id)
-			assert_bool(Campaign.task_retryable(task_id, map_id)).is_false()
-			assert_bool(Campaign.retry_task(task_id, map_id)).is_false()
 			assert_int(Campaign.task_status(task_id, map_id)).is_equal(Campaign.TaskStatus.FAILED)
 
 
@@ -150,16 +147,14 @@ func test_a_generation_in_progress_has_no_rank_yet() -> void:
 
 	assert_str(String(Campaign.map_summary(1)["rank"])).is_equal("pending")
 	assert_bool(Campaign.is_map_resolved(1)).is_false()
-	assert_bool(Campaign.is_map_complete(1)).is_false()
-	assert_bool(Campaign.can_leave_map(1)).is_false()
+	assert_bool(Campaign.is_map_resolved(1)).is_false()
 
 
 func test_a_flawless_generation_is_full() -> void:
 	_complete_map(1)
 
 	assert_str(String(Campaign.map_summary(1)["rank"])).is_equal("full")
-	assert_bool(Campaign.is_map_complete(1)).is_true()
-	assert_bool(Campaign.can_leave_map(1)).is_true()
+	assert_bool(Campaign.is_map_resolved(1)).is_true()
 
 
 func test_a_failed_ordinary_task_makes_the_generation_partial() -> void:
@@ -238,7 +233,7 @@ func test_finalising_announces_a_map_resolved_outside_the_task_calls() -> void:
 func test_a_resolved_map_with_a_reopened_task_is_announced_unresolved() -> void:
 	_complete_map(1)
 	var unresolved := _record(Campaign.map_unresolved)
-	# What a retry leaves behind: two tasks pending again.
+	# A task reopened by hand: two tasks pending again.
 	Campaign.tasks[1]["find_water"]["status"] = Campaign.TaskStatus.PENDING
 	Campaign.tasks[1]["reach_refuge"]["status"] = Campaign.TaskStatus.PENDING
 

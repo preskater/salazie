@@ -49,7 +49,6 @@ func test_failure_history_survives_completion() -> void:
 	assert_int(Campaign.task_status("find_food")).is_equal(Campaign.TaskStatus.FAILED)
 	assert_int(Campaign.task_failure_count("find_food")).is_equal(1)
 	assert_str(Campaign.task_last_failure("find_food")).is_equal("Repéré par une patrouille")
-	assert_bool(Campaign.retry_task("find_food")).is_false()
 
 	assert_bool(Campaign.complete_task("find_food")).is_true()
 	assert_int(Campaign.task_status("find_food")).is_equal(Campaign.TaskStatus.DONE)

@@ -52,7 +52,7 @@ func test_progress_and_done_rows_are_refreshed_by_signals() -> void:
 	assert_str(food_row).starts_with("✓ Rassembler des vivres")
 
 
-func test_failed_row_shows_reason_and_retry_hint() -> void:
+func test_failed_row_shows_its_reason() -> void:
 	var list := _spawn()
 	await get_tree().process_frame
 
@@ -63,7 +63,6 @@ func test_failed_row_shows_reason_and_retry_hint() -> void:
 		if row.begins_with("✗ Rassembler des vivres"):
 			found = true
 			assert_str(row).contains("Repéré par une patrouille")
-			assert_bool(row.contains("[Réessayer]")).is_false()
 	assert_bool(found).override_failure_message("Failed task row was not rendered").is_true()
 	assert_str(list.get_compact_text()).contains("1 échouées")
 

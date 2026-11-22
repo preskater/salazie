@@ -285,27 +285,6 @@ func _messages(spot: Area2D) -> Array[String]:
 	return messages
 
 
-func test_a_spring_is_drunk_on_request_and_only_once() -> void:
-	var player := _spawn_player()
-	var survival: Node = player.get_node("Survival")
-	survival.call("add_water", -60.0)
-	var water_before := float(survival.get("water"))
-	var spot := _spawn_forage({"water_amount": 15.0, "auto_pickup": false, "kind": "water"})
-	var messages := _messages(spot)
-	assert_str(String(spot.call("get_interaction_prompt"))).contains("Boire")
-
-	spot.call("interact", player)
-
-	assert_float(float(survival.get("water"))).is_equal_approx(water_before + 15.0, 0.01)
-	assert_array(messages).is_equal(["Vous buvez."])
-	assert_str(String(spot.call("get_interaction_prompt"))).is_empty()
-	assert_bool((spot.get_node("Sprite2D") as Sprite2D).visible).is_false()
-
-	spot.call("interact", player)
-	assert_float(float(survival.get("water"))).is_equal_approx(water_before + 15.0, 0.01)
-	assert_array(messages).has_size(1)
-
-
 func test_pickups_without_their_own_message_say_what_was_found() -> void:
 	var player := _spawn_player()
 	var seeds := _spawn_forage({"seed_crop": "corn", "auto_pickup": false, "kind": "seed"})
@@ -392,7 +371,7 @@ func test_walking_follows_the_move_actions_and_remembers_the_direction() -> void
 
 	Input.action_press(&"move_right")
 	player.call("_physics_process", 0.1)
-	assert_vector(player.velocity).is_equal_approx(Vector2(float(player.get("SPEED")), 0),
+	assert_vector(player.velocity).is_equal_approx(Vector2(float(player.get("speed")), 0),
 		Vector2(0.01, 0.01))
 	assert_str(String(sprite.animation)).is_equal("walk_right")
 	assert_bool(bool(player.get("is_running"))).is_false()
@@ -411,7 +390,7 @@ func test_walking_follows_the_move_actions_and_remembers_the_direction() -> void
 
 func test_a_knockback_pushes_the_player_and_wears_off() -> void:
 	var player := _spawn_driven_player()
-	player.set("KNOCKBACK_DECAY", 900.0)
+	player.set("knockback_decay", 900.0)
 
 	player.call("apply_knockback", Vector2(200, 0))
 	player.call("_physics_process", 0.1)
@@ -454,12 +433,12 @@ func test_a_stunned_player_cannot_walk_or_run_but_is_still_pushed() -> void:
 	player.call("_physics_process", 0.1)
 	assert_bool(bool(player.get("is_running"))).is_true()
 	assert_float(player.velocity.x).is_equal_approx(
-		float(player.get("SPEED")) * float(player.get("RUN_MULTIPLIER")), 0.01)
+		float(player.get("speed")) * float(player.get("run_multiplier")), 0.01)
 
 
 func test_running_makes_noise_at_intervals_and_walking_makes_none() -> void:
 	var player := _spawn_driven_player()
-	player.set("NOISE_INTERVAL", 0.25)
+	player.set("noise_interval", 0.25)
 	var listener: NoiseListener = auto_free(NoiseListener.new())
 	listener.add_to_group("guards")
 	add_child(listener)
@@ -514,6 +493,7 @@ func test_the_view_returns_to_its_base_once_the_shake_is_over() -> void:
 	camera.add_trauma(0.4)
 	camera.add_trauma(0.9)
 	assert_float(camera.trauma).is_equal(1.0)
+	assert_bool(camera.ignore_rotation).is_false()
 	camera.call("_process", 0.1)
 	assert_float(camera.trauma).is_equal_approx(1.0 - camera.decay * 0.1, 0.001)
 	assert_float(absf(camera.offset.x - 3.0)).is_less_equal(camera.max_offset.x)

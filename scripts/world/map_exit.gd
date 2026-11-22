@@ -35,7 +35,7 @@ func can_leave() -> bool:
 		return false
 	if requires_map_ready and not DayNightCycle.is_ready_for_next_map():
 		return false
-	if requires_map_complete and not Campaign.can_leave_map():
+	if requires_map_complete and not Campaign.is_map_resolved():
 		return false
 	return true
 

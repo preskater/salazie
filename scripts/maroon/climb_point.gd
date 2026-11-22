@@ -1,3 +1,4 @@
+class_name ClimbPoint
 extends Area2D
 ## A climb between the river trail and the cliff ridge.
 

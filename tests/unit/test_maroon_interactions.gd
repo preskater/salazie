@@ -150,11 +150,13 @@ func _shore(map: MaroonMap) -> Vector2:
 
 # --- Entering the map --------------------------------------------------------
 
-func test_entering_the_map_starts_a_gameplay_session() -> void:
+func test_a_map_does_not_start_a_gameplay_session_on_its_own() -> void:
+	# The router owns the session: a map added by a test must not flip it, or
+	# the suite would write saves in the middle of a menu state.
 	await _spawn_map()
 
-	assert_bool(SceneRouter.is_gameplay).is_true()
-	assert_bool(GameState.playing).is_true()
+	assert_bool(SceneRouter.is_gameplay).is_false()
+	assert_bool(GameState.playing).is_false()
 	assert_bool(GameState.farm_active).is_false()
 	assert_int(Campaign.current_map).is_equal(1)
 

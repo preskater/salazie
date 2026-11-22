@@ -1,3 +1,4 @@
+class_name StealthZone
 extends Area2D
 ## A stealth zone: a cave, a waterfall alcove or any place that covers the player.
 ## The map creates these from the layout anchors.

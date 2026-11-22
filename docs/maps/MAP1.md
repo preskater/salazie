@@ -321,7 +321,7 @@ the bridge rows.
   the shared `DialogueBox` (`queue_line`), once per visit, and can be dismissed with
   `interact`.
 - Running spends breath (`player.stamina_enabled`, on this map only): 5 s of sprint
-  (`STAMINA_SECONDS`), 8 s to recover (`STAMINA_RECOVERY_SECONDS`), and a winded player must
+  (`stamina_seconds`), 8 s to recover (`stamina_recovery_seconds`), and a winded player must
   get back to 30 % before running again. `MaroonUI/Root/StaminaBar` shows it while it is not
   full. With guards chasing between walking and running speed, a sprint is an escape to
   spend wisely, not a way to cross the map.

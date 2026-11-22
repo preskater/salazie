@@ -171,8 +171,6 @@ func _rebuild_rows(summary: Dictionary) -> void:
 				row.text = "✗ " + label
 				if not reason.is_empty():
 					row.text += " — " + reason
-				if bool(details.get("retryable", false)):
-					row.text += " [Réessayer]"
 				row.add_theme_color_override("font_color", NEGATIVE)
 			_:
 				var progress := int(details.get("progress", 0))

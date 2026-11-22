@@ -37,6 +37,17 @@ func is_transitioning() -> bool:
 	return _transitioning or SceneTransition.is_transitioning
 
 
+## A map opened on its own (F6, or a scene run from the editor) needs a
+## gameplay session; the router normally starts it. A map instanced by a test
+## or by another scene is left alone: the session belongs to the router.
+func bootstrap_direct_run(scene: Node) -> bool:
+	if get_tree() == null or get_tree().current_scene != scene:
+		return false
+	GameState.playing = true
+	is_gameplay = true
+	return true
+
+
 func start_new_game() -> bool:
 	if _transitioning:
 		return false
@@ -87,7 +98,7 @@ func continue_game() -> bool:
 func go_to_next_map() -> bool:
 	if _transitioning or SceneTransition.is_transitioning:
 		return false
-	if not Campaign.can_leave_map():
+	if not Campaign.is_map_resolved():
 		return false
 	var summary := Campaign.finalize_map()
 	var previous_map := Campaign.current_map

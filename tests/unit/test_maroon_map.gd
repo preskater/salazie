@@ -956,9 +956,9 @@ func test_patrols_give_a_respawned_player_time_to_move() -> void:
 	assert_float(float(guard.get("_ignore_timer"))).is_greater(MaroonMap.RESPAWN_GRACE - 1.0)
 	assert_float(float(guard.get("chase_speed"))).is_equal(MaroonMap.GUARD_CHASE_SPEED)
 	var player: Node = map.get_node("World/Player")
-	assert_float(MaroonMap.GUARD_CHASE_SPEED).is_greater(float(player.get("SPEED")))
+	assert_float(MaroonMap.GUARD_CHASE_SPEED).is_greater(float(player.get("speed")))
 	assert_float(MaroonMap.GUARD_CHASE_SPEED).is_less(
-		float(player.get("SPEED")) * float(player.get("RUN_MULTIPLIER")))
+		float(player.get("speed")) * float(player.get("run_multiplier")))
 
 
 func test_patrols_see_less_far_at_night() -> void:

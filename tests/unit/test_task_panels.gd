@@ -167,7 +167,7 @@ func test_a_reopened_map_goes_back_to_its_objective() -> void:
 	_complete_map(1)
 	var list := _spawn_list()
 	assert_str(list.get_compact_text()).contains("carte terminée")
-	# What a retry leaves behind before the campaign announces it.
+	# A task reopened by hand (a save edit) before the campaign announces it.
 	Campaign.tasks[1]["find_water"]["status"] = Campaign.TaskStatus.PENDING
 
 	# Another generation reopening is none of this list's business.
