@@ -194,4 +194,4 @@ arrival/boarding/ride/exit) and `tests/unit/test_ending.gd`. Status at time of w
 
 - The school is a courtyard and clock tower, not a full interior; buildings are facades.
 - Vehicles are static; traffic is limited to the parked car and the shuttle interaction.
-- No audio yet; the map uses the existing day/night cycle tint.
+- Audio is synthesised placeholder material; see [AUDIO.md](../AUDIO.md).

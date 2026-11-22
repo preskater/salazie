@@ -32,6 +32,7 @@ Campaign="*res://scripts/systems/campaign/campaign_state.gd"
 SaveGame="*res://scripts/systems/save/save_game.gd"
 SceneRouter="*res://scripts/systems/scene_router.gd"
 PauseMenu="*res://scenes/preloads/pause_menu.tscn"
+Audio="*res://scripts/systems/audio/audio.gd"
 
 [display]
 

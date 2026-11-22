@@ -9,6 +9,10 @@ extends CharacterBody2D
 @export var camera_limits := Rect2i()      # vide = pas de limite
 @export var sprite_scale := 1.0      # 1 = monde 16px, 3 = monde 48px
 
+@export_group("Footsteps")
+@export var STEP_INTERVAL := 0.34
+@export var RUN_STEP_INTERVAL := 0.22
+
 @export_group("Running")
 @export var RUN_MULTIPLIER := 1.7
 @export var RUN_NOISE_RADIUS := 260.0
@@ -26,6 +30,7 @@ var noise_muted := false
 var speed_scale := 1.0
 
 var _noise_timer := 0.0
+var _step_timer := 0.0
 ## Everything that currently conceals the player or masks their steps. Several
 ## sources overlap (a bush inside a cave), so each one is counted on its own.
 var _cover_sources: Dictionary = {}
@@ -67,6 +72,7 @@ func _physics_process(delta: float) -> void:
 	
 	wind = Vector2.ZERO
 	_tick_noise(delta)
+	_tick_steps(delta, control_lock <= 0.0 and input_dir != Vector2.ZERO)
 
 func get_current_speed() -> float:
 	return SPEED * (RUN_MULTIPLIER if is_running else 1.0) * speed_scale
@@ -79,6 +85,17 @@ func _tick_noise(delta: float) -> void:
 	if _noise_timer <= 0.0:
 		_noise_timer = NOISE_INTERVAL
 		emit_noise()
+
+## One footstep per stride while the player walks under their own control.
+func _tick_steps(delta: float, walking: bool) -> void:
+	if not walking:
+		_step_timer = 0.0
+		return
+	_step_timer -= delta
+	if _step_timer <= 0.0:
+		_step_timer = RUN_STEP_INTERVAL if is_running else STEP_INTERVAL
+		Audio.play_sfx(&"step", -14.0 if not is_running else -9.0, 0.12)
+
 
 ## Tells every guard in range that the player is being noisy.
 func emit_noise() -> void:

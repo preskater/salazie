@@ -22,9 +22,9 @@ Salazie is a 2D pixel-art narrative RPG made with **Godot 4.7.2** and GDScript. 
 | `themes/` | UI theme and icon resources |
 | `sprites/` | Pixel-art packs, `.import` files, licenses |
 | `shaders/` | Shader files |
-| `audio/` | Audio bus layout and future audio assets |
+| `audio/` | Audio bus layout, `music/` and `sfx/` (generated placeholders, see `docs/AUDIO.md`) |
 | `tests/unit/` | gdUnit4 test suites (`test_*.gd`) |
-| `tools/` | Dev-only helpers: TileSet generator, map preview, collision checks and the coverage tool |
+| `tools/` | Dev-only helpers: TileSet generator, map preview, collision checks, the coverage tool and the audio generator |
 | `docs/` | Design notes, lore, third-party notices |
 | `export_presets.cfg` | Linux, Windows, macOS, Web presets |
 | `.github/workflows/godot-ci.yml` | CI: gdUnit4 tests, coverage gate + four exports |

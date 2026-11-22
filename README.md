@@ -79,6 +79,12 @@ Le jeu démarre sur un menu d’accueil : **Nouvelle partie**, **Continuer**, **
 
 Détails techniques : [docs/UI.md](docs/UI.md).
 
+## Son
+
+Chaque map a sa musique et le jeu réagit par des effets sonores : pas, ramassage, alerte des gardes, récolte, vente, tâche accomplie. Les sons actuels sont **provisoires** : ils sont synthétisés par un script du projet (`tools/audio/generate_audio.py`), donc libres de droits, et peuvent être remplacés fichier par fichier. Les volumes se règlent dans les options.
+
+Détails techniques : [docs/AUDIO.md](docs/AUDIO.md).
+
 ## Économie
 
 Chaque génération possède sa propre économie, configurable dans

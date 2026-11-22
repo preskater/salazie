@@ -272,4 +272,4 @@ map, menu, settings, save and UI-asset suites in `tests/unit/`.
   not counted in the generation result.
 - Cyclone duration (30 s), speed (200 px/s) and turning are unverified tuning values, and
   the storm still roams the whole farm instead of a dedicated travel zone.
-- No audio assets yet.
+- Audio is synthesised placeholder material; see [AUDIO.md](../AUDIO.md).
