@@ -48,15 +48,16 @@ gdUnit4 v6 needs `--ignoreHeadlessMode` when using `--headless`. If that mode
 misbehaves on your machine, drop `--headless --ignoreHeadlessMode` and run the
 same command with a display.
 
-## 4. Smoke test the main scene
+## 4. Smoke test every reachable scene
 
 ```bash
-"$GODOT_BIN" --headless --quit-after 5 --audio-driver Dummy 2>&1 | tee /tmp/salazie-smoke.log
-grep -nE "SCRIPT ERROR|^ERROR:" /tmp/salazie-smoke.log && exit 1 || true
+GODOT_BIN="$GODOT_BIN" bash tools/ci/smoke.sh
 ```
 
-The exit code alone is not enough: Godot can exit 0 after runtime errors, so
-scan the log.
+The script runs the boot scene, the three maps, the ending and the sandbox
+headless for 60 frames each, and fails on any `SCRIPT ERROR` or `ERROR:` line.
+The exit code alone is not enough: Godot can exit 0 after runtime errors. Logs
+land in `reports/smoke/`. CI runs the same script.
 
 ## 5. Export when exports or project settings changed
 
