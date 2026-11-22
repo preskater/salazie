@@ -43,6 +43,12 @@ const DRINK_WATER := 10.0
 const DRINK_COOLDOWN := 3.0
 const DRINK_REACH_TILES := 2
 const WATERFALL_TASK_RADIUS := 12.0 * 48.0
+## An empty food or water bar slows the player; after this many seconds without
+## eating or drinking the player collapses and wakes at the last checkpoint.
+const EXHAUSTED_SPEED_SCALE := 0.6
+const COLLAPSE_DELAY := 20.0
+## Food and water a respawn guarantees, so a collapse cannot chain into another.
+const RESPAWN_RESERVE := 35.0
 
 var _terrain: Node2D
 var _world: Node2D
@@ -66,6 +72,8 @@ var _respawning := false
 var _climbing := false
 var _near_fresh_water := false
 var _drink_cooldown := 0.0
+var _survival: Node
+var _exhaustion := 0.0
 var _food_spots: Array[Area2D] = []
 var _guards: Array[Dictionary] = []
 
@@ -157,12 +165,14 @@ func _add_player() -> void:
 	_player = PLAYER_SCENE.instantiate()
 	_player.name = "Player"
 	_player.position = _anchors["spawn"]
+	_respawn_position = _anchors["spawn"]
 	_player.set("camera_limits", Rect2i(0, 0, int(_map_size.x), int(_map_size.y)))
 	_world.add_child(_player)
-	var survival := _player.get_node_or_null("Survival")
-	if survival != null:
-		survival.set("food_drain", 0.35)
-		survival.set("water_drain", 0.55)
+	_survival = _player.get_node_or_null("Survival")
+	if _survival != null:
+		_survival.set("food_drain", 0.35)
+		_survival.set("water_drain", 0.55)
+		_survival.connect("depleted", _on_survival_depleted)
 
 
 func _add_ui() -> void:
@@ -307,6 +317,7 @@ func _process(delta: float) -> void:
 	_near_fresh_water = _is_near_fresh_water()
 	_update_interaction_target()
 	_update_objective_bar()
+	_tick_exhaustion(delta)
 	if _clock_label != null:
 		_clock_timer -= delta
 		if _clock_timer <= 0.0:
@@ -663,6 +674,10 @@ func _on_stealth_exited(zone_name: String, _spec: Dictionary) -> void:
 
 
 func _on_checkpoint_reached(point: Vector2) -> void:
+	# Standing on the checkpoint already held says nothing: the spawn and every
+	# respawn land on one, and the message would hide the one that matters.
+	if point.is_equal_approx(_respawn_position):
+		return
 	_respawn_position = point
 	_notify("Checkpoint atteint.")
 
@@ -681,9 +696,45 @@ func _on_map_resolved(_map_id: int, _summary: Dictionary) -> void:
 
 
 func _on_caught(_guard: CharacterBody2D) -> void:
+	await _lose_ground("Repéré par une patrouille", "Repéré !")
+
+
+func _on_survival_depleted(kind: StringName) -> void:
+	if kind == &"water":
+		_notify("Vous mourez de soif : trouvez la rivière avant de vous effondrer.")
+	else:
+		_notify("La faim vous épuise : trouvez de quoi manger avant de vous effondrer.")
+
+
+func _is_exhausted() -> bool:
+	if _survival == null or not bool(_survival.get("active")):
+		return false
+	return float(_survival.get("food")) <= 0.0 or float(_survival.get("water")) <= 0.0
+
+
+## Slows an exhausted player and counts down to the collapse. Eating or
+## drinking clears the countdown.
+func _tick_exhaustion(delta: float) -> void:
+	if _respawning or _climbing:
+		return
+	if not _is_exhausted():
+		_exhaustion = 0.0
+		_player.set("speed_scale", 1.0)
+		return
+	_player.set("speed_scale", EXHAUSTED_SPEED_SCALE)
+	_exhaustion += delta
+	if _exhaustion >= COLLAPSE_DELAY:
+		var cause := "la soif" if float(_survival.get("water")) <= 0.0 else "la faim"
+		_lose_ground("Effondré, vaincu par %s" % cause, "Vous vous effondrez.")
+
+
+## Shared by a catch and a collapse: the setback is recorded, the player wakes
+## at the last checkpoint and the patrols go back to their rounds.
+func _lose_ground(reason: String, headline: String) -> void:
 	if _respawning or _climbing:
 		return
 	_respawning = true
+	var count := Campaign.record_setback(reason, 1)
 	_shake_camera(0.75)
 	await _flash_damage()
 	_player.call("stun", 1.0)
@@ -692,15 +743,20 @@ func _on_caught(_guard: CharacterBody2D) -> void:
 	await _fade_respawn(1.0)
 	_player.global_position = _respawn_position
 	_player.call("set_hidden", false)
-	var survival := _player.get_node_or_null("Survival")
-	if survival != null:
-		survival.call("add_food", 20.0)
-		survival.call("add_water", 20.0)
+	_player.set("speed_scale", 1.0)
+	_exhaustion = 0.0
+	if _survival != null:
+		_survival.call("add_food", maxf(0.0, RESPAWN_RESERVE - float(_survival.get("food"))))
+		_survival.call("add_water", maxf(0.0, RESPAWN_RESERVE - float(_survival.get("water"))))
 	for entry: Dictionary in _guards:
 		var other: CharacterBody2D = entry["guard"]
 		if is_instance_valid(other):
 			other.call("reset_after_catch", entry["spawn"])
-	_notify("Repéré ! Retour au dernier checkpoint.")
+	if count <= Campaign.SETBACK_CAP:
+		_notify("%s Retour au dernier checkpoint — la génération suivante en paiera le prix."
+			% headline)
+	else:
+		_notify("%s Retour au dernier checkpoint." % headline)
 	await _fade_respawn(0.0)
 	_respawning = false
 

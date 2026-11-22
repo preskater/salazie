@@ -77,6 +77,15 @@ func show_result(summary: Dictionary, next_label := "", note := "") -> void:
 			row.text = "○ " + label
 			row.add_theme_color_override("font_color", TEXT_DARK)
 		_rows.add_child(row)
+	var setbacks := int((summary.get("setbacks", []) as Array).size())
+	if setbacks > 0:
+		var setback_row := Label.new()
+		setback_row.name = "SetbackRow"
+		setback_row.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		setback_row.add_theme_font_size_override("font_size", 16)
+		setback_row.text = "✗ %d revers en chemin" % setbacks
+		setback_row.add_theme_color_override("font_color", NEGATIVE)
+		_rows.add_child(setback_row)
 	var parts: PackedStringArray = PackedStringArray()
 	if not next_label.is_empty():
 		parts.append(next_label)

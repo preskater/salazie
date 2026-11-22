@@ -34,7 +34,7 @@ Chaque génération possède une liste de tâches. Une tâche peut être **réus
 2. Cultiver et vendre comme cultivateur : préparer, planter, récolter, vendre et atteindre 100 G avant le jour 6.
 3. Écouter, évaluer et décider comme héritier : habitants, zones fragiles, plan et vote du conseil.
 
-Les échecs de la map 1 réduisent l'argent de départ du cultivateur. Les échecs de la map 2 réduisent l'héritage transmis à l'héritier. À la fin de la map 3, le plan choisi et le vote du conseil déterminent l'épilogue.
+Sur la map 1, être repéré par une patrouille ou s'effondrer de faim ou de soif est un revers : les deux premiers réduisent l'argent de départ du cultivateur et pèsent sur le vote final. Les échecs de la map 2 réduisent l'héritage transmis à l'héritier. À la fin de la map 3, le plan choisi et le vote du conseil déterminent l'épilogue.
 
 La liste des tâches est visible en permanence en haut de l'écran. **T** ou **Select/Back** ouvre le détail, avec les tâches réussies, échouées et les raisons des échecs.
 

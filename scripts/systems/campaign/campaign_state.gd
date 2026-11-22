@@ -11,11 +11,16 @@ signal map_resolved(map_id: int, summary: Dictionary)
 signal map_unresolved(map_id: int)
 signal map_changed(map_id: int)
 signal choices_changed()
+signal setback_recorded(map_id: int, count: int)
 
 enum TaskStatus { PENDING, DONE, FAILED }
 
 const MAP_ORDER: Array[int] = [1, 2, 3]
 const BASE_START_MONEY := 30
+## Setbacks are failures that belong to a map rather than to a task: being
+## caught, collapsing from hunger. Only the first ones weigh on the generation
+## result, so one hard section cannot decide the whole campaign.
+const SETBACK_CAP := 2
 
 const MAPS := {
 	1: {
@@ -155,6 +160,7 @@ var tasks: Dictionary = {}
 var results: Dictionary = {}
 var choices: Dictionary = {}
 var bonus_seeds: Dictionary = {}
+var setbacks: Dictionary = {}
 var heritage := 0
 var finished := false
 
@@ -173,6 +179,7 @@ func reset() -> void:
 	choices = {}
 	results = {}
 	bonus_seeds = {}
+	setbacks = {}
 	_resolved_announced = {}
 	tasks = {}
 	for map_id: int in MAP_ORDER:
@@ -330,6 +337,26 @@ func retry_task(task_id: String, map_id: int = -1) -> bool:
 	return true
 
 
+## Records a failure that is not tied to a task. Returns the number of
+## setbacks the map now holds.
+func record_setback(reason: String, map_id: int = -1) -> int:
+	var id := _active_map(map_id)
+	var entries: Array = setbacks.get(id, [])
+	entries.append({
+		"reason": reason,
+		"at": Time.get_datetime_string_from_system(),
+	})
+	setbacks[id] = entries
+	setback_recorded.emit(id, entries.size())
+	if results.has(id):
+		results[id] = map_summary(id).duplicate(true)
+	return entries.size()
+
+
+func setbacks_for_map(map_id: int = -1) -> int:
+	return (setbacks.get(_active_map(map_id), []) as Array).size()
+
+
 func is_map_resolved(map_id: int = -1) -> bool:
 	return int(map_summary(map_id).get("pending", 0)) == 0
 
@@ -383,6 +410,8 @@ func map_summary(map_id: int = -1) -> Dictionary:
 			"critical": bool(definition.get("critical", false)),
 			"optional": is_optional,
 		}
+	var setback_list: Array = setbacks.get(id, [])
+	failure_events += mini(setback_list.size(), SETBACK_CAP)
 	var rank := "pending"
 	if pending == 0:
 		if critical_failed:
@@ -399,6 +428,7 @@ func map_summary(map_id: int = -1) -> Dictionary:
 		"pending": pending,
 		"optional_pending": optional_pending,
 		"failure_events": failure_events,
+		"setbacks": setback_list.duplicate(true),
 		"rank": rank,
 		"tasks": details,
 	}
@@ -509,6 +539,7 @@ func to_dict() -> Dictionary:
 		"results": results.duplicate(true),
 		"choices": choices.duplicate(true),
 		"bonus_seeds": bonus_seeds.duplicate(true),
+		"setbacks": setbacks.duplicate(true),
 		"heritage": heritage,
 		"finished": finished,
 	}
@@ -561,6 +592,7 @@ func from_dict(data: Dictionary) -> bool:
 	var raw_choices: Variant = data.get("choices", {})
 	choices = (raw_choices as Dictionary).duplicate(true) if raw_choices is Dictionary else {}
 	bonus_seeds = _read_bonus_seeds(data.get("bonus_seeds", {}))
+	setbacks = _read_setbacks(data.get("setbacks", {}))
 	heritage = maxi(0, int(data.get("heritage", 0)))
 	finished = bool(data.get("finished", false))
 	_resolved_announced = {}
@@ -625,6 +657,28 @@ func _sanitize_state(_default_state: Dictionary, raw: Dictionary) -> Dictionary:
 		"attempts": maxi(0, int(raw.get("attempts", 0))),
 		"failures": failures,
 	}
+
+
+func _read_setbacks(raw: Variant) -> Dictionary:
+	var result := {}
+	if not (raw is Dictionary):
+		return result
+	for map_key: Variant in (raw as Dictionary):
+		# JSON turns the integer map ids into strings.
+		var map_id := int(String(map_key)) if String(map_key).is_valid_int() else 0
+		var raw_entries: Variant = (raw as Dictionary)[map_key]
+		if not MAP_ORDER.has(map_id) or not (raw_entries is Array):
+			continue
+		var entries: Array = []
+		for entry: Variant in (raw_entries as Array):
+			if entry is Dictionary:
+				entries.append({
+					"reason": String((entry as Dictionary).get("reason", "")),
+					"at": String((entry as Dictionary).get("at", "")),
+				})
+		if not entries.is_empty():
+			result[map_id] = entries
+	return result
 
 
 func _mark_map_one_done(next_tasks: Dictionary) -> void:

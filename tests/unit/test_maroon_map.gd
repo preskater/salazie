@@ -658,3 +658,130 @@ func test_pickup_messages_match_the_pickup_kind() -> void:
 	if water_spot != null:
 		water_spot.call("interact", player)
 		assert_str(notification.text).contains("buvez")
+
+
+func _finish_respawn(map: MaroonMap) -> void:
+	while bool(map.get("_respawning")):
+		await get_tree().process_frame
+
+
+func test_a_catch_costs_a_setback_and_sends_the_player_back() -> void:
+	# Regression (#18): a catch used to refill food and water and cost nothing.
+	var map := await _spawn_map()
+	var player: Node2D = map.get_node("World/Player")
+	var survival: Node = player.get_node("Survival")
+	var guard: Node = map.get_node("World/Guard1")
+	var checkpoint: Vector2 = map.get_node("World/ForestCheckpoint").global_position
+	map.call("_on_checkpoint_reached", checkpoint)
+	survival.call("add_food", -20.0)
+	var food_before := float(survival.get("food"))
+	player.call("set_hidden", true)
+
+	guard.emit_signal("caught")
+	await _finish_respawn(map)
+
+	assert_vector(player.global_position).is_equal(checkpoint)
+	assert_int(Campaign.setbacks_for_map(1)).is_equal(1)
+	assert_int(Campaign.starting_money_for_map(2)).is_equal(25)
+	assert_float(float(survival.get("food"))).is_less_equal(food_before)
+	assert_bool(bool(player.get("concealed"))).is_false()
+	var notification := map.get_node("MaroonUI/Root/Notification") as Label
+	assert_str(notification.text).contains("Repéré")
+
+
+func test_a_second_catch_during_the_respawn_is_ignored() -> void:
+	var map := await _spawn_map()
+	var guard: Node = map.get_node("World/Guard1")
+
+	guard.emit_signal("caught")
+	guard.emit_signal("caught")
+	await _finish_respawn(map)
+
+	assert_int(Campaign.setbacks_for_map(1)).is_equal(1)
+
+
+func test_an_empty_bar_warns_and_slows_the_player() -> void:
+	# Regression (#17): food and water at zero had no effect at all.
+	var map := await _spawn_map()
+	var player: Node2D = map.get_node("World/Player")
+	var survival: Node = player.get_node("Survival")
+	var notification := map.get_node("MaroonUI/Root/Notification") as Label
+
+	survival.call("add_water", -1000.0)
+	assert_str(notification.text).contains("soif")
+	map.call("_tick_exhaustion", 1.0)
+	assert_float(float(player.get("speed_scale"))).is_equal(MaroonMap.EXHAUSTED_SPEED_SCALE)
+
+	survival.call("add_food", -1000.0)
+	assert_str(notification.text).contains("faim")
+
+	# Eating and drinking lift the penalty and reset the countdown.
+	survival.call("add_water", 10.0)
+	survival.call("add_food", 10.0)
+	map.call("_tick_exhaustion", 1.0)
+	assert_float(float(player.get("speed_scale"))).is_equal(1.0)
+	assert_float(float(map.get("_exhaustion"))).is_equal(0.0)
+	assert_int(Campaign.setbacks_for_map(1)).is_equal(0)
+
+
+func test_staying_exhausted_ends_in_a_collapse() -> void:
+	var map := await _spawn_map()
+	var player: Node2D = map.get_node("World/Player")
+	var survival: Node = player.get_node("Survival")
+	var start: Vector2 = map.get_node("World/StartCheckpoint").global_position
+	player.global_position = start + Vector2(0, -200)
+	survival.call("add_food", -1000.0)
+
+	map.call("_tick_exhaustion", MaroonMap.COLLAPSE_DELAY - 1.0)
+	assert_int(Campaign.setbacks_for_map(1)).is_equal(0)
+	map.call("_tick_exhaustion", 1.0)
+	await _finish_respawn(map)
+
+	assert_int(Campaign.setbacks_for_map(1)).is_equal(1)
+	assert_str(String(Campaign.setbacks[1][0]["reason"])).contains("faim")
+	assert_vector(player.global_position).is_equal(start)
+	assert_float(float(survival.get("food"))).is_greater_equal(MaroonMap.RESPAWN_RESERVE - 1.0)
+	assert_float(float(player.get("speed_scale"))).is_equal(1.0)
+
+
+func test_exhaustion_is_ignored_when_survival_is_off() -> void:
+	var map := await _spawn_map()
+	var player: Node2D = map.get_node("World/Player")
+	var survival: Node = player.get_node("Survival")
+	survival.call("add_water", -1000.0)
+	survival.set("active", false)
+
+	map.call("_tick_exhaustion", MaroonMap.COLLAPSE_DELAY * 2.0)
+
+	assert_float(float(player.get("speed_scale"))).is_equal(1.0)
+	assert_int(Campaign.setbacks_for_map(1)).is_equal(0)
+
+
+func test_repeated_setbacks_stop_announcing_a_price() -> void:
+	var map := await _spawn_map()
+	var guard: Node = map.get_node("World/Guard1")
+	var notification := map.get_node("MaroonUI/Root/Notification") as Label
+
+	for index: int in Campaign.SETBACK_CAP:
+		guard.emit_signal("caught")
+		await _finish_respawn(map)
+		assert_str(notification.text).contains("prix")
+	guard.emit_signal("caught")
+	await _finish_respawn(map)
+
+	assert_str(notification.text).not_contains("prix")
+	assert_int(Campaign.failure_events_for_map(1)).is_equal(Campaign.SETBACK_CAP)
+
+
+func test_the_intro_line_survives_the_start_checkpoint() -> void:
+	# The start checkpoint sits on the spawn and used to replace the intro on
+	# the first physics frame.
+	var map := await _spawn_map()
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	var notification := map.get_node("MaroonUI/Root/Notification") as Label
+
+	assert_str(notification.text).contains("Le marron")
+
+	map.call("_on_checkpoint_reached", map.get_node("World/ForestCheckpoint").global_position)
+	assert_str(notification.text).contains("Checkpoint")

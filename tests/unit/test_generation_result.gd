@@ -33,3 +33,19 @@ func test_result_lists_every_task_and_pauses_the_game() -> void:
 	result.close()
 	assert_bool(result.visible).is_false()
 	assert_bool(get_tree().paused).is_false()
+
+
+func test_result_reports_the_setbacks_of_the_generation() -> void:
+	for definition: Dictionary in Campaign.TASKS[1]:
+		Campaign.complete_task(String(definition["id"]))
+	Campaign.record_setback("Repéré", 1)
+	Campaign.record_setback("Effondré", 1)
+	var result: GenerationResult = RESULT_SCENE.instantiate()
+	add_child(auto_free(result))
+
+	result.show_result(Campaign.map_summary())
+
+	var row: Label = result.find_child("SetbackRow", true, false)
+	assert_object(row).is_not_null()
+	assert_str(row.text).contains("2 revers")
+	result.close()

@@ -175,3 +175,83 @@ func test_bonus_seeds_are_applied_when_map_two_starts() -> void:
 	GameState.reset()
 	DayNightCycle.nights_required_for_next_map = 2
 	DayNightCycle.nights_spent = 0
+
+
+func test_setbacks_weigh_on_the_generation_but_are_capped() -> void:
+	assert_int(Campaign.record_setback("Repéré", 1)).is_equal(1)
+	assert_int(Campaign.setbacks_for_map(1)).is_equal(1)
+	assert_int(Campaign.failure_events_for_map(1)).is_equal(1)
+	assert_int(Campaign.starting_money_for_map(2)).is_equal(25)
+
+	for index: int in 5:
+		Campaign.record_setback("Repéré %d" % index, 1)
+
+	assert_int(Campaign.setbacks_for_map(1)).is_equal(6)
+	assert_int(Campaign.failure_events_for_map(1)).is_equal(Campaign.SETBACK_CAP)
+	assert_int(Campaign.starting_money_for_map(2)).is_equal(20)
+	assert_int(Campaign.mayor_support()).is_equal(4)
+	assert_bool(Campaign.has_mayor_support()).is_true()
+
+
+func test_setback_announces_itself_and_defaults_to_the_current_map() -> void:
+	var seen: Array = []
+	var listener := func(map_id: int, count: int) -> void: seen.append([map_id, count])
+	Campaign.setback_recorded.connect(listener)
+	Campaign.current_map = 2
+
+	Campaign.record_setback("Récolte perdue")
+
+	Campaign.setback_recorded.disconnect(listener)
+	assert_array(seen).is_equal([[2, 1]])
+	assert_int(Campaign.setbacks_for_map(1)).is_equal(0)
+	assert_int(Campaign.setbacks_for_map()).is_equal(1)
+
+
+func test_setbacks_make_a_finished_generation_partial() -> void:
+	_complete_map_one()
+	assert_str(String(Campaign.map_summary(1)["rank"])).is_equal("full")
+
+	Campaign.record_setback("Repéré", 1)
+
+	assert_str(String(Campaign.map_summary(1)["rank"])).is_equal("partial")
+	# The stored result follows, since the map was already resolved.
+	assert_str(String(Campaign.results[1]["rank"])).is_equal("partial")
+	assert_int((Campaign.map_summary(1)["setbacks"] as Array).size()).is_equal(1)
+
+
+func test_setbacks_across_generations_can_cost_the_election() -> void:
+	Campaign.record_setback("a", 1)
+	Campaign.record_setback("b", 1)
+	Campaign.fail_task("earn_100", "Le délai est passé", 2)
+
+	assert_int(Campaign.total_failure_events()).is_equal(3)
+	assert_int(Campaign.mayor_support()).is_equal(3)
+	assert_bool(Campaign.has_mayor_support()).is_false()
+
+
+func test_setbacks_survive_a_json_round_trip_and_a_reset_clears_them() -> void:
+	Campaign.record_setback("Repéré par une patrouille", 1)
+	Campaign.record_setback("Effondré", 1)
+	var payload: Dictionary = JSON.parse_string(JSON.stringify(Campaign.to_dict()))
+
+	Campaign.reset()
+	assert_int(Campaign.setbacks_for_map(1)).is_equal(0)
+	assert_bool(Campaign.from_dict(payload)).is_true()
+
+	assert_int(Campaign.setbacks_for_map(1)).is_equal(2)
+	assert_str(String(Campaign.setbacks[1][0]["reason"])).is_equal("Repéré par une patrouille")
+
+
+func test_malformed_setbacks_are_ignored_on_load() -> void:
+	var payload := Campaign.to_dict()
+	payload["setbacks"] = {"1": "oops", "9": [{"reason": "x"}], "two": [], "2": [42, {"reason": "ok"}]}
+
+	assert_bool(Campaign.from_dict(payload)).is_true()
+
+	assert_int(Campaign.setbacks_for_map(1)).is_equal(0)
+	assert_int(Campaign.setbacks_for_map(2)).is_equal(1)
+	assert_bool(Campaign.setbacks.has(9)).is_false()
+
+	payload["setbacks"] = "nope"
+	assert_bool(Campaign.from_dict(payload)).is_true()
+	assert_bool(Campaign.setbacks.is_empty()).is_true()
