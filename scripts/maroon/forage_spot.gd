@@ -71,6 +71,7 @@ func _pick_up(body: Node2D) -> void:
 	if not seed_crop.is_empty():
 		Campaign.add_bonus_seed(seed_crop, seed_amount)
 	picked.emit(kind, _compose_message())
+	Audio.play_sfx(&"pickup")
 	set_deferred("monitoring", false)
 	sprite.visible = false
 	_spawn_pop()

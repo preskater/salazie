@@ -262,6 +262,7 @@ func _strike_cyclone() -> void:
 		return
 	var path := _cyclone_path(cyclone.global_position)
 	GameState.announce("Le cyclone traverse la ferme !")
+	Audio.play_ambience(&"wind")
 	var destroyed := 0
 	var sheltered_before := _sheltered
 	for index in range(1, path.size()):
@@ -269,6 +270,7 @@ func _strike_cyclone() -> void:
 		tween.tween_property(cyclone, "global_position", path[index], cyclone_leg_time)
 		await tween.finished
 		destroyed += _destroy_ripe_crops_on_path(path[index - 1], path[index])
+	Audio.stop_ambience()
 	var sheltered := _sheltered - sheltered_before
 	if sheltered > 0:
 		GameState.announce(

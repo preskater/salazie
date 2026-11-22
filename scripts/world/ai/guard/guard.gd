@@ -265,6 +265,8 @@ func _enter_suspicious(point: Vector2) -> void:
 
 
 func _enter_alert() -> void:
+	if state != State.ALERT:
+		Audio.play_sfx(&"alert")
 	state = State.ALERT
 	suspicion = suspicion_delay
 	_state_timer = give_up_delay

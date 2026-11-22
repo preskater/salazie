@@ -91,6 +91,9 @@ jobs:
       - name: Test the instrumenter
         run: python3 tools/coverage/test_coverage.py
 
+      - name: Check that every generated sound is committed
+        run: python3 tools/audio/generate_audio.py --check
+
       - name: Install gdUnit4
         run: |
           git clone --depth 1 --branch "$GDUNIT_VERSION" \

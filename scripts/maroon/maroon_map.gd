@@ -438,6 +438,7 @@ func _drink() -> void:
 	if survival != null:
 		survival.call("add_water", DRINK_WATER)
 	_drink_cooldown = DRINK_COOLDOWN
+	Audio.play_sfx(&"drink")
 	if _player.global_position.distance_to(_anchors["water_spot"]) <= WATERFALL_TASK_RADIUS:
 		Campaign.complete_task("find_water")
 		_notify("Vous buvez au bassin (+10 eau). La vase doit se décanter.")

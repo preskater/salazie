@@ -125,7 +125,8 @@ running. Day/night remains decorative: the next generation is unlocked by the ta
 | `display` | `vsync` | bool | `true` |
 
 Audio is applied to the `Master`, `Music` and `SFX` buses in `audio/default_bus_layout.tres`.
-There are no audio assets yet, so the sliders are wired for future music and sound effects.
+The sliders drive the `Master`, `Music` and `SFX` buses used by the `Audio` autoload; see
+[AUDIO.md](AUDIO.md).
 Display changes are skipped when `DisplayServer.get_name() == "headless"`, which keeps
 CI and the gdUnit4 runner safe.
 
