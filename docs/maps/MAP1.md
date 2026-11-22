@@ -37,7 +37,7 @@ Two optional routes parallel the main trail through the gorge.
 | Route | Entry / exit | Mechanics |
 |---|---|---|
 | Cave tunnel | Trail at `(21, 50)` → `(20, 36)`, west of the trail | dark floor shade, rock walls, lanterns, food at `(18, 42)`, hide spot at `(18, 44)`; the cave zone conceals the player and mutes running noise |
-| Cliff ridge | Climb `(39, 51)` → `(42, 48)`, then climb `(42, 30)` → `(44, 28)` | sealed lane of rock walls, lanterns, hide spot at `(42, 40)`; both climbs are interactive and fade the screen |
+| Cliff ridge | Climb `(39, 51)` → `(42, 48)`, then climb `(42, 30)` → `(44, 28)` | lane of columns 41–43, rows 30–48, sealed by a full-tile collider ring (`MaroonLayout.ridge_wall_tiles()`); lanterns, hide spot at `(42, 40)`, wild seeds at `(41, 38)`; both climbs are interactive and fade the screen |
 
 - The waterfall spray is a third stealth zone (`(28, 41)`, 9 × 4 tiles): it only
   mutes noise, it does not conceal the player. The alcove at `(26, 42)` nests
@@ -132,18 +132,23 @@ past Map 1, the river task is marked done.
 - Food is collected on contact and restores 28.
 - Drinking is an `E` interaction at any freshwater bank (river, estuary, pool).
   Each drink restores 10 water. The sea is salt water and cannot be drunk.
-- The drink cooldown is `DRINK_COOLDOWN`: 10 s by design (the gourd must stand so
-  the fine volcanic silt settles before the next sip), but the local branch
-  currently sets it to 0.0 for testing. The prompt shows the remaining time when
-  it is active.
-- The first drink within 12 tiles of `WATER_SPOT_TILE` (the waterfall basin)
-  completes `find_water`. There are no water forage pickups any more.
+- The drink cooldown is `DRINK_COOLDOWN`: 10 s (the gourd must stand so the fine
+  volcanic silt settles before the next sip). The prompt shows the remaining time.
+  A full gourd refuses the sip and costs no cooldown.
+- The first drink within 6 tiles of `WATER_SPOT_TILE` (the waterfall basin)
+  completes `find_water`, however full the gourd is. There are no water forage
+  pickups any more.
 - Hiding is a tool, not a task: ten hide spots conceal the player with a soft
   green ring and a `Caché` label. Guards ignore a concealed player beyond 32 px.
 - Running emits noise unless the player is inside the cave or the waterfall
   spray, where the ambient noise masks the steps.
-- Guards use the existing vision cone, chase and catch logic with `pause_on_catch = false`
-  so the map can respawn the player.
+- Guards use the vision cone, chase and catch logic with `pause_on_catch = false` so the
+  map can respawn the player. On this map they chase at 340 px/s
+  (`GUARD_CHASE_SPEED`): faster than a walk (300), slower than a run (510), so being
+  seen means running, and running makes noise.
+- A guard gives up once the player has been outside its patrol zone for
+  `give_up_delay`, even in plain sight. A concealed player is only caught from 32 px.
+- After a respawn the patrols ignore the player for 4 s (`RESPAWN_GRACE`).
 
 ## Static world builders
 

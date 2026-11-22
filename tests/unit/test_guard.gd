@@ -235,3 +235,89 @@ func test_a_plain_world_collider_does_not_block_the_view() -> void:
 	guard.facing = Vector2.RIGHT
 
 	assert_bool(guard.can_see(Vector2(7200, 5000))).is_true()
+
+
+func _concealable_player(at: Vector2) -> Node2D:
+	var player: CharacterBody2D = auto_free(load("res://scenes/player/player.tscn").instantiate())
+	player.collision_layer = 0
+	player.collision_mask = 0
+	add_child(player)
+	player.set_physics_process(false)
+	player.global_position = at
+	return player
+
+
+func test_the_leash_runs_even_while_the_guard_sees_the_player() -> void:
+	# Regression (#37): the timer was reset on sight, so a guard that kept the
+	# player in view followed across the whole map.
+	var guard := _spawn_guard()
+	guard.zone_size = Vector2(200, 200)
+	guard.give_up_delay = 1.0
+	var player := _fake_player(Vector2(600, 0))
+	guard.player = player
+	guard.state = GUARD_SCRIPT.State.ALERT
+	guard.last_seen_position = player.global_position
+
+	for step: int in 8:
+		guard._can_see = true
+		guard._tick_alert(0.2)
+
+	assert_int(guard.state).is_not_equal(GUARD_SCRIPT.State.ALERT)
+
+
+func test_coming_back_into_the_zone_clears_the_leash() -> void:
+	var guard := _spawn_guard()
+	guard.zone_size = Vector2(200, 200)
+	guard.give_up_delay = 1.0
+	var player := _fake_player(Vector2(600, 0))
+	guard.player = player
+	guard.state = GUARD_SCRIPT.State.ALERT
+	guard._can_see = true
+	guard._tick_alert(0.6)
+	assert_float(guard._out_of_zone_timer).is_greater(0.5)
+
+	player.global_position = Vector2(80, 0)
+	guard._can_see = true
+	guard._tick_alert(0.1)
+
+	assert_float(guard._out_of_zone_timer).is_equal(0.0)
+	assert_int(guard.state).is_equal(GUARD_SCRIPT.State.ALERT)
+
+
+func test_an_alerted_guard_does_not_trip_over_a_hidden_player() -> void:
+	# Regression (#37): the catch test was distance only.
+	var guard := _spawn_guard()
+	var player := _concealable_player(Vector2(40, 0))
+	player.call("set_hidden", true)
+	guard.player = player
+	guard.state = GUARD_SCRIPT.State.ALERT
+	guard.last_seen_position = Vector2(40, 0)
+	guard._state_timer = 5.0
+	var catches: Array[bool] = []
+	guard.caught.connect(func() -> void: catches.append(true))
+
+	guard._tick_alert(0.05)
+	assert_int(catches.size()).is_equal(0)
+
+	# Almost on top of the bush, hiding no longer helps.
+	player.global_position = Vector2(20, 0)
+	guard._tick_alert(0.05)
+	assert_int(catches.size()).is_equal(1)
+
+
+func test_reset_after_catch_clears_every_timer() -> void:
+	var guard := _spawn_guard()
+	guard.pause_on_catch = false
+	guard._state_timer = 3.0
+	guard._wait_timer = 2.0
+	guard._out_of_zone_timer = 1.0
+	guard.state = GUARD_SCRIPT.State.CAUGHT
+
+	guard.reset_after_catch(Vector2(50, 60), 4.0)
+
+	assert_vector(guard.global_position).is_equal(Vector2(50, 60))
+	assert_int(guard.state).is_equal(GUARD_SCRIPT.State.PATROL)
+	assert_float(guard._state_timer).is_equal(0.0)
+	assert_float(guard._wait_timer).is_equal(0.0)
+	assert_float(guard._out_of_zone_timer).is_equal(0.0)
+	assert_float(guard._ignore_timer).is_equal(4.0)

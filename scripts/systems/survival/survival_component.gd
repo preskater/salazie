@@ -48,7 +48,9 @@ func add_water(amount: float) -> void:
 
 func _set_food(value: float) -> void:
 	var clamped := clampf(value, 0.0, food_max)
-	if is_equal_approx(clamped, food):
+	# Exact comparison on purpose: `is_equal_approx` swallowed the tiny drain of
+	# a single frame above ~350 fps, and the bar never went down.
+	if clamped == food:
 		return
 	food = clamped
 	food_changed.emit(food, food_max)
@@ -62,7 +64,7 @@ func _set_food(value: float) -> void:
 
 func _set_water(value: float) -> void:
 	var clamped := clampf(value, 0.0, water_max)
-	if is_equal_approx(clamped, water):
+	if clamped == water:
 		return
 	water = clamped
 	water_changed.emit(water, water_max)

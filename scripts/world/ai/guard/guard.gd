@@ -14,6 +14,8 @@ const SUSPICIOUS_COLOR := Color(1.0, 0.6, 0.1)
 const ALERT_COLOR := Color(0.9, 0.1, 0.1)
 const ALERT_REST_Y := -110.0
 const ARRIVE_DISTANCE := 10.0
+## A concealed player is only found from this close, by sight or by touch.
+const CONCEALED_SIGHT_DISTANCE := 32.0
 
 @export_group("Patrol")
 @export var zone_center: Node2D
@@ -38,6 +40,8 @@ const ARRIVE_DISTANCE := 10.0
 @export var give_up_cooldown := 1.5
 @export var leash_margin := 40.0
 @export var pause_on_catch := true
+## Draws the patrol zone in game. For tuning only.
+@export var debug_draw_zone := false
 
 var state: State = State.PATROL
 var suspicion := 0.0
@@ -151,7 +155,7 @@ func _sees_player() -> bool:
 	if player == null or not is_instance_valid(player):
 		return false
 	if player.has_method("set_hidden") and bool(player.get("concealed")) \
-			and global_position.distance_to(player.global_position) > 32.0:
+			and global_position.distance_to(player.global_position) > CONCEALED_SIGHT_DISTANCE:
 		return false
 	return can_see(player.global_position)
 
@@ -223,9 +227,8 @@ func _tick_alert(delta: float) -> void:
 	if _can_see:
 		last_seen_position = player.global_position
 		_state_timer = give_up_delay
-		_out_of_zone_timer = 0.0
 
-	if global_position.distance_to(player.global_position) <= catch_distance:
+	if _can_catch():
 		_catch()
 		return
 
@@ -235,14 +238,30 @@ func _tick_alert(delta: float) -> void:
 		_give_up()
 		return
 
-	# Leash: if the player stays outside the patrol zone, stop following.
-	if not _zone_rect().grow(leash_margin).has_point(player.global_position):
+	# Leash: a guard does not leave its post for good. The timer runs while the
+	# player is outside the patrol zone, seen or not, and only coming back in
+	# clears it; resetting it on sight made the leash unreachable.
+	if _zone_rect().grow(leash_margin).has_point(player.global_position):
+		_out_of_zone_timer = 0.0
+	else:
 		_out_of_zone_timer += delta
 		if _out_of_zone_timer >= give_up_delay:
 			_give_up()
 			return
 
 	_move_towards(last_seen_position, chase_speed)
+
+
+## Reaching distance is not enough when the player is concealed: a guard
+## walking to where it last saw them must not trip over a hidden player that
+## its eyes could not find (see `_sees_player`).
+func _can_catch() -> bool:
+	var distance := global_position.distance_to(player.global_position)
+	if distance > catch_distance:
+		return false
+	if player.get("concealed") == true and distance > CONCEALED_SIGHT_DISTANCE:
+		return false
+	return true
 
 
 # --- Transitions ------------------------------------------------------------
@@ -291,20 +310,24 @@ func _catch() -> void:
 	queue_redraw()
 
 	caught.emit()
-	print("GAME OVER")
 	if pause_on_catch:
 		get_tree().paused = true
 
 
 ## Puts a guard back on patrol after the player respawns at a checkpoint.
-func reset_after_catch(at := _spawn_position) -> void:
+## `ignore_for` is how long it stays blind and deaf, so a respawn next to its
+## round is not an instant second catch.
+func reset_after_catch(at := _spawn_position, ignore_for := give_up_cooldown) -> void:
 	global_position = at
 	_caught_emitted = false
 	state = State.PATROL
 	suspicion = 0.0
 	velocity = Vector2.ZERO
 	_can_see = false
-	_ignore_timer = give_up_cooldown
+	_ignore_timer = ignore_for
+	_state_timer = 0.0
+	_wait_timer = 0.0
+	_out_of_zone_timer = 0.0
 	alert.visible = false
 	_pick_patrol_point()
 	queue_redraw()
@@ -399,8 +422,10 @@ func _has_navigation_map() -> bool:
 
 
 func _draw() -> void:
-	var rect := _zone_rect()
-	draw_rect(Rect2(to_local(rect.position), rect.size), Color(0.4, 0.8, 1.0, 0.15), false, 1.0)
+	if debug_draw_zone:
+		var rect := _zone_rect()
+		draw_rect(Rect2(to_local(rect.position), rect.size),
+			Color(0.4, 0.8, 1.0, 0.15), false, 1.0)
 
 	if state == State.CAUGHT:
 		return
