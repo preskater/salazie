@@ -10,6 +10,14 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 GODOT_BIN="${GODOT_BIN:-godot}"
+# gdUnit4's runner insists on a file path, so a name found on PATH is resolved.
+if [ ! -f "$GODOT_BIN" ]; then
+	GODOT_BIN="$(command -v "$GODOT_BIN" || true)"
+fi
+if [ -z "$GODOT_BIN" ] || [ ! -x "$GODOT_BIN" ]; then
+	echo "coverage: no Godot binary; set GODOT_BIN." >&2
+	exit 2
+fi
 WORK="${SALAZIE_COV_WORK:-$(mktemp -d)}"
 COPY="$WORK/project"
 OUT="$ROOT/reports/coverage"
