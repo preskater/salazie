@@ -70,6 +70,13 @@ func close() -> void:
 	get_viewport().gui_release_focus()
 
 
+## Another window or a browser tab took the focus: pause if the player asked
+## for it, so the game never runs away while they are away.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and Settings.pause_on_focus_loss:
+		open()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if not SceneRouter.is_gameplay:
 		return

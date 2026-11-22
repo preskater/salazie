@@ -190,8 +190,7 @@ func _restore_world(data: Dictionary) -> void:
 		var point := Vector2(float(respawn[0]), float(respawn[1]))
 		if Rect2(Vector2.ZERO, _map_size).has_point(point):
 			_respawn_position = point
-			_player.global_position = point
-			_player.reset_physics_interpolation()
+			_player.teleport_to(point)
 	if _survival != null:
 		var food: Variant = data.get("food", null)
 		if food is int or food is float:
@@ -783,7 +782,7 @@ func _on_climb_requested(destination: Vector2) -> void:
 	_climbing = true
 	_set_prompt("")
 	await _fade_respawn(1.0)
-	_player.global_position = destination
+	_player.teleport_to(destination)
 	await get_tree().physics_frame
 	await _fade_respawn(0.0)
 	_climbing = false
@@ -904,7 +903,7 @@ func _lose_ground(reason: String, headline: String) -> void:
 	if _respawn_overlay != null:
 		_respawn_overlay.color = Color(0.02, 0.02, 0.03, 0.0)
 	await _fade_respawn(1.0)
-	_player.global_position = _respawn_position
+	_player.teleport_to(_respawn_position)
 	_player.set_hidden(false)
 	_player.speed_scale = 1.0
 	_exhaustion = 0.0
@@ -936,7 +935,7 @@ func _flash_damage() -> void:
 	_respawn_overlay.color = Color(0.55, 0.05, 0.05, 0.0)
 	_respawn_overlay.visible = true
 	var tween := create_tween()
-	tween.tween_property(_respawn_overlay, "color:a", 0.5, 0.08)
+	tween.tween_property(_respawn_overlay, "color:a", 0.5 * Settings.flash_share(), 0.08)
 	tween.tween_property(_respawn_overlay, "color:a", 0.0, 0.2)
 	await tween.finished
 	_respawn_overlay.visible = false

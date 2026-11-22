@@ -308,7 +308,8 @@ the bridge rows.
 - The player camera is a `ShakeCamera2D`. `add_trauma()` drives a trauma² shake
   sampled from summed sines, decaying in real time and restoring the base offset.
 - Being caught adds 0.75 trauma, flashes the respawn overlay red, then fades to
-  black for the respawn.
+  black for the respawn. The **Secousses réduites** and **Flashs réduits** comfort
+  options soften both (see [UI.md](../UI.md#comfort)).
 - Picking up food or seeds spawns a `PickupPop` sprite that rises, scales up and
   fades.
 - A hide spot shows a soft green ring at its base and a `Caché` label while the

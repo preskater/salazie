@@ -285,6 +285,128 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Activée"
 
+[node name="ComfortTitleRow" type="HBoxContainer" parent="Center/Panel/VBox/Scroll/Content"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Icon" type="TextureRect" parent="Center/Panel/VBox/Scroll/Content/ComfortTitleRow"]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("6_display")
+expand_mode = 1
+stretch_mode = 4
+
+[node name="Label" type="Label" parent="Center/Panel/VBox/Scroll/Content/ComfortTitleRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42, 0.22, 0.03, 1)
+theme_override_font_sizes/font_size = 22
+text = "Confort"
+
+[node name="UiScaleRow" type="HBoxContainer" parent="Center/Panel/VBox/Scroll/Content"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Icon" type="TextureRect" parent="Center/Panel/VBox/Scroll/Content/UiScaleRow"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("6_display")
+expand_mode = 1
+stretch_mode = 4
+
+[node name="Label" type="Label" parent="Center/Panel/VBox/Scroll/Content/UiScaleRow"]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+text = "Échelle d'affichage"
+
+[node name="UiScaleOption" type="OptionButton" parent="Center/Panel/VBox/Scroll/Content/UiScaleRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PauseFocusRow" type="HBoxContainer" parent="Center/Panel/VBox/Scroll/Content"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Icon" type="TextureRect" parent="Center/Panel/VBox/Scroll/Content/PauseFocusRow"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("7_vsync")
+expand_mode = 1
+stretch_mode = 4
+
+[node name="Label" type="Label" parent="Center/Panel/VBox/Scroll/Content/PauseFocusRow"]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+text = "Pause quand la fenêtre perd le focus"
+
+[node name="PauseFocusToggle" type="CheckBox" parent="Center/Panel/VBox/Scroll/Content/PauseFocusRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Activée"
+
+[node name="ReducedShakeRow" type="HBoxContainer" parent="Center/Panel/VBox/Scroll/Content"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Icon" type="TextureRect" parent="Center/Panel/VBox/Scroll/Content/ReducedShakeRow"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("7_vsync")
+expand_mode = 1
+stretch_mode = 4
+
+[node name="Label" type="Label" parent="Center/Panel/VBox/Scroll/Content/ReducedShakeRow"]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+text = "Secousses réduites"
+
+[node name="ReducedShakeToggle" type="CheckBox" parent="Center/Panel/VBox/Scroll/Content/ReducedShakeRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Activées"
+
+[node name="ReducedFlashRow" type="HBoxContainer" parent="Center/Panel/VBox/Scroll/Content"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Icon" type="TextureRect" parent="Center/Panel/VBox/Scroll/Content/ReducedFlashRow"]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("7_vsync")
+expand_mode = 1
+stretch_mode = 4
+
+[node name="Label" type="Label" parent="Center/Panel/VBox/Scroll/Content/ReducedFlashRow"]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+text = "Flashs réduits"
+
+[node name="ReducedFlashToggle" type="CheckBox" parent="Center/Panel/VBox/Scroll/Content/ReducedFlashRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Activés"
+
+[node name="FullscreenHint" type="Label" parent="Center/Panel/VBox/Scroll/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.44, 0.36, 0.28, 1)
+theme_override_font_sizes/font_size = 15
+text = ""
+
 [node name="SeparatorBottom" type="HSeparator" parent="Center/Panel/VBox"]
 layout_mode = 2
 

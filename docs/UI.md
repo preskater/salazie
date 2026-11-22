@@ -93,7 +93,7 @@ is pressed.
 
 | Autoload | Script | Responsibility |
 |---|---|---|
-| `Settings` | `scripts/systems/settings/settings.gd` | Load/apply/save audio, window and VSync settings |
+| `Settings` | `scripts/systems/settings/settings.gd` | Load/apply/save audio, window, comfort and VSync settings |
 | `DayNightCycle` | `scenes/preloads/day_night_cycle.tscn` | Day/night phases and tint |
 | `SceneTransition` | `scenes/preloads/scene_transition.tscn` | Chapter fade used by map exits |
 | `Economy` | `scripts/systems/economy/economy.gd` | Per-generation wallets, offers, trading, ownership |
@@ -123,6 +123,10 @@ running. Day/night remains decorative: the next generation is unlocked by the ta
 | `display` | `window_mode` | int (`0` windowed, `1` fullscreen) | `0` |
 | `display` | `resolution` | `[width, height]` | `[1280, 720]` |
 | `display` | `vsync` | bool | `true` |
+| `accessibility` | `ui_scale` | float (`1.0`, `1.25`, `1.5`) | `1.0` |
+| `accessibility` | `pause_on_focus_loss` | bool | `false` |
+| `accessibility` | `reduced_shake` | bool | `false` |
+| `accessibility` | `reduced_flash` | bool | `false` |
 
 Audio is applied to the `Master`, `Music` and `SFX` buses in `audio/default_bus_layout.tres`.
 The sliders drive the `Master`, `Music` and `SFX` buses used by the `Audio` autoload; see
@@ -136,6 +140,24 @@ does, and the window is centred after a resize. Toggling VSync no longer resets 
 The options screen applies changes immediately and saves after a short debounce, on
 **Retour**, and when leaving the screen with `ui_cancel`. `Réinitialiser` restores the
 defaults above.
+
+### Comfort
+
+- **Échelle d'affichage** scales the whole rendered view through
+  `Window.content_scale_factor`, so the 14–15 px HUD labels can be read on a small screen.
+  It zooms the world with the interface; a UI-only scale would need the interface in its
+  own `SubViewport`. It is not applied on Web, where the page sizes the canvas.
+- **Pause quand la fenêtre perd le focus** makes the pause menu open on
+  `NOTIFICATION_APPLICATION_FOCUS_OUT`, so a browser tab or another window never lets the
+  game run on its own.
+- **Secousses réduites** keeps `Settings.REDUCED_SHAKE_SHARE` (35 %) of the trauma in
+  `ShakeCamera2D`, and stops a shake already running when it is switched on.
+- **Flashs réduits** keeps `Settings.REDUCED_FLASH_SHARE` (30 %) of the peak alpha of the
+  damage flash on Map 1.
+
+The fullscreen shortcut is the `toggle_fullscreen` action (F11 on a keyboard); it flips
+between windowed and fullscreen and saves the choice. The settings screen shows the key
+through `InputHints.label()`.
 
 ## Save format
 
@@ -287,6 +309,7 @@ Keys are bound by **physical position** (US names below); a gamepad works everyw
 | `toggle_prices` | P | R3 |
 | `toggle_tasks` | T | Select |
 | `pause` | Escape | Start |
+| `toggle_fullscreen` | F11 | — |
 | `ui_accept` | Enter / Space | A |
 | `ui_cancel` | Escape | B |
 

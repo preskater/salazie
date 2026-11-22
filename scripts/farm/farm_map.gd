@@ -28,7 +28,7 @@ const SIGN_TEXTURE := "res://sprites/farm_48x48/singles/Props_and_Buildings/Sign
 ## instead of wandering over the house, the market or the spawn.
 @export var cyclone_zone := Rect2(1150.0, 1300.0, 1350.0, 900.0)
 
-@onready var player: Node2D = _find_player()
+@onready var player: Player = _find_player() as Player
 @onready var hud: FarmHUD = $HUD
 @onready var market_stand: MarketStand = $World/MarketStand
 @onready var cyclone: Node2D = $World/Cyclone
@@ -132,8 +132,7 @@ func _restore_world(data: Dictionary) -> void:
 	if position_data is Array and (position_data as Array).size() == 2:
 		var point := Vector2(float(position_data[0]), float(position_data[1]))
 		if Rect2(Vector2.ZERO, FARM_SIZE).has_point(point):
-			player.global_position = point
-			player.reset_physics_interpolation()
+			player.teleport_to(point)
 
 
 func _process(_delta: float) -> void:

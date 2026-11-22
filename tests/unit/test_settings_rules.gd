@@ -14,6 +14,10 @@ var _original_resolution := Vector2i.ZERO
 var _original_vsync := true
 var _original_controls_override := -1
 var _original_screen_override := Vector2i.ZERO
+var _original_ui_scale := 1.0
+var _original_pause_focus := false
+var _original_reduced_shake := false
+var _original_reduced_flash := false
 var _changes := 0
 
 
@@ -27,6 +31,10 @@ func before_test() -> void:
 	_original_vsync = Settings.vsync_enabled
 	_original_controls_override = Settings.controls_window_override
 	_original_screen_override = Settings.screen_size_override
+	_original_ui_scale = Settings.ui_scale
+	_original_pause_focus = Settings.pause_on_focus_loss
+	_original_reduced_shake = Settings.reduced_shake
+	_original_reduced_flash = Settings.reduced_flash
 	# A runner may have a real screen (X11 under a CI agent) or none at all;
 	# pin both so the options screen is tested, not the machine running it.
 	Settings.controls_window_override = 0
@@ -39,6 +47,10 @@ func before_test() -> void:
 	Settings.window_mode = Settings.WINDOWED
 	Settings.resolution = Settings.RESOLUTIONS[0]
 	Settings.vsync_enabled = true
+	Settings.ui_scale = 1.0
+	Settings.pause_on_focus_loss = false
+	Settings.reduced_shake = false
+	Settings.reduced_flash = false
 	Settings.apply_audio()
 	_changes = 0
 	Settings.settings_changed.connect(_on_settings_changed)
@@ -56,6 +68,10 @@ func after_test() -> void:
 	Settings.vsync_enabled = _original_vsync
 	Settings.controls_window_override = _original_controls_override
 	Settings.screen_size_override = _original_screen_override
+	Settings.ui_scale = _original_ui_scale
+	Settings.pause_on_focus_loss = _original_pause_focus
+	Settings.reduced_shake = _original_reduced_shake
+	Settings.reduced_flash = _original_reduced_flash
 	Settings.apply_audio()
 
 
@@ -495,3 +511,153 @@ func test_settings_are_kept_without_ever_touching_a_window() -> void:
 	assert_int(Settings.window_mode).is_equal(Settings.FULLSCREEN)
 	assert_vector(Settings.resolution).is_equal(Vector2i(1600, 900))
 	assert_bool(Settings.vsync_enabled).is_false()
+
+
+# --- #55 -----------------------------------------------------------------------
+
+func test_the_comfort_options_start_off() -> void:
+	assert_float(Settings.ui_scale).is_equal(1.0)
+	assert_bool(Settings.pause_on_focus_loss).is_false()
+	assert_bool(Settings.reduced_shake).is_false()
+	assert_bool(Settings.reduced_flash).is_false()
+
+
+func test_only_the_offered_display_scales_are_accepted() -> void:
+	Settings.set_ui_scale(1.25)
+	assert_float(Settings.ui_scale).is_equal(1.25)
+	# Anything else is ignored rather than stretching the view at random.
+	Settings.set_ui_scale(1.1)
+	assert_float(Settings.ui_scale).is_equal(1.25)
+
+
+func test_a_hand_edited_comfort_block_is_ignored() -> void:
+	_write_config({"accessibility/ui_scale": 3.0, "accessibility/reduced_shake": "oui"})
+	Settings.ui_scale = 1.25
+	Settings.reduced_shake = false
+
+	Settings.load_settings()
+
+	# The scale is not one of the offered ones and the flag is not a boolean:
+	# both keep the value already in memory, like a missing key.
+	assert_float(Settings.ui_scale).is_equal(1.25)
+	assert_bool(Settings.reduced_shake).is_false()
+
+
+func test_the_comfort_options_round_trip_through_the_file() -> void:
+	Settings.set_ui_scale(1.5)
+	Settings.set_pause_on_focus_loss(true)
+	Settings.set_reduced_shake(true)
+	Settings.set_reduced_flash(true)
+	Settings.save_settings()
+	Settings.ui_scale = 1.0
+	Settings.pause_on_focus_loss = false
+	Settings.reduced_shake = false
+	Settings.reduced_flash = false
+
+	Settings.load_settings()
+
+	assert_float(Settings.ui_scale).is_equal(1.5)
+	assert_bool(Settings.pause_on_focus_loss).is_true()
+	assert_bool(Settings.reduced_shake).is_true()
+	assert_bool(Settings.reduced_flash).is_true()
+
+
+func test_the_comfort_shares_scale_what_is_on_screen() -> void:
+	assert_float(Settings.shake_share()).is_equal(1.0)
+	assert_float(Settings.flash_share()).is_equal(1.0)
+
+	Settings.set_reduced_shake(true)
+	Settings.set_reduced_flash(true)
+
+	assert_float(Settings.shake_share()).is_equal(Settings.REDUCED_SHAKE_SHARE)
+	assert_float(Settings.flash_share()).is_equal(Settings.REDUCED_FLASH_SHARE)
+
+
+func test_the_fullscreen_shortcut_swaps_the_mode_and_remembers_it() -> void:
+	Settings.window_mode = Settings.WINDOWED
+
+	Settings.toggle_fullscreen()
+
+	assert_int(Settings.window_mode).is_equal(Settings.FULLSCREEN)
+	assert_int(int(_read_config().get_value("display", "window_mode"))).is_equal(Settings.FULLSCREEN)
+
+	Settings.toggle_fullscreen()
+	assert_int(Settings.window_mode).is_equal(Settings.WINDOWED)
+
+
+func test_the_fullscreen_shortcut_needs_a_window_to_own() -> void:
+	var event := InputEventAction.new()
+	event.action = &"toggle_fullscreen"
+	event.pressed = true
+
+	assert_bool(Settings.handles_fullscreen_shortcut(event)).is_false()
+	Settings.controls_window_override = 1
+	assert_bool(Settings.handles_fullscreen_shortcut(event)).is_true()
+	# Any other action is left to the game.
+	var other := InputEventAction.new()
+	other.action = &"pause"
+	other.pressed = true
+	assert_bool(Settings.handles_fullscreen_shortcut(other)).is_false()
+
+
+func test_the_screen_shows_the_comfort_options() -> void:
+	Settings.ui_scale = 1.25
+	Settings.pause_on_focus_loss = true
+	Settings.reduced_shake = true
+	Settings.reduced_flash = true
+
+	var screen := _spawn_screen()
+
+	var scale_option: OptionButton = screen.get_node("%UiScaleOption")
+	assert_str(scale_option.get_item_text(scale_option.selected)).is_equal("125 %")
+	assert_bool((screen.get_node("%PauseFocusToggle") as CheckBox).button_pressed).is_true()
+	assert_bool((screen.get_node("%ReducedShakeToggle") as CheckBox).button_pressed).is_true()
+	assert_bool((screen.get_node("%ReducedFlashToggle") as CheckBox).button_pressed).is_true()
+	var hint: String = (screen.get_node("%FullscreenHint") as Label).text
+	assert_str(hint).contains(InputHints.label(&"toggle_fullscreen"))
+	# Showing the values is not a change: nothing is scheduled for saving.
+	assert_bool((screen.get_node("%SaveTimer") as Timer).is_stopped()).is_true()
+	assert_int(_changes).is_equal(0)
+
+
+func test_the_comfort_controls_write_their_settings() -> void:
+	var screen := _spawn_screen()
+	var scale_option: OptionButton = screen.get_node("%UiScaleOption")
+
+	scale_option.select(2)
+	scale_option.item_selected.emit(2)
+	(screen.get_node("%PauseFocusToggle") as CheckBox).button_pressed = true
+	(screen.get_node("%ReducedShakeToggle") as CheckBox).button_pressed = true
+	(screen.get_node("%ReducedFlashToggle") as CheckBox).button_pressed = true
+
+	assert_float(Settings.ui_scale).is_equal(1.5)
+	assert_bool(Settings.pause_on_focus_loss).is_true()
+	assert_bool(Settings.reduced_shake).is_true()
+	assert_bool(Settings.reduced_flash).is_true()
+	assert_bool((screen.get_node("%SaveTimer") as Timer).is_stopped()).is_false()
+
+
+func test_the_reset_button_restores_the_comfort_defaults() -> void:
+	Settings.ui_scale = 1.5
+	Settings.pause_on_focus_loss = true
+	Settings.reduced_shake = true
+	Settings.reduced_flash = true
+	var screen := _spawn_screen()
+
+	(screen.get_node("%ResetButton") as Button).pressed.emit()
+
+	assert_float(Settings.ui_scale).is_equal(1.0)
+	assert_bool(Settings.pause_on_focus_loss).is_false()
+	assert_bool(Settings.reduced_shake).is_false()
+	assert_bool(Settings.reduced_flash).is_false()
+	assert_int((screen.get_node("%UiScaleOption") as OptionButton).selected).is_equal(0)
+
+
+func test_the_fullscreen_shortcut_is_bound_to_f11() -> void:
+	assert_bool(InputMap.has_action(&"toggle_fullscreen")).is_true()
+	var keys := 0
+	for event: InputEvent in InputMap.action_get_events(&"toggle_fullscreen"):
+		if event is InputEventKey:
+			keys += 1
+			assert_int((event as InputEventKey).physical_keycode).is_equal(KEY_F11)
+	assert_int(keys).is_equal(1)
