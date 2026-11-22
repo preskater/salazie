@@ -72,6 +72,11 @@ mid-stage textures swap automatically while growing.
 | `sell_produce` | Sell produce | — |
 | `earn_100` | Reach 100 G before day 6 | Day 6 starts first |
 
+A farmer with no seed, no produce, nothing in the ground and not enough money for the
+cheapest seed is *destitute* (`FarmMap.is_destitute()`): the objective points at the
+Marchande, who advances one carrot seed (`RELIEF_CROP`) when talked to. Without it the
+remaining tasks could never be resolved and the road exit would stay closed.
+
 The five tasks replace the old local objective booleans and are stored in `Campaign`.
 `earn_100` is permanent once the day-6 deadline passes: the farm can still be left, but the
 generation result is partial and the heir receives a smaller heritage.
