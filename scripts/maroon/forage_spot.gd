@@ -97,6 +97,13 @@ func is_used() -> bool:
 	return _used
 
 
+## Restores a pickup taken before the game was saved: no reward, no message.
+func mark_used() -> void:
+	_used = true
+	set_deferred("monitoring", false)
+	sprite.visible = false
+
+
 func _spawn_pop() -> void:
 	var parent := get_parent()
 	if parent == null:

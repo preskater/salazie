@@ -135,14 +135,34 @@ defaults above.
 
 ## Save format
 
-Only plain data is stored. The farm scene rebuilds itself from `GameState` and the campaign
-rebuilds task states from `Campaign`; no nodes, resources or node paths are serialised.
-Save version 2 adds the per-generation economy payload documented in [ECONOMY.md](ECONOMY.md)
-and the campaign payload.
+Only plain data is stored; no nodes, resources or node paths are serialised. Three blocks
+make a save: the game state (`GameState`), the campaign (`Campaign`) and the **world** of the
+map being played.
+
+Save version 2 added the per-generation economy payload documented in
+[ECONOMY.md](ECONOMY.md) and the campaign payload. Version 3 adds `world` and `cycle`.
+
+### World block
+
+A map registers itself with `SaveGame.register_world(map_id, provider)` at the end of
+`_ready()`, and unregisters in `_exit_tree()`. `provider` returns the dictionary to store;
+the call returns the block saved for that map, handed over once, or `{}` on a fresh visit.
+
+| Map | Stored | Restored as |
+|---|---|---|
+| 1 — maroon | last checkpoint, food, water, names of the pickups taken | player at the checkpoint (not at the exact position: patrols are not saved) |
+| 2 — farm | every `CropPlot` (`state`, `crop`, `growth`), farmer position | plots and position as left |
+| 3 — heir | heir position (nothing during a shuttle ride) | position as left |
+
+Only the world of `Campaign.current_map` is kept: leaving a generation drops its block, and
+the next map starts fresh. Values that are missing, of the wrong type or outside the map are
+ignored one by one, so a damaged block never prevents a load.
+
+`cycle` holds the day/night clock (`day_number`, `phase`, `time_left`).
 
 ```json
 {
-  "version": 2,
+  "version": 3,
   "saved_at": "2026-11-21T10:30:00",
   "money": 84,
   "day": 3,
@@ -174,9 +194,18 @@ and the campaign payload.
     },
     "results": {},
     "choices": {"map3_plan": "forest"},
+    "setbacks": {"1": [{"reason": "Repéré par une patrouille", "at": "2026-11-21T10:12:00"}]},
     "heritage": 0,
     "finished": false
-  }
+  },
+  "world": {
+    "map": 2,
+    "state": {
+      "plots": {"CropPlot3": {"state": 2, "crop": "pumpkin", "growth": 7.5}},
+      "player": [1700.0, 1900.0]
+    }
+  },
+  "cycle": {"day_number": 2, "phase": 1, "time_left": 48.0}
 }
 ```
 
@@ -198,6 +227,8 @@ but keeps the failure list.
   existing save is replaced only after the confirmation panel.
 - Version 1 saves migrate to version 2: the farm is kept, `current_map` becomes 2, Map 1 is
   treated as completed, and `earn_100` is marked done when the old purse had 100 G.
+- Version 2 saves migrate to version 3 with an empty `world` and `cycle`: the map restarts
+  as it did before, at dawn.
 - The **Continuer** line shows the generation, its title, the day and the purse.
 
 ## Pause and HUD interaction

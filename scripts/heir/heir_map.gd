@@ -45,7 +45,29 @@ func _ready() -> void:
 	_add_player()
 	_add_ui()
 	_connect_world()
+	_restore_world(SaveGame.register_world(3, save_world))
 	_notify("Map 3 — L'héritier : écoutez, évaluez et décidez de l'avenir de Salazie.")
+
+
+func _exit_tree() -> void:
+	SaveGame.unregister_world(3)
+
+
+## The village keeps its state in `Campaign`; only the heir's position is left.
+## During a shuttle ride the player is a passenger, so nothing is recorded.
+func save_world() -> Dictionary:
+	if _shuttle_active or _player.get_parent() != _world:
+		return {}
+	return {"player": [_player.global_position.x, _player.global_position.y]}
+
+
+func _restore_world(data: Dictionary) -> void:
+	var position_data: Variant = data.get("player", null)
+	if position_data is Array and (position_data as Array).size() == 2:
+		var point := Vector2(float(position_data[0]), float(position_data[1]))
+		if Rect2(Vector2.ZERO, MAP_SIZE).has_point(point):
+			_player.global_position = point
+			_player.reset_physics_interpolation()
 
 
 func _add_player() -> void:

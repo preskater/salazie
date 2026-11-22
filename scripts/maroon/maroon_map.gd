@@ -104,11 +104,55 @@ func _ready() -> void:
 	_build_navigation()
 	Campaign.map_resolved.connect(_on_map_resolved)
 	Campaign.task_status_changed.connect(_on_task_status_changed)
+	_restore_world(SaveGame.register_world(1, save_world))
 	_notify("Map 1 — Le marron : de la mer au col, remontez la rivière et rejoignez le refuge.")
 
 
 func map_size() -> Vector2:
 	return _map_size
+
+
+func _exit_tree() -> void:
+	SaveGame.unregister_world(1)
+
+
+## What the escape needs to resume: the checkpoint held, the two bars and the
+## pickups already taken. The exact position is not kept on purpose: the
+## patrols are not saved, and waking next to one would be a free catch.
+func save_world() -> Dictionary:
+	var used: Array[String] = []
+	for node: Node in get_tree().get_nodes_in_group("forage_spots"):
+		if is_ancestor_of(node) and bool(node.call("is_used")):
+			used.append(String(node.name))
+	var data := {
+		"respawn": [_respawn_position.x, _respawn_position.y],
+		"used_spots": used,
+	}
+	if _survival != null:
+		data["food"] = float(_survival.get("food"))
+		data["water"] = float(_survival.get("water"))
+	return data
+
+
+func _restore_world(data: Dictionary) -> void:
+	var used: Variant = data.get("used_spots", [])
+	if used is Array:
+		for node: Node in get_tree().get_nodes_in_group("forage_spots"):
+			if is_ancestor_of(node) and (used as Array).has(String(node.name)):
+				node.call("mark_used")
+	var respawn: Variant = data.get("respawn", null)
+	if respawn is Array and (respawn as Array).size() == 2:
+		var point := Vector2(float(respawn[0]), float(respawn[1]))
+		if Rect2(Vector2.ZERO, _map_size).has_point(point):
+			_respawn_position = point
+			_player.global_position = point
+			_player.call("reset_physics_interpolation")
+	if _survival != null:
+		for key: String in ["food", "water"]:
+			var value: Variant = data.get(key, null)
+			if value is int or value is float:
+				# Bars start full, so the saved level is reached by removing the gap.
+				_survival.call("add_" + key, float(value) - float(_survival.get(key)))
 
 
 func _build_world() -> void:

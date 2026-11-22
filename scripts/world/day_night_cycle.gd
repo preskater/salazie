@@ -82,6 +82,31 @@ func reset_for_new_map(required_nights := nights_required_for_next_map, begin_at
 	time_left = _current_phase_duration()
 	_apply_tint()
 
+func to_dict() -> Dictionary:
+	return {
+		"day_number": day_number,
+		"phase": int(phase),
+		"time_left": time_left,
+	}
+
+
+## Restores a saved cycle. Anything missing or out of range keeps the current
+## value, so an old save simply resumes at dawn.
+func from_dict(data: Dictionary) -> void:
+	var raw_day: Variant = data.get("day_number", null)
+	if raw_day is int or raw_day is float:
+		day_number = maxi(1, int(raw_day))
+	var raw_phase: Variant = data.get("phase", null)
+	if raw_phase is int or raw_phase is float:
+		phase = Phase.NIGHT if int(raw_phase) == Phase.NIGHT else Phase.DAY
+	var raw_time: Variant = data.get("time_left", null)
+	if raw_time is int or raw_time is float:
+		time_left = clampf(float(raw_time), MIN_PHASE_DURATION, _current_phase_duration())
+	else:
+		time_left = _current_phase_duration()
+	_apply_tint()
+
+
 func is_night() -> bool:
 	return phase == Phase.NIGHT
 
