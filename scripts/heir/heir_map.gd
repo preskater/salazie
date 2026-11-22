@@ -419,15 +419,17 @@ func _on_town_hall_requested() -> void:
 		Campaign.fail_task("become_mayor", "Le conseil a rejeté votre plan (soutien %d/%d)"
 			% [support, Campaign.SUPPORT_NEEDED])
 		_dialogue.show_line("Le conseil", "Votre plan est refusé. Le village se divisera, mais la vallée continuera.")
-	await _show_result_and_end()
+	await _show_result_and_end(support)
 
 
-func _show_result_and_end() -> void:
+## `support` is the score the council voted on. Reading it again here would
+## count the rejection itself as one more failure and show a lower number.
+func _show_result_and_end(support: int) -> void:
 	var overlay := get_tree().get_first_node_in_group("generation_result") as GenerationResult
 	if overlay != null:
 		overlay.show_result(Campaign.map_summary(), "Épilogue de Salazie",
 			"Héritage familial : %d G · Soutien du conseil : %d / %d" % [
-				Campaign.heritage, Campaign.mayor_support(), Campaign.SUPPORT_NEEDED])
+				Campaign.heritage, support, Campaign.SUPPORT_NEEDED])
 		await overlay.confirmed
 	await SceneRouter.go_to_ending()
 

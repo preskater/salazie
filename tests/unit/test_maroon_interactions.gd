@@ -281,7 +281,8 @@ func test_interact_on_the_river_bank_drinks_and_starts_the_cooldown() -> void:
 
 	# The silt has to settle: the prompt counts down and a second sip is refused.
 	map.call("_process", 0.0)
-	assert_str(_prompt_label(map).text).is_equal("L'eau se décante — 3 s")
+	assert_str(_prompt_label(map).text).is_equal(
+		"L'eau se décante — %d s" % ceili(MaroonMap.DRINK_COOLDOWN))
 	map.call("_unhandled_input", _press(&"interact"))
 	assert_float(float(survival.get("water"))).is_equal_approx(40.0, 0.01)
 	assert_str(_notice(map).text).contains("trouble")
@@ -478,7 +479,7 @@ func test_the_objective_bar_hides_when_no_food_is_left_to_point_at() -> void:
 	assert_bool(bar.visible).is_false()
 
 
-func test_the_objective_bar_hides_once_the_route_is_done() -> void:
+func test_the_objective_bar_keeps_pointing_at_the_refuge_once_the_route_is_done() -> void:
 	var map := await _spawn_map()
 	var bar: Node2D = map.get_node("MaroonUI/Root/ObjectiveBar")
 	map.call("_process", 0.0)
@@ -488,9 +489,11 @@ func test_the_objective_bar_hides_once_the_route_is_done() -> void:
 		Campaign.complete_task(task_id)
 	map.call("_process", 0.0)
 
-	# The optional seeds never get an arrow of their own.
+	# The optional seeds never get an arrow of their own: the bar goes back to
+	# the cabin, which the player still has to enter.
 	assert_int(Campaign.task_status("gather_seeds")).is_equal(Campaign.TaskStatus.PENDING)
-	assert_bool(bar.visible).is_false()
+	assert_bool(bar.visible).is_true()
+	assert_str((map.get("_objective_label") as Label).text).contains("refuge")
 
 
 # --- Notifications -----------------------------------------------------------
@@ -531,14 +534,15 @@ func test_resolving_the_last_task_announces_the_open_refuge() -> void:
 
 	for task_id: String in ["follow_river", "find_water", "find_food"]:
 		Campaign.complete_task(task_id)
-	assert_str(_notice(map).text).not_contains("résolue")
+	assert_str(_notice(map).text).not_contains("accomplies")
 	Campaign.complete_task("reach_refuge")
 
 	assert_bool(Campaign.is_map_resolved()).is_true()
-	assert_str(_notice(map).text).contains("Map 1 résolue")
-	# Any later change repeats that the way is open.
+	assert_str(_notice(map).text).contains("Toutes les tâches sont accomplies")
+	# Said once: a later change does not repeat it over whatever came since.
+	map.call("_notify", "autre chose")
 	Campaign.add_task_progress("gather_seeds", 1)
-	assert_str(_notice(map).text).contains("le refuge est ouvert")
+	assert_str(_notice(map).text).is_equal("autre chose")
 
 
 func test_stealth_zones_and_bushes_tell_the_player_what_they_do() -> void:

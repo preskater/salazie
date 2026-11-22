@@ -293,9 +293,10 @@ func test_credits_link_is_wired_to_the_screen() -> void:
 	var link: LinkButton = credits.get_node("%LimezuLink")
 
 	# The link is not pressed: it would open the player's browser.
-	var connections := link.pressed.get_connections()
-	assert_int(connections.size()).is_equal(1)
-	assert_object((connections[0]["callable"] as Callable).get_object()).is_same(credits)
+	# `Audio` also listens to every button for its click sound.
+	var targets := link.pressed.get_connections().map(
+		func(entry: Dictionary) -> Object: return (entry["callable"] as Callable).get_object())
+	assert_bool(targets.has(credits)).is_true()
 
 
 # --- Survival HUD --------------------------------------------------------------

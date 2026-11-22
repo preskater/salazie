@@ -455,3 +455,22 @@ func test_every_site_points_at_an_offer_the_heir_can_buy() -> void:
 	assert_int(get_tree().get_nodes_in_group("npc").size()).is_equal(Campaign.RESIDENT_COUNT)
 	for node: Node in get_tree().get_nodes_in_group("landmarks"):
 		assert_bool(Campaign.LANDMARKS.has(String(node.get("landmark_id")))).is_true()
+
+
+func test_a_rejection_reports_the_score_the_council_voted_on() -> void:
+	# The rejection is itself a failure event; the report used to read the
+	# score again and show one voice less than the vote.
+	var map := await _spawn_map()
+	var hall: Node = get_tree().get_first_node_in_group("town_halls")
+	var result: GenerationResult = map.get_node("GenerationResult")
+	_resolve_fieldwork()
+	Campaign.set_choice("map3_plan", "forest")
+	Campaign.complete_task("choose_plan")
+	var voted := Campaign.mayor_support()
+
+	hall.call("interact", map.get_node("World/Player"))
+
+	assert_int(Campaign.task_status("become_mayor")).is_equal(Campaign.TaskStatus.FAILED)
+	var footer: Label = result.get("_footer")
+	assert_str(footer.text).contains("%d / %d" % [voted, Campaign.SUPPORT_NEEDED])
+	result.close()
