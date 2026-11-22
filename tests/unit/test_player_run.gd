@@ -34,3 +34,13 @@ func test_emit_noise_alerts_nearby_guard() -> void:
 	player.emit_noise()
 
 	assert_int(guard.state).is_equal(GUARD_SCRIPT.State.SUSPICIOUS)
+
+
+func test_speed_scale_slows_walking_and_running() -> void:
+	var player := _spawn_player()
+	player.speed_scale = 0.5
+
+	player.is_running = false
+	assert_float(player.get_current_speed()).is_equal_approx(150.0, 0.001)
+	player.is_running = true
+	assert_float(player.get_current_speed()).is_equal_approx(255.0, 0.001)

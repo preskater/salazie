@@ -22,6 +22,8 @@ var wind := Vector2.ZERO
 var is_running := false
 var concealed := false
 var noise_muted := false
+## Multiplies walking and running speed; an exhausted survivor drags along.
+var speed_scale := 1.0
 
 var _noise_timer := 0.0
 
@@ -63,7 +65,7 @@ func _physics_process(delta: float) -> void:
 	_tick_noise(delta)
 
 func get_current_speed() -> float:
-	return SPEED * (RUN_MULTIPLIER if is_running else 1.0)
+	return SPEED * (RUN_MULTIPLIER if is_running else 1.0) * speed_scale
 
 func _tick_noise(delta: float) -> void:
 	if not is_running:

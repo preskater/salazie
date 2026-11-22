@@ -88,8 +88,11 @@ done or failed; an optional task never blocks the exit.
 | `reach_refuge` | Enter the cabin | yes |
 | `gather_seeds` | Gather 3 wild seeds with `E` | **no** |
 
-Being caught no longer fails a task: the player respawns at the last checkpoint and keeps
-playing, and the failure history stays in the generation result. Seeds collected by
+Being caught never fails a task, but it is a **setback**: `Campaign.record_setback()` stores
+it, the player respawns at the last checkpoint and keeps playing. Collapsing from hunger or
+thirst is a setback too. The first two setbacks of the map count as failure events
+(`Campaign.SETBACK_CAP`); later ones are recorded and shown in the result without weighing
+further. Seeds collected by
 `gather_seeds` are stored in `Campaign.bonus_seeds` and granted on top of the starting
 seeds when Map 2 loads.
 
@@ -117,6 +120,10 @@ past Map 1, the river task is marked done.
 ## Survival and stealth
 
 - `SurvivalComponent`: food drains at 0.35/s, water at 0.55/s.
+- An empty bar warns the player and cuts the speed to 60 % (`EXHAUSTED_SPEED_SCALE`).
+  After 20 s without eating or drinking (`COLLAPSE_DELAY`) the player collapses: a setback
+  is recorded and the player wakes at the last checkpoint.
+- A respawn guarantees 35 food and water (`RESPAWN_RESERVE`); it never refills beyond that.
 - Food is collected on contact and restores 28.
 - Drinking is an `E` interaction at any freshwater bank (river, estuary, pool).
   Each drink restores 10 water. The sea is salt water and cannot be drunk.
@@ -298,7 +305,8 @@ the bridge rows.
 ## Result and carry-over
 
 - Map result: done / failed / failure events / rank.
-- Each Map 1 failure event removes 5 G from the farmer's starting money, down to 15 G.
+- Each Map 1 failure event removes 5 G from the farmer's starting money. Setbacks are the
+  only failure source on this map, so the farmer starts with 30, 25 or 20 G.
 - The generation result is shown before the chapter fade to `farm.tscn`.
 
 ## Controls
