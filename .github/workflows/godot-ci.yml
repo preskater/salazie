@@ -18,6 +18,10 @@ concurrency:
 
 env:
   GODOT_VERSION: "4.7.2"
+  GDUNIT_VERSION: "v6.2.3"
+  # Coverage floor in percent. Raise it with every PR that adds tests; see
+  # .agent/skills/salazie-coverage/SKILL.md.
+  COVERAGE_MIN: "80"
 
 jobs:
   test:
@@ -59,6 +63,57 @@ jobs:
           use-actions-summary: true
           fail-on-error: false
           fail-on-empty: false
+
+  coverage:
+    name: Coverage (GDScript)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Cache Godot imports
+        uses: actions/cache@v6
+        with:
+          path: .godot
+          key: ${{ runner.os }}-godot-${{ env.GODOT_VERSION }}-${{ hashFiles('project.godot', 'scenes/**', 'scripts/**', 'game_resources/**', 'themes/**', 'shaders/**', 'audio/**', 'sprites/**/*.import', 'icon.svg*') }}
+          restore-keys: |
+            ${{ runner.os }}-godot-${{ env.GODOT_VERSION }}-
+
+      - name: Setup Godot
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: ${{ env.GODOT_VERSION }}
+          use-dotnet: false
+          include-templates: false
+
+      - name: Test the instrumenter
+        run: python3 tools/coverage/test_coverage.py
+
+      - name: Install gdUnit4
+        run: |
+          git clone --depth 1 --branch "$GDUNIT_VERSION" \
+            https://github.com/godot-gdunit-labs/gdUnit4 "$RUNNER_TEMP/gdUnit4"
+          mkdir -p addons
+          cp -R "$RUNNER_TEMP/gdUnit4/addons/gdUnit4" addons/
+
+      - name: Import project
+        run: godot --headless --import
+
+      - name: Measure coverage
+        run: |
+          GODOT_BIN=godot bash tools/coverage/run.sh \
+            --min "$COVERAGE_MIN" --markdown "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload coverage report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage
+          path: reports/coverage/
+          if-no-files-found: warn
+          retention-days: 7
 
   prepare:
     name: Prepare imports

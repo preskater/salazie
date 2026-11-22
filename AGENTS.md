@@ -24,10 +24,10 @@ Salazie is a 2D pixel-art narrative RPG made with **Godot 4.7.2** and GDScript. 
 | `shaders/` | Shader files |
 | `audio/` | Audio bus layout and future audio assets |
 | `tests/unit/` | gdUnit4 test suites (`test_*.gd`) |
-| `tools/` | Dev-only helpers: TileSet generator, map preview and collision checks |
+| `tools/` | Dev-only helpers: TileSet generator, map preview, collision checks and the coverage tool |
 | `docs/` | Design notes, lore, third-party notices |
 | `export_presets.cfg` | Linux, Windows, macOS, Web presets |
-| `.github/workflows/godot-ci.yml` | CI: gdUnit4 tests + four exports |
+| `.github/workflows/godot-ci.yml` | CI: gdUnit4 tests, coverage gate + four exports |
 | `.agent/` | Canonical agent and skill definitions |
 | `opencode.json` | OpenCode config: Godot MCP server |
 | `.mcp.json` | Claude Code project-scope MCP servers |
@@ -67,7 +67,7 @@ Skills live in `.agent/skills/`. Load the relevant one before specialised work.
 | GDScript / scenes | `godot-gdscript`, `godot-nodes-scenes`, `godot-signals-groups` |
 | Player / animation | `godot-2d-movement`, `godot-animation` |
 | Data / levels / UI | `godot-resources`, `godot-tilemap`, `godot-ui-control` |
-| Build / verification | `godot-export`, `salazie-verify` |
+| Build / verification | `godot-export`, `salazie-verify`, `salazie-coverage` |
 | Art | `create-game-assets` |
 | Design | `game-docs`, `level-design`, `game-feel`, `game-ui-ux`, `input-systems`, `save-systems`, `camera-systems`, `dialogue-systems` |
 
@@ -78,6 +78,7 @@ Rules:
 - This project uses **gdUnit4**. Do not replace it with the custom SceneTree runner described by generic Godot testing skills.
 - `godot-export` examples may use `build/`; this project uses **`export/`**.
 - `salazie-verify` is the canonical verification procedure.
+- `salazie-coverage` measures statement coverage and explains the CI floor.
 
 ## Agents
 
@@ -185,6 +186,8 @@ GODOT_BIN="$GODOT_BIN" bash addons/gdUnit4/runtest.sh \
 - Avoid frame-rate-dependent assertions. Await `process_frame` only when needed.
 - Every gameplay change should add or update a focused test. Bug fixes should include a regression test.
 - CI runs tests with the gdUnit4 action; local runs use the command above.
+- Coverage: `bash tools/coverage/run.sh --show-missed` (see `salazie-coverage`). The target
+  is 100 % of statements; CI fails below `COVERAGE_MIN`, which only ever goes up.
 
 ## Assets
 
@@ -207,6 +210,8 @@ GODOT_BIN="$GODOT_BIN" bash addons/gdUnit4/runtest.sh \
 Workflow: `.github/workflows/godot-ci.yml`
 
 - `test`: gdUnit4 on Ubuntu, report uploaded.
+- `coverage`: instruments a copy of the project, reruns gdUnit4 on it, publishes the
+  per-script table and fails below `COVERAGE_MIN`.
 - `prepare`: imports the project once and runs the smoke test, then saves the `.godot` cache.
 - `build`: matrix over Linux, Windows, macOS and Web; each job restores the import cache, exports one platform, and uploads a `salazie-<platform>` artifact.
 
@@ -231,6 +236,7 @@ Run the checks that match the change:
 
 - [ ] `godot --headless --import`
 - [ ] gdUnit4 tests
+- [ ] coverage did not drop (`tools/coverage/run.sh`) when scripts or tests changed
 - [ ] headless smoke test, with log scan
 - [ ] affected exports, with artifact existence checks
 - [ ] `git diff` contains no generated or unrelated files
