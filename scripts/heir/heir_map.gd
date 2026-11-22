@@ -412,6 +412,8 @@ func _on_town_hall_requested() -> void:
 		return
 	_council_done = true
 	var support := Campaign.mayor_support()
+	# Kept for the epilogue: once the vote is recorded the score reads lower.
+	Campaign.set_choice("map3_support", str(support))
 	var verdict := ""
 	if Campaign.has_mayor_support():
 		Campaign.complete_task("become_mayor")

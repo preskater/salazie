@@ -477,3 +477,17 @@ func test_a_rejection_reports_the_score_the_council_voted_on() -> void:
 	var footer: Label = result.get("_footer")
 	assert_str(footer.text).contains("%d / %d" % [voted, Campaign.SUPPORT_NEEDED])
 	result.close()
+
+
+func test_the_vote_keeps_its_score_for_the_epilogue() -> void:
+	var map := await _spawn_map()
+	var hall: Node = get_tree().get_first_node_in_group("town_halls")
+	_resolve_fieldwork()
+	Campaign.set_choice("map3_plan", "forest")
+	Campaign.complete_task("choose_plan")
+	var voted := Campaign.mayor_support()
+
+	hall.call("interact", map.get_node("World/Player"))
+
+	assert_str(Campaign.get_choice("map3_support")).is_equal(str(voted))
+	(map.get_node("GenerationResult") as GenerationResult).close()
