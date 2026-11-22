@@ -118,6 +118,7 @@ func test_pause_menu_pauses_and_resumes_the_tree() -> void:
 
 
 func test_continue_is_enabled_with_a_valid_save() -> void:
+	Campaign.current_map = 2
 	GameState.money = 55
 	GameState.day = 2
 	assert_bool(SaveGame.save_game()).is_true()
@@ -128,7 +129,8 @@ func test_continue_is_enabled_with_a_valid_save() -> void:
 	var continue_button: Button = menu.get_node("%ContinueButton")
 	var info: Label = menu.get_node("%ContinueInfo")
 	assert_bool(continue_button.disabled).is_false()
-	assert_str(info.text).is_equal("Gén. 1 · Le marron · Jour 2 · 55 G")
+	assert_str(info.text).is_equal("Gén. 2 · Le cultivateur · Jour 2 · 55 G")
+	Campaign.reset()
 
 
 func test_hud_ignores_inventory_when_paused_by_another_system() -> void:
@@ -212,3 +214,22 @@ func test_pause_menu_refuses_to_open_outside_gameplay_or_when_paused() -> void:
 	pause.call("open")
 	assert_bool(pause.visible).is_false()
 	get_tree().paused = false
+
+
+func test_a_save_without_a_summary_still_describes_itself() -> void:
+	# Saves written before the summary line existed.
+	Campaign.current_map = 2
+	GameState.money = 12
+	GameState.day = 3
+	assert_bool(SaveGame.save_game()).is_true()
+	var payload: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(SaveGame.save_path))
+	payload.erase("summary")
+	var file := FileAccess.open(SaveGame.save_path, FileAccess.WRITE)
+	file.store_string(JSON.stringify(payload))
+	file.close()
+
+	var menu := _spawn_main_menu()
+
+	assert_str((menu.get_node("%ContinueInfo") as Label).text).is_equal(
+		"Gén. 2 · Le cultivateur · Jour 3 · 12 G")
+	Campaign.reset()

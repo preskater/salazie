@@ -180,7 +180,7 @@ func test_a_config_without_a_usable_generation_is_refused() -> void:
 	assert_str(String(economy.current_generation_id())).is_equal("test")
 
 
-func test_an_unknown_generation_falls_back_to_the_first_one() -> void:
+func test_an_unknown_generation_is_refused_once_one_is_running() -> void:
 	var economy := _bare_economy()
 	var second := _generation(&"second")
 	var generations: Array[EconomyGeneration] = [null, _generation(&"first"), second]
@@ -196,9 +196,11 @@ func test_an_unknown_generation_falls_back_to_the_first_one() -> void:
 	assert_bool(economy.has_generation(&"second")).is_true()
 	assert_bool(economy.has_generation(&"third")).is_false()
 
-	assert_bool(economy.select_generation(&"third")).is_true()
-	assert_str(String(economy.current_generation_id())).is_equal("first")
-	assert_str(", ".join(PackedStringArray(selected))).is_equal("first, second, first")
+	# A typo keeps the running economy: it used to swap it for the first
+	# generation of the file, which in the shipped data is the disabled one.
+	assert_bool(economy.select_generation(&"third")).is_false()
+	assert_str(String(economy.current_generation_id())).is_equal("second")
+	assert_str(", ".join(PackedStringArray(selected))).is_equal("first, second")
 
 
 func test_selecting_the_active_generation_again_resets_it_without_announcing_a_change() -> void:
@@ -438,7 +440,9 @@ func test_a_refused_sale_says_why_and_changes_nothing() -> void:
 	var economy := _economy(generation)
 	economy.buy(&"medal")
 	economy.buy(&"barn")
-	economy.trade({}, {"asset": "relic", "amount": 1})
+	# The relic is priced in a disabled currency, so it can only be bartered for.
+	assert_bool(economy.trade(
+		{"currency": "token", "amount": 1}, {"asset": "relic", "amount": 1})).is_true()
 
 	assert_int(economy.sell(&"barn", 0)).is_equal(0)
 	assert_int(economy.sell(&"ghost")).is_equal(0)
@@ -536,35 +540,47 @@ func test_money_buys_an_asset_and_the_asset_buys_money_back() -> void:
 		trades.append("%s -> %s" % [give.get("amount", 0), receive.get("amount", 0)]))
 
 	assert_bool(economy.trade(
-		{"currency": "gourde", "amount": 30}, {"asset": "hen", "amount": 2})).is_true()
+		{"currency": "gourde", "amount": 30}, {"asset": "medal", "amount": 2})).is_true()
 	assert_int(economy.balance(&"gourde")).is_equal(70)
-	assert_int(economy.owned_count(&"hen")).is_equal(2)
+	assert_int(economy.owned_count(&"medal")).is_equal(2)
 
 	assert_bool(economy.trade(
-		{"asset": "hen", "amount": 1}, {"currency": "token", "amount": 4})).is_true()
-	assert_int(economy.owned_count(&"hen")).is_equal(1)
+		{"asset": "medal", "amount": 1}, {"currency": "token", "amount": 4})).is_true()
+	assert_int(economy.owned_count(&"medal")).is_equal(1)
 	assert_int(economy.balance(&"token")).is_equal(7)
 
-	# Receiving more than was ever owned is fine; giving it is not.
+	# Giving more than is owned is refused.
 	assert_bool(economy.trade(
-		{"asset": "hen", "amount": 2}, {"currency": "token", "amount": 4})).is_false()
-	assert_int(economy.owned_count(&"hen")).is_equal(1)
+		{"asset": "medal", "amount": 2}, {"currency": "token", "amount": 4})).is_false()
+	assert_int(economy.owned_count(&"medal")).is_equal(1)
 	assert_str(", ".join(PackedStringArray(trades))).is_equal("30 -> 2, 1 -> 4")
 
 
-func test_a_trade_can_be_a_gift_or_a_tribute() -> void:
+func test_a_trade_always_has_two_sides() -> void:
+	# Regression (#48): a trade with only a "receive" side minted money or
+	# assets out of nothing.
 	var economy := _economy()
 
-	assert_bool(economy.trade({}, {"currency": "gourde", "amount": 15})).is_true()
-	assert_int(economy.balance(&"gourde")).is_equal(115)
+	assert_bool(economy.trade({}, {"currency": "gourde", "amount": 15})).is_false()
+	assert_bool(economy.trade({"currency": "gourde", "amount": 15}, {})).is_false()
+	assert_bool(economy.trade({}, {"asset": "medal", "amount": 1})).is_false()
 
-	assert_bool(economy.trade({"currency": "gourde", "amount": 115}, {})).is_true()
-	assert_int(economy.balance(&"gourde")).is_equal(0)
+	assert_int(economy.balance(&"gourde")).is_equal(100)
+	assert_int(economy.owned_count(&"medal")).is_equal(0)
+	assert_str(_reasons()).is_equal("empty_trade, empty_trade, empty_trade")
 
-	assert_bool(economy.trade({}, {"asset": "hen", "amount": 1})).is_true()
-	assert_bool(economy.trade({"asset": "hen", "amount": 1}, {})).is_true()
+
+func test_a_trade_only_hands_out_assets_the_generation_sells() -> void:
+	var economy := _economy()
+	var coin := {"currency": "gourde", "amount": 10}
+
+	assert_bool(economy.trade(coin, {"asset": "hen", "amount": 1})).is_false()
+	assert_bool(economy.trade(coin, {"asset": "barn_asset", "amount": 1})).is_true()
+
 	assert_int(economy.owned_count(&"hen")).is_equal(0)
-	assert_str(_reasons()).is_empty()
+	assert_int(economy.owned_count(&"barn_asset")).is_equal(1)
+	assert_str(_reasons()).is_equal("unknown_offer")
+	assert_bool(economy.can_afford(&"gourde", -5)).is_false()
 
 
 # --- Save payload ------------------------------------------------------------
@@ -641,7 +657,7 @@ func test_a_save_round_trip_keeps_wallets_stock_and_assets() -> void:
 	var economy := _economy()
 	economy.buy(&"barn")
 	economy.buy(&"plot")
-	economy.trade({}, {"asset": "hen", "amount": 3})
+	economy.trade({"currency": "gourde", "amount": 1}, {"asset": "medal", "amount": 3})
 	var saved: Dictionary = economy.to_dict()
 	var other := _economy()
 
@@ -649,7 +665,7 @@ func test_a_save_round_trip_keeps_wallets_stock_and_assets() -> void:
 
 	assert_dict(other.to_dict()).is_equal(saved)
 	assert_str(String(saved["generation"])).is_equal("test")
-	assert_int(other.owned_count(&"hen")).is_equal(3)
+	assert_int(other.owned_count(&"medal")).is_equal(3)
 	assert_int(other.balance(&"token")).is_equal(1)
 
 

@@ -46,7 +46,19 @@ primary currency is the first enabled currency of the generation.
 | `cultivateur` | `true` | `gourde` (G), start 30 | Barn, field slot, hoe |
 | `heritier` | `true` | `euro` (€), start 120; `credit_vert` (CV), start 5 | Wetland, refuge slot, seedling kit |
 
-`default_generation` is `cultivateur`, matching the first playable map.
+`default_generation` is `cultivateur`: it is what `GameState.reset()` selects. Each map then
+selects its own generation as it enters the tree (`marron` on Map 1, `cultivateur` on Map 2,
+`heritier` on Map 3, which also converts the heritage into euros).
+
+Rules enforced by `Economy`:
+
+- `select_generation()` with an unknown id returns `false` and keeps the running generation.
+- `trade()` needs both sides; the received asset must be granted by an offer of the
+  generation. A one-sided trade is refused as `empty_trade`.
+- An offer without an id cannot be bought or sold.
+- `from_dict()` only restores assets the generation sells.
+- `owned_value()` is the purchase price of what is owned; `GameState.net_worth()` adds it to
+  the purse.
 
 ### Disabling the economy
 

@@ -40,6 +40,7 @@ const HIDE_TEXTURES := [
 ## A gourd of river water is worth one sip, and the volcanic silt needs ten
 ## seconds to settle before the next one. At 1 water/s against a drain of
 ## 0.55/s, staying by the river is safe but slow: water is a reason to stop.
+const ECONOMY_GENERATION := &"marron"
 const DRINK_WATER := 10.0
 const DRINK_COOLDOWN := 10.0
 const DRINK_REACH_TILES := 2
@@ -119,6 +120,14 @@ func _ready() -> void:
 
 func map_size() -> Vector2:
 	return _map_size
+
+
+## The maroon owns nothing: this generation runs on its disabled economy, so no
+## purse is shown and nothing can be bought.
+func _enter_tree() -> void:
+	if Economy.has_generation(ECONOMY_GENERATION) \
+			and Economy.current_generation_id() != ECONOMY_GENERATION:
+		Economy.select_generation(ECONOMY_GENERATION)
 
 
 func _exit_tree() -> void:
