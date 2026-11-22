@@ -15,6 +15,10 @@ var _button: Button
 
 
 func _ready() -> void:
+	# The ending is the last screen: whatever paused the tree on the way here,
+	# the button back to the menu must answer.
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	get_tree().paused = false
 	theme = THEME
 	_build_ui()
 	_title.text = "Salazie — Trois générations"

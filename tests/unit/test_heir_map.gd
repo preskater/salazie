@@ -129,3 +129,193 @@ func test_bus_stop_moves_the_player_to_its_destination() -> void:
 	await map.ride_finished
 
 	assert_float(player.global_position.distance_to(destination)).is_less(1.0)
+
+
+func _resolve_fieldwork() -> void:
+	Campaign.complete_task("listen")
+	Campaign.complete_task("assess")
+
+
+func _press(action: StringName) -> InputEventAction:
+	var event := InputEventAction.new()
+	event.action = action
+	event.pressed = true
+	return event
+
+
+func test_decision_point_opens_only_after_the_fieldwork() -> void:
+	var map := await _spawn_map()
+	var panel: DecisionPanel = map.get_node("DecisionPanel")
+	var point: Node = get_tree().get_first_node_in_group("decision_points")
+	var notification: Label = map.get_node("Overlay/NotificationLabel")
+
+	point.call("interact", map.get_node("World/Player"))
+	assert_bool(panel.visible).is_false()
+	assert_str(notification.text).contains("habitants")
+
+	Campaign.complete_task("listen")
+	point.call("interact", map.get_node("World/Player"))
+	assert_bool(panel.visible).is_false()
+	assert_str(notification.text).contains("zones fragiles")
+
+	Campaign.complete_task("assess")
+	point.call("interact", map.get_node("World/Player"))
+	assert_bool(panel.visible).is_true()
+	assert_bool(get_tree().paused).is_true()
+
+
+func test_decision_point_does_not_reopen_once_a_plan_is_chosen() -> void:
+	# Regression (#14): the panel reopened, paused the game and none of its
+	# buttons could close it.
+	var map := await _spawn_map()
+	var panel: DecisionPanel = map.get_node("DecisionPanel")
+	var point: Node = get_tree().get_first_node_in_group("decision_points")
+	_resolve_fieldwork()
+	point.call("interact", map.get_node("World/Player"))
+	panel.choose_plan("tourism")
+
+	point.call("interact", map.get_node("World/Player"))
+
+	assert_bool(panel.visible).is_false()
+	assert_bool(get_tree().paused).is_false()
+	assert_str((map.get_node("Overlay/NotificationLabel") as Label).text).contains("mairie")
+
+
+func test_decision_panel_never_stays_open_on_a_resolved_choice() -> void:
+	var map := await _spawn_map()
+	var panel: DecisionPanel = map.get_node("DecisionPanel")
+	Campaign.set_choice("map3_plan", "forest")
+	Campaign.complete_task("choose_plan")
+	panel.open()
+	assert_bool(get_tree().paused).is_true()
+
+	panel.choose_plan("farms")
+
+	assert_bool(panel.visible).is_false()
+	assert_bool(get_tree().paused).is_false()
+	assert_str(Campaign.get_choice("map3_plan")).is_equal("forest")
+
+
+func test_decision_panel_ignores_an_unknown_plan() -> void:
+	var map := await _spawn_map()
+	var panel: DecisionPanel = map.get_node("DecisionPanel")
+	panel.open()
+
+	panel.choose_plan("casino")
+
+	assert_bool(panel.visible).is_true()
+	assert_int(Campaign.task_status("choose_plan")).is_equal(Campaign.TaskStatus.PENDING)
+	panel.close()
+
+
+func test_cancel_closes_the_decision_panel_and_restores_the_pause() -> void:
+	var map := await _spawn_map()
+	var panel: DecisionPanel = map.get_node("DecisionPanel")
+	panel.open()
+
+	panel._unhandled_input(_press(&"ui_cancel"))
+
+	assert_bool(panel.visible).is_false()
+	assert_bool(get_tree().paused).is_false()
+	assert_int(Campaign.task_status("choose_plan")).is_equal(Campaign.TaskStatus.PENDING)
+
+
+func test_decision_panel_leaves_a_pause_it_did_not_start() -> void:
+	var map := await _spawn_map()
+	var panel: DecisionPanel = map.get_node("DecisionPanel")
+	get_tree().paused = true
+
+	panel.open()
+	panel.close()
+
+	assert_bool(get_tree().paused).is_true()
+
+
+func test_plan_buttons_choose_their_plan_and_announce_it() -> void:
+	var map := await _spawn_map()
+	var panel: DecisionPanel = map.get_node("DecisionPanel")
+	panel.open()
+	var button: Button = panel.find_child("Plan_farms", true, false)
+
+	assert_object(get_viewport().gui_get_focus_owner()).is_not_null()
+	button.pressed.emit()
+
+	assert_str(Campaign.get_choice("map3_plan")).is_equal("farms")
+	assert_str((map.get_node("Overlay/NotificationLabel") as Label).text) \
+		.contains("familles paysannes")
+
+
+func test_town_hall_asks_for_a_plan_first() -> void:
+	var map := await _spawn_map()
+	var hall: Node = get_tree().get_first_node_in_group("town_halls")
+
+	hall.call("interact", map.get_node("World/Player"))
+
+	assert_int(Campaign.task_status("become_mayor")).is_equal(Campaign.TaskStatus.PENDING)
+	assert_str((map.get_node("Overlay/NotificationLabel") as Label).text).contains("plan")
+	assert_bool(get_tree().paused).is_false()
+
+
+func test_council_adopts_the_plan_and_votes_only_once() -> void:
+	# Regression (#29): a second vote during the fade to the ending paused the
+	# tree again, and the ending screen loaded frozen.
+	var map := await _spawn_map()
+	var hall: Node = get_tree().get_first_node_in_group("town_halls")
+	var result: GenerationResult = map.get_node("GenerationResult")
+	_resolve_fieldwork()
+	Campaign.set_choice("map3_plan", "forest")
+	Campaign.complete_task("choose_plan")
+
+	hall.call("interact", map.get_node("World/Player"))
+
+	assert_int(Campaign.task_status("become_mayor")).is_equal(Campaign.TaskStatus.DONE)
+	assert_bool(result.visible).is_true()
+	assert_bool(get_tree().paused).is_true()
+
+	# What the "Continuer" button leaves behind while the ending fades in.
+	result.close()
+	assert_bool(get_tree().paused).is_false()
+	hall.call("interact", map.get_node("World/Player"))
+
+	assert_bool(result.visible).is_false()
+	assert_bool(get_tree().paused).is_false()
+
+
+func test_council_rejects_the_plan_without_enough_support() -> void:
+	var map := await _spawn_map()
+	var hall: Node = get_tree().get_first_node_in_group("town_halls")
+	_resolve_fieldwork()
+	Campaign.set_choice("map3_plan", "forest")
+	Campaign.complete_task("choose_plan")
+	# Three failure events inherited from the farm leave 3 support out of 6.
+	Campaign.ensure_map(2)
+	Campaign.tasks[2]["earn_100"]["failures"] = [
+		{"reason": "a"}, {"reason": "b"}, {"reason": "c"}]
+
+	hall.call("interact", map.get_node("World/Player"))
+
+	assert_bool(Campaign.has_mayor_support()).is_false()
+	assert_int(Campaign.task_status("become_mayor")).is_equal(Campaign.TaskStatus.FAILED)
+	assert_str((map.get_node("DialogueBox") as DialogueBox).get_text()).contains("refusé")
+
+
+func test_player_can_interact_while_the_bus_drives_away() -> void:
+	# Regression (#45): prompts stayed off until the bus had left the map.
+	var map := await _spawn_map()
+	var player: Node2D = map.get_node("World/Player")
+	var stop: Area2D = get_tree().get_nodes_in_group("bus_stops")[0]
+	var world: Node = map.get_node("World")
+
+	stop.call("interact", player)
+	while not player.is_physics_processing() or player.get_parent() != world:
+		await get_tree().process_frame
+
+	assert_object(world.get_node_or_null("Shuttle")).is_not_null()
+	assert_bool(map.get("_shuttle_active")).is_false()
+
+	# A second bus must not spawn on top of the one that is leaving.
+	stop.call("interact", player)
+	assert_int(world.find_children("Shuttle*", "", false, false).size()).is_equal(1)
+	await map.ride_finished
+	await get_tree().process_frame
+	assert_object(world.get_node_or_null("Shuttle")).is_null()

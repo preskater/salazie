@@ -26,6 +26,7 @@ var _notification_timer: Timer
 var _target: Node = null
 var _shuttle: Node2D
 var _shuttle_active := false
+var _council_done := false
 
 
 func _ready() -> void:
@@ -216,7 +217,9 @@ func _on_landmark_inspected(title: String, text: String, landmark_id: String) ->
 
 
 func _on_ride_requested(stop_id: String, destination: Vector2, stop: Node2D) -> void:
-	if _shuttle_active:
+	# `_shuttle` outlives `_shuttle_active`: the bus is still driving away after
+	# the player got control back, and a second bus must not spawn on top of it.
+	if _shuttle_active or _shuttle != null:
 		return
 	_shuttle_active = true
 	_target = null
@@ -262,15 +265,22 @@ func _on_ride_requested(stop_id: String, destination: Vector2, stop: Node2D) -> 
 	_player.set_physics_process(true)
 	_notify("La navette vous dépose %s."
 		% ("à la mairie" if stop_id == "south" else "à l'entrée du village"))
+	# The player is free again: prompts and interactions must not wait for the
+	# bus to leave the map.
+	_shuttle_active = false
 
 	await _shuttle.drive_to(offscreen)
 	_shuttle.queue_free()
 	_shuttle = null
-	_shuttle_active = false
 	ride_finished.emit()
 
 
 func _on_decision_requested() -> void:
+	# The choice is permanent. Reopening the panel would pause the game on
+	# buttons that can no longer do anything.
+	if Campaign.task_status("choose_plan") == Campaign.TaskStatus.DONE:
+		_notify("Votre plan est choisi : présentez-le à la mairie.")
+		return
 	if Campaign.task_status("listen") != Campaign.TaskStatus.DONE:
 		_notify("Écoutez d'abord les habitants avant de proposer un plan.")
 		return
@@ -290,6 +300,10 @@ func _on_plan_chosen(plan_id: String) -> void:
 
 
 func _on_town_hall_requested() -> void:
+	# The map stays live while the ending fades in; a second vote would pause
+	# the tree again and carry that pause into the ending screen.
+	if _council_done:
+		return
 	if Campaign.task_status("choose_plan") != Campaign.TaskStatus.DONE:
 		_notify("Choisissez d'abord un plan au conseil du village.")
 		return
@@ -297,6 +311,7 @@ func _on_town_hall_requested() -> void:
 			or Campaign.task_status("assess") != Campaign.TaskStatus.DONE:
 		_notify("Le conseil veut savoir ce que vous avez appris du terrain.")
 		return
+	_council_done = true
 	var support := Campaign.mayor_support()
 	if Campaign.has_mayor_support():
 		Campaign.complete_task("become_mayor")

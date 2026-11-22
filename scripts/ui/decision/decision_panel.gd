@@ -51,6 +51,8 @@ func open() -> void:
 
 func choose_plan(plan_id: String) -> void:
 	if Campaign.task_status("choose_plan") == Campaign.TaskStatus.DONE:
+		# Never leave the game paused on a panel that cannot answer.
+		close()
 		return
 	var valid := false
 	for plan: Dictionary in PLANS:
@@ -70,6 +72,14 @@ func close() -> void:
 		get_tree().paused = false
 		_paused_by_us = false
 	hide()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if visible and event.is_action_pressed("ui_cancel"):
+		close()
+		# `pause` shares the Escape key: without this the pause menu would open
+		# on the same press.
+		get_viewport().set_input_as_handled()
 
 
 func _build_ui() -> void:
