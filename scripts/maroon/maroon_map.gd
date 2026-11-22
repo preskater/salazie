@@ -41,6 +41,9 @@ const HIDE_TEXTURES := [
 ## seconds to settle before the next one. At 1 water/s against a drain of
 ## 0.55/s, staying by the river is safe but slow: water is a reason to stop.
 const ECONOMY_GENERATION := &"marron"
+## Patrols see less far in the dark: night is the time to move.
+const GUARD_VISION_DAY := 300.0
+const GUARD_VISION_NIGHT := 200.0
 const DRINK_WATER := 10.0
 const DRINK_COOLDOWN := 10.0
 const DRINK_REACH_TILES := 2
@@ -113,6 +116,7 @@ func _ready() -> void:
 	_add_refuge()
 	_build_navigation()
 	Campaign.map_resolved.connect(_on_map_resolved)
+	DayNightCycle.phase_changed.connect(_on_phase_changed)
 	Campaign.task_status_changed.connect(_on_task_status_changed)
 	_restore_world(SaveGame.register_world(1, save_world))
 	_notify("Map 1 — Le marron : de la mer au col, remontez la rivière et rejoignez le refuge.")
@@ -566,7 +570,7 @@ func _add_guards() -> void:
 		guard.name = "Guard%d" % (index + 1)
 		guard.position = spawn
 		guard.set("zone_size", Vector2(360, 260))
-		guard.set("vision_range", 300.0)
+		guard.set("vision_range", _guard_vision())
 		guard.set("use_navigation", true)
 		guard.set("pause_on_catch", false)
 		guard.set("chase_speed", GUARD_CHASE_SPEED)
@@ -774,6 +778,21 @@ func _on_task_status_changed(_map_id: int, _task_id: String, _status: int) -> vo
 
 ## One message for the event: `task_status_changed` fires in the same frame and
 ## used to show a second line that this one replaced at once.
+func _guard_vision() -> float:
+	return GUARD_VISION_NIGHT if DayNightCycle.is_night() else GUARD_VISION_DAY
+
+
+func _on_phase_changed(_phase: int) -> void:
+	for entry: Dictionary in _guards:
+		var guard: CharacterBody2D = entry["guard"]
+		if is_instance_valid(guard):
+			guard.set("vision_range", _guard_vision())
+	if DayNightCycle.is_night():
+		_notify("La nuit tombe : les patrouilles voient moins loin.")
+	else:
+		_notify("Le jour se lève : les patrouilles voient de nouveau loin.")
+
+
 func _on_map_resolved(_map_id: int, _summary: Dictionary) -> void:
 	_notify("Toutes les tâches sont accomplies — le refuge du col vous attend.")
 

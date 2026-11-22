@@ -158,7 +158,23 @@ func test_continue_resumes_the_saved_generation_and_clock() -> void:
 	assert_bool(GameState.playing).is_true()
 	assert_bool(GameState.farm_active).is_true()
 	assert_bool(SceneRouter.is_gameplay).is_true()
+	# The farm's sky follows the farm's own day, not a second clock.
+	assert_bool(DayNightCycle.running).is_false()
+
+
+func test_continue_restores_the_sky_of_a_map_without_its_own_clock() -> void:
+	Campaign.current_map = 1
+	DayNightCycle.running = true
+	DayNightCycle.reset_for_new_map(0)
+	DayNightCycle.advance(DayNightCycle.day_duration + 5.0)
+	_write_save()
+	Campaign.reset()
+	DayNightCycle.reset_for_new_map(0)
+
+	assert_bool(await SceneRouter.continue_game()).is_true()
+
 	assert_bool(DayNightCycle.is_night()).is_true()
+	assert_bool(DayNightCycle.running).is_true()
 
 
 func test_continue_without_a_save_does_nothing() -> void:

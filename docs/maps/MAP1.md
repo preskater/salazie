@@ -50,6 +50,8 @@ Two optional routes parallel the main trail through the gorge.
   withdraw only themselves on exit. The player is concealed or muted while at
   least one source remains, so a bush inside the cave and the alcove inside the
   spray nest correctly.
+- Night: patrols see 200 px instead of 300 (`GUARD_VISION_NIGHT` / `GUARD_VISION_DAY`),
+  switched on `DayNightCycle.phase_changed` with a notification.
 - Line of sight: props (rocks, trees, walls, the cabin) are on physics layers
   `world` (1) and `vision_blockers` (2); the guard's `VisionRay` masks layer 2.
   Water and the map bounds are on layer 1 only: they stop movement, not sight.
