@@ -47,7 +47,7 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.44, 0.36, 0.28, 1)
 theme_override_font_sizes/font_size = 15
-text = "Clavier et manette. Les touches sont fixes dans cette version."
+text = "Clavier et manette. Les touches suivent la disposition de votre clavier."
 horizontal_alignment = 1
 
 [node name="Separator" type="HSeparator" parent="Center/Panel/VBox"]
@@ -59,83 +59,12 @@ size_flags_vertical = 3
 theme_override_constants/separation = 24
 
 [node name="Rows" type="GridContainer" parent="Center/Panel/VBox/Content"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/h_separation = 40
 theme_override_constants/v_separation = 10
-columns = 2
-
-[node name="MoveLabel" type="Label" parent="Center/Panel/VBox/Content/Rows"]
-layout_mode = 2
-text = "Se déplacer"
-
-[node name="MoveValue" type="Label" parent="Center/Panel/VBox/Content/Rows"]
-layout_mode = 2
-text = "WASD ou flèches"
-
-[node name="InteractLabel" type="Label" parent="Center/Panel/VBox/Content/Rows"]
-layout_mode = 2
-text = "Interagir"
-
-[node name="InteractValue" type="Label" parent="Center/Panel/VBox/Content/Rows"]
-layout_mode = 2
-text = "E"
-
-[node name="SeedLabel" type="Label" parent="Center/Panel/VBox/Content/Rows"]
-layout_mode = 2
-text = "Choisir une graine"
-
-[node name="SeedValue" type="Label" parent="Center/Panel/VBox/Content/Rows"]
-layout_mode = 2
-text = "1 à 4"
-
-[node name="InventoryLabel" type="Label" parent="Center/Panel/VBox/Content/Rows"]
-layout_mode = 2
-text = "Inventaire"
-
-[node name="InventoryValue" type="Label" parent="Center/Panel/VBox/Content/Rows"]
-layout_mode = 2
-text = "I"
-
-[node name="PricesLabel" type="Label" parent="Center/Panel/VBox/Content/Rows"]
-layout_mode = 2
-text = "Prix du marché"
-
-[node name="PricesValue" type="Label" parent="Center/Panel/VBox/Content/Rows"]
-layout_mode = 2
-text = "P"
-
-[node name="TasksLabel" type="Label" parent="Center/Panel/VBox/Content/Rows"]
-layout_mode = 2
-text = "Liste des tâches"
-
-[node name="TasksValue" type="Label" parent="Center/Panel/VBox/Content/Rows"]
-layout_mode = 2
-text = "T ou Select"
-
-[node name="PauseLabel" type="Label" parent="Center/Panel/VBox/Content/Rows"]
-layout_mode = 2
-text = "Pause"
-
-[node name="PauseValue" type="Label" parent="Center/Panel/VBox/Content/Rows"]
-layout_mode = 2
-text = "Échap ou Start"
-
-[node name="MenuLabel" type="Label" parent="Center/Panel/VBox/Content/Rows"]
-layout_mode = 2
-text = "Naviguer dans les menus"
-
-[node name="MenuValue" type="Label" parent="Center/Panel/VBox/Content/Rows"]
-layout_mode = 2
-text = "Flèches + Entrée, ou croix + A"
-
-[node name="BackLabel" type="Label" parent="Center/Panel/VBox/Content/Rows"]
-layout_mode = 2
-text = "Retour / fermer"
-
-[node name="BackValue" type="Label" parent="Center/Panel/VBox/Content/Rows"]
-layout_mode = 2
-text = "Échap ou B"
+columns = 3
 
 [node name="ControllerBox" type="VBoxContainer" parent="Center/Panel/VBox/Content"]
 custom_minimum_size = Vector2(240, 0)

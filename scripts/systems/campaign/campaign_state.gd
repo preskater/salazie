@@ -43,7 +43,9 @@ const MAPS := {
 	},
 }
 
-## Task definitions. `target` supports multi-step tasks; `critical` marks the
+## Task definitions. Hints never name a key: `{interact}` and the other action
+## tokens are resolved by `InputHints.format()` when the hint is shown.
+## `target` supports multi-step tasks; `critical` marks the
 ## task whose permanent failure makes the generation result "poor".
 const TASKS := {
 	1: [
@@ -88,28 +90,28 @@ const TASKS := {
 		{
 			"id": "prepare_plot",
 			"label": "Préparer une parcelle",
-			"hint": "Préparez une parcelle du potager (E).",
+			"hint": "Préparez une parcelle du potager ({interact}).",
 			"target": 1,
 			"retryable": false,
 		},
 		{
 			"id": "plant_seed",
 			"label": "Planter une graine",
-			"hint": "Choisissez une graine (1-4) puis plantez (E).",
+			"hint": "Choisissez une graine ({select_seed}) puis plantez ({interact}).",
 			"target": 1,
 			"retryable": false,
 		},
 		{
 			"id": "harvest_crop",
 			"label": "Récolter une culture",
-			"hint": "Récoltez une culture mûre (E).",
+			"hint": "Récoltez une culture mûre ({interact}).",
 			"target": 1,
 			"retryable": false,
 		},
 		{
 			"id": "sell_produce",
 			"label": "Vendre au marché",
-			"hint": "Vendez votre récolte au marché du hameau (E).",
+			"hint": "Vendez votre récolte au marché du hameau ({interact}).",
 			"target": 1,
 			"retryable": false,
 		},

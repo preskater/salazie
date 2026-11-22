@@ -243,7 +243,9 @@ func _add_ui() -> void:
 
 	var hint := Label.new()
 	hint.name = "ControlsHint"
-	hint.text = "WASD · Maj courir · E interagir · T tâches"
+	hint.text = _controls_hint()
+	InputHints.device_changed.connect(
+		func(_gamepad: bool) -> void: hint.text = _controls_hint())
 	hint.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
 	hint.offset_left = 18.0
 	hint.offset_top = -44.0
@@ -396,7 +398,7 @@ func _update_interaction_target() -> void:
 		if _drink_cooldown > 0.0:
 			_set_prompt("L'eau se décante — %d s" % ceili(_drink_cooldown))
 		else:
-			_set_prompt("E — Boire (+10 eau)")
+			_set_prompt(InputHints.prompt(&"interact", "Boire (+%d eau)" % int(DRINK_WATER)))
 	else:
 		_set_prompt("")
 
@@ -504,6 +506,11 @@ func _nearest_spot(spots: Array[Area2D]) -> Vector2:
 			best_distance = distance
 			best = spot.global_position
 	return best
+
+
+func _controls_hint() -> String:
+	return InputHints.format(
+		"{move} · {run} courir · {interact} interagir · {toggle_tasks} tâches")
 
 
 func _set_prompt(text: String) -> void:

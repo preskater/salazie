@@ -1,6 +1,6 @@
 extends Area2D
 ## A wild food, water or seed pickup. Food is collected on contact; water and
-## seeds wait for `interact` (E) so drinking and gathering stay deliberate.
+## seeds wait for `interact` so drinking and gathering stay deliberate.
 ## It can advance a multi-step campaign task and store seed bonuses for Map 2.
 
 signal picked(kind: String, message: String)
@@ -15,7 +15,7 @@ signal picked(kind: String, message: String)
 ## Message shown after the pickup. `%d` is replaced by the task progress and
 ## `%d/%d` by progress and target.
 @export var pickup_message := ""
-## When false the pickup waits for `interact` (E) instead of body contact.
+## When false the pickup waits for `interact` instead of body contact.
 @export var auto_pickup := true
 ## When set, the pickup also stores a seed bonus for the next generation.
 @export var seed_crop := ""
@@ -40,10 +40,10 @@ func get_interaction_prompt() -> String:
 	if _used:
 		return ""
 	if water_amount > 0.0:
-		return "E — Boire"
+		return InputHints.prompt(&"interact", "Boire")
 	if not seed_crop.is_empty():
-		return "E — Ramasser des graines"
-	return "E — Ramasser"
+		return InputHints.prompt(&"interact", "Ramasser des graines")
+	return InputHints.prompt(&"interact", "Ramasser")
 
 
 func interact(player: Node2D) -> void:

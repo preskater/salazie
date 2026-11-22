@@ -261,19 +261,40 @@ systems apart:
 
 ## Controls
 
-| Action | Keys |
-|---|---|
-| Move | WASD / arrow keys |
-| Interact | `E` |
-| Select seed | `1`–`4` |
-| Inventory | `I` |
-| Market prices | `P` |
-| Task list | `T` / gamepad Select |
-| Pause | `Échap` / gamepad Start |
-| Menu navigation | arrows / D-pad + Enter / A |
-| Back / close | `Échap` / B |
+Keys are bound by **physical position** (US names below); a gamepad works everywhere.
 
-Rebinding is not implemented; `Commandes` is a read-only screen.
+| Action | Keyboard | Gamepad |
+|---|---|---|
+| `move_*` | WASD position (ZQSD on AZERTY) / arrows | left stick / D-pad |
+| `run` | Shift | X / right trigger |
+| `interact` | E | A |
+| `select_seed_1..4` | 1–4 | — |
+| `seed_previous` / `seed_next` | — | LB / RB |
+| `toggle_inventory` | I | Y |
+| `toggle_prices` | P | R3 |
+| `toggle_tasks` | T | Select |
+| `pause` | Escape | Start |
+| `ui_accept` | Enter / Space | A |
+| `ui_cancel` | Escape | B |
+
+`ui_accept` and `ui_cancel` are redefined in `project.godot`: Godot's built-in versions have
+no gamepad button, so menus could not be confirmed or closed with a pad.
+
+### Key labels
+
+No script or scene spells a key. The `InputHints` autoload
+(`scripts/systems/input/input_hints.gd`) builds every label from the InputMap:
+
+- `InputHints.prompt(&"interact", "Parler")` → `E — Parler`, or `A — Parler` once a gamepad
+  was used; `device_changed` lets static labels refresh.
+- `InputHints.format("Plantez ({interact}).")` resolves `{action}` tokens. Text stored in
+  scenes (`talk_prompt`, climb labels) and in `Campaign.TASKS` hints uses tokens.
+- Keyboard labels follow the player's layout through
+  `DisplayServer.keyboard_get_label_from_physical()`, so the movement hint reads `ZQSD` on
+  AZERTY. The headless and Web display servers cannot report a layout; US names are used.
+
+The **Commandes** screen is generated from `InputHints.CONTROLS`, one row per action with
+its keyboard and gamepad label. Rebinding is not implemented yet (#23).
 
 ## Files
 
@@ -283,7 +304,8 @@ Rebinding is not implemented; `Commandes` is a read-only screen.
 | `scenes/preloads/pause_menu.tscn` / `scripts/ui/menus/pause_menu.gd` | Global pause overlay |
 | `scripts/ui/menus/menu_stack.gd` | Screen stack, focus, back navigation |
 | `scenes/ui/menus/screens/settings_screen.tscn` / `scripts/ui/menus/screens/settings_screen.gd` | Audio and display options |
-| `scenes/ui/menus/screens/controls_screen.tscn` / `scripts/ui/menus/screens/controls_screen.gd` | Read-only controls reference |
+| `scenes/ui/menus/screens/controls_screen.tscn` / `scripts/ui/menus/screens/controls_screen.gd` | Controls reference generated from the InputMap |
+| `scripts/systems/input/input_hints.gd` | Autoload: action labels per device and layout |
 | `scenes/ui/menus/screens/credits_screen.tscn` / `scripts/ui/menus/screens/credits_screen.gd` | Credits |
 | `scenes/ui/menus/screens/confirm_screen.tscn` / `scripts/ui/menus/screens/confirm_screen.gd` | Confirmation panel |
 | `scenes/ui/menus/family_portrait.tscn` / `scripts/ui/menus/family_portrait.gd` | Four-layer portrait from the portrait generator |
@@ -349,7 +371,7 @@ Current status: **155/155 gdUnit4 tests pass**.
 - Building and slot ownership is recorded by the economy but does not build anything in the
   world yet.
 - No audio assets yet; music/SFX volumes are ready but silent.
-- No key rebinding and no language selector.
+- No key rebinding (#23) and no language selector (#54).
 - Display options are ignored in headless mode and may behave differently in a browser.
 - The title screen uses the engine default font because the UI pack has no font asset; there
   is no dedicated logo.

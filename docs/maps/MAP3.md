@@ -106,8 +106,8 @@ The heritage is displayed in the top-left label and in the epilogue.
 
 | Action | Keys | Effect |
 |---|---|---|
-| `move_*` | WASD / arrows | Move |
-| `interact` | E | Talk, inspect, decide, board the shuttle, present the plan |
+| `move_*` | WASD position / arrows, left stick / D-pad | Move |
+| `interact` | E, gamepad A | Talk, inspect, decide, board the shuttle, present the plan |
 | `toggle_tasks` | T / Select | Open the task list |
 | `pause` | Esc / Start | Pause menu |
 

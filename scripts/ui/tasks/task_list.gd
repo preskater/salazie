@@ -42,9 +42,11 @@ func refresh() -> void:
 	var failed := int(summary.get("failed", 0))
 	var pending := int(summary.get("pending", 0))
 	if pending == 0:
-		_compact_label.text = "Tâches — %d réussies · %d échouées · carte terminée (T)" % [done, failed]
+		_compact_label.text = "Tâches — %d réussies · %d échouées · carte terminée (%s)" % [
+			done, failed, InputHints.label(&"toggle_tasks")]
 	else:
-		_compact_label.text = "Tâches — %d faites · %d échouées · %d en cours (T)" % [done, failed, pending]
+		_compact_label.text = "Tâches — %d faites · %d échouées · %d en cours (%s)" % [
+			done, failed, pending, InputHints.label(&"toggle_tasks")]
 	_rebuild_rows(summary)
 	_update_result(summary)
 	_apply_expanded()
@@ -216,7 +218,7 @@ func _current_hint(summary: Dictionary) -> String:
 		if not tasks.has(task_id):
 			continue
 		if int((tasks[task_id] as Dictionary).get("status", 0)) == Campaign.TaskStatus.PENDING:
-			return String(definition.get("hint", definition.get("label", "")))
+			return InputHints.format(String(definition.get("hint", definition.get("label", ""))))
 	return "Terminez les tâches restantes."
 
 

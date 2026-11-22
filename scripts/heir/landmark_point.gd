@@ -21,7 +21,7 @@ func _ready() -> void:
 
 
 func get_interaction_prompt() -> String:
-	return "E — Observer %s" % title
+	return InputHints.prompt(&"interact", "Observer %s" % title)
 
 
 func interact(_player: Node2D) -> void:
