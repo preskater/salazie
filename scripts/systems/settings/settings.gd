@@ -46,6 +46,11 @@ var vsync_enabled := true
 ## Overrides only: action -> physical keycode / gamepad button index.
 var key_bindings: Dictionary = {}
 var button_bindings: Dictionary = {}
+## Test seam: runners disagree on the display (X11, macOS, headless), so tests
+## pin the platform rules instead of asserting the machine's own screen.
+## -1 asks the engine; `screen_size_override` of zero means "the real screen".
+var controls_window_override := -1
+var screen_size_override := Vector2i.ZERO
 
 
 func _ready() -> void:
@@ -219,10 +224,27 @@ func apply_audio() -> void:
 	_set_bus_volume("SFX", sfx_volume)
 
 
+## Platform rule, kept pure so that it can be checked on any runner.
+func owns_window(server_name: String, is_web: bool) -> bool:
+	return server_name != "headless" and not is_web
+
+
 ## True where the game owns its window. A browser owns the canvas: it sizes
 ## it, refuses fullscreen without a click and has no VSync switch.
 func controls_window() -> bool:
-	return DisplayServer.get_name() != "headless" and not OS.has_feature("web")
+	if controls_window_override != -1:
+		return controls_window_override > 0
+	return owns_window(DisplayServer.get_name(), OS.has_feature("web"))
+
+
+## Usable screen. A headless runner has no display and reports a dummy one, so
+## the largest preset stands in: the resolution list must never come out empty.
+func screen_size() -> Vector2i:
+	if screen_size_override != Vector2i.ZERO:
+		return screen_size_override
+	if DisplayServer.get_name() == "headless":
+		return RESOLUTIONS[-1]
+	return DisplayServer.screen_get_usable_rect(DisplayServer.window_get_current_screen()).size
 
 
 func apply_display() -> void:

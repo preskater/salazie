@@ -45,7 +45,7 @@ func _build_options() -> void:
 	window_mode_option.add_item("Plein écran", Settings.FULLSCREEN)
 	resolution_option.clear()
 	# Only what the screen can show; ids stay indices into Settings.RESOLUTIONS.
-	var offered := Settings.available_resolutions(_screen_size())
+	var offered := Settings.available_resolutions(Settings.screen_size())
 	for index in Settings.RESOLUTIONS.size():
 		var value: Vector2i = Settings.RESOLUTIONS[index]
 		if offered.has(value) or value == Settings.resolution:
@@ -54,12 +54,6 @@ func _build_options() -> void:
 	var windowed_platform := not OS.has_feature("web")
 	(resolution_option.get_parent() as Control).visible = windowed_platform
 	(vsync_toggle.get_parent() as Control).visible = windowed_platform
-
-
-func _screen_size() -> Vector2i:
-	if DisplayServer.get_name() == "headless":
-		return Settings.RESOLUTIONS[-1]
-	return DisplayServer.screen_get_usable_rect(DisplayServer.window_get_current_screen()).size
 
 
 func _refresh() -> void:

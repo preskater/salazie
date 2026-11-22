@@ -12,6 +12,8 @@ var _original_sfx := 0.0
 var _original_window_mode := 0
 var _original_resolution := Vector2i.ZERO
 var _original_vsync := true
+var _original_controls_override := -1
+var _original_screen_override := Vector2i.ZERO
 var _changes := 0
 
 
@@ -23,6 +25,12 @@ func before_test() -> void:
 	_original_window_mode = Settings.window_mode
 	_original_resolution = Settings.resolution
 	_original_vsync = Settings.vsync_enabled
+	_original_controls_override = Settings.controls_window_override
+	_original_screen_override = Settings.screen_size_override
+	# A runner may have a real screen (X11 under a CI agent) or none at all;
+	# pin both so the options screen is tested, not the machine running it.
+	Settings.controls_window_override = 0
+	Settings.screen_size_override = Vector2i(1920, 1080)
 	Settings.config_path = TEST_PATH
 	_remove_file(TEST_PATH)
 	Settings.master_volume = Settings.DEFAULT_MASTER
@@ -46,6 +54,8 @@ func after_test() -> void:
 	Settings.window_mode = _original_window_mode
 	Settings.resolution = _original_resolution
 	Settings.vsync_enabled = _original_vsync
+	Settings.controls_window_override = _original_controls_override
+	Settings.screen_size_override = _original_screen_override
 	Settings.apply_audio()
 
 
@@ -293,6 +303,7 @@ func test_the_screen_opens_on_the_current_settings() -> void:
 	assert_str((screen.get_node("%MusicValue") as Label).text).is_equal("55 %")
 	assert_str((screen.get_node("%SfxValue") as Label).text).is_equal("100 %")
 	var resolution: OptionButton = screen.get_node("%ResolutionOption")
+	# The pinned screen can show every preset, so all three are listed.
 	assert_int(resolution.item_count).is_equal(Settings.RESOLUTIONS.size())
 	assert_str(resolution.get_item_text(resolution.selected)).is_equal("1920 × 1080")
 	assert_bool((screen.get_node("%VsyncToggle") as CheckBox).button_pressed).is_false()
@@ -457,7 +468,25 @@ func test_a_resolution_too_large_for_the_screen_falls_back_to_one_that_fits() ->
 		.is_equal(Vector2i(1280, 720))
 
 
-func test_the_headless_runner_never_touches_a_window() -> void:
+func test_the_platform_rules_decide_who_owns_the_window() -> void:
+	assert_bool(Settings.owns_window("headless", false)).is_false()
+	assert_bool(Settings.owns_window("X11", true)).is_false()
+	assert_bool(Settings.owns_window("macOS", false)).is_true()
+	# Without an override the rule is applied to this very runner.
+	Settings.controls_window_override = -1
+	assert_bool(Settings.controls_window()).is_equal(
+		Settings.owns_window(DisplayServer.get_name(), OS.has_feature("web")))
+
+
+func test_the_screen_size_comes_from_the_real_screen_without_an_override() -> void:
+	Settings.screen_size_override = Vector2i.ZERO
+	var size := Settings.screen_size()
+	assert_bool(size.x > 0 and size.y > 0).is_true()
+	if DisplayServer.get_name() == "headless":
+		assert_vector(size).is_equal(Settings.RESOLUTIONS[-1])
+
+
+func test_settings_are_kept_without_ever_touching_a_window() -> void:
 	assert_bool(Settings.controls_window()).is_false()
 	Settings.set_vsync_enabled(false)
 	Settings.set_window_mode(Settings.FULLSCREEN)
