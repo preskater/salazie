@@ -540,3 +540,30 @@ func test_leaves_only_fall_when_they_have_a_fall_animation() -> void:
 	assert_bool(leaves.is_playing()).is_true()
 	assert_str(String(leaves.animation)).is_equal("fall")
 	assert_float(leaves.speed_scale).is_between(0.7, 1.3)
+
+
+func test_the_sky_follows_the_farm_day() -> void:
+	# Regression (#42): "Jour N" advanced three times per visual day.
+	var map := await _spawn_farm()
+	GameState.playing = true
+	GameState.day = 2
+	assert_bool(DayNightCycle.running).is_false()
+
+	GameState.set("_day_time", GameState.day_length * 0.2)
+	GameState.sync_sky()
+	assert_bool(DayNightCycle.is_night()).is_false()
+	assert_int(DayNightCycle.day_number).is_equal(2)
+
+	GameState.set("_day_time", GameState.day_length * 0.9)
+	GameState.sync_sky()
+	assert_bool(DayNightCycle.is_night()).is_true()
+
+	# Off the farm the sky is left alone.
+	GameState.farm_active = false
+	GameState.set("_day_time", 0.0)
+	GameState.sync_sky()
+	assert_bool(DayNightCycle.is_night()).is_true()
+	GameState.farm_active = true
+	GameState.playing = false
+	DayNightCycle.reset_for_new_map(0)
+	assert_object(map).is_not_null()

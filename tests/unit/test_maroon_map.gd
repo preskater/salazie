@@ -955,3 +955,20 @@ func test_patrols_give_a_respawned_player_time_to_move() -> void:
 	assert_float(MaroonMap.GUARD_CHASE_SPEED).is_greater(float(player.get("SPEED")))
 	assert_float(MaroonMap.GUARD_CHASE_SPEED).is_less(
 		float(player.get("SPEED")) * float(player.get("RUN_MULTIPLIER")))
+
+
+func test_patrols_see_less_far_at_night() -> void:
+	var map := await _spawn_map()
+	var guard: Node = map.get_node("World/Guard1")
+	var notification := map.get_node("MaroonUI/Root/Notification") as Label
+	DayNightCycle.reset_for_new_map(0)
+	assert_float(float(guard.get("vision_range"))).is_equal(MaroonMap.GUARD_VISION_DAY)
+
+	DayNightCycle.set_progress(1, 0.9)
+	assert_float(float(guard.get("vision_range"))).is_equal(MaroonMap.GUARD_VISION_NIGHT)
+	assert_str(notification.text).contains("nuit")
+
+	DayNightCycle.set_progress(2, 0.1)
+	assert_float(float(guard.get("vision_range"))).is_equal(MaroonMap.GUARD_VISION_DAY)
+	assert_str(notification.text).contains("jour")
+	assert_float(MaroonMap.GUARD_VISION_NIGHT).is_less(MaroonMap.GUARD_VISION_DAY)

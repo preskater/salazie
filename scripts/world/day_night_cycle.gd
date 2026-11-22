@@ -75,8 +75,12 @@ func advance(delta: float) -> void:
 ## owns the transition.
 func reset_for_new_map(required_nights := nights_required_for_next_map, begin_at_night := false) -> void:
 	nights_spent = 0
-	_ready_announced = false
+	# Marked as announced first: the setter below checks the state, and with no
+	# night required it would emit `ready_for_next_map` from a reset that is
+	# documented as silent.
+	_ready_announced = true
 	nights_required_for_next_map = maxi(0, required_nights)
+	_ready_announced = is_ready_for_next_map()
 	day_number = 1
 	phase = Phase.NIGHT if begin_at_night else Phase.DAY
 	time_left = _current_phase_duration()
@@ -104,6 +108,26 @@ func from_dict(data: Dictionary) -> void:
 		time_left = clampf(float(raw_time), MIN_PHASE_DURATION, _current_phase_duration())
 	else:
 		time_left = _current_phase_duration()
+	_apply_tint()
+
+
+## Puts the cycle at `fraction` (0 to 1) of day `day`, for a map that keeps its
+## own clock. The farm counts its days in `GameState`: it drives the sky with
+## this instead of letting a second clock run beside it at another pace.
+func set_progress(day: int, fraction: float) -> void:
+	var total := maxf(day_duration, MIN_PHASE_DURATION) + maxf(night_duration, MIN_PHASE_DURATION)
+	var elapsed := clampf(fraction, 0.0, 1.0) * total
+	var next_phase := Phase.DAY if elapsed < day_duration else Phase.NIGHT
+	day_number = maxi(1, day)
+	if next_phase != phase:
+		phase = next_phase
+		phase_changed.emit(phase)
+		if phase == Phase.NIGHT:
+			night_started.emit(day_number)
+		else:
+			day_started.emit(day_number)
+	var into_phase := elapsed if phase == Phase.DAY else elapsed - day_duration
+	time_left = maxf(0.0, _current_phase_duration() - into_phase)
 	_apply_tint()
 
 

@@ -195,7 +195,8 @@ func _on_close_requested() -> void:
 func _set_day_night_active(active: bool, reset_cycle := false) -> void:
 	if reset_cycle:
 		DayNightCycle.reset_for_new_map(0)
-	DayNightCycle.running = active
+	# On the farm the sky is driven by the farm's own day (GameState.sync_sky).
+	DayNightCycle.running = active and not GameState.farm_active
 	DayNightCycle.tint_enabled = active
 
 

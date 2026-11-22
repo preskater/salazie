@@ -174,3 +174,42 @@ func test_project_registers_the_autoload() -> void:
 	assert_object(cycle).is_not_null()
 	assert_int(cycle.nights_required_for_next_map).is_equal(2)
 	assert_object(cycle.get_node_or_null("Tint")).is_not_null()
+
+
+# --- #42 -----------------------------------------------------------------------
+
+func test_a_driven_cycle_shows_the_fraction_of_the_day_it_is_given() -> void:
+	var cycle = _spawn_cycle()
+	cycle.day_duration = 40.0
+	cycle.night_duration = 20.0
+	var phases: Array[int] = []
+	cycle.phase_changed.connect(func(phase: int) -> void: phases.append(phase))
+
+	cycle.set_progress(4, 0.25)
+	assert_int(cycle.day_number).is_equal(4)
+	assert_bool(cycle.is_night()).is_false()
+	assert_float(cycle.seconds_until_next_phase()).is_equal_approx(25.0, 0.01)
+
+	cycle.set_progress(4, 0.75)
+	assert_bool(cycle.is_night()).is_true()
+	assert_float(cycle.seconds_until_next_phase()).is_equal_approx(15.0, 0.01)
+
+	cycle.set_progress(5, 0.0)
+	assert_bool(cycle.is_night()).is_false()
+	assert_int(cycle.day_number).is_equal(5)
+	cycle.set_progress(-3, 7.0)
+	assert_int(cycle.day_number).is_equal(1)
+	assert_bool(cycle.is_night()).is_true()
+	assert_array(phases).is_equal([cycle.Phase.NIGHT, cycle.Phase.DAY, cycle.Phase.NIGHT])
+
+
+func test_resetting_for_a_new_map_is_silent_even_with_no_night_required() -> void:
+	var cycle = _spawn_cycle()
+	var announced: Array[bool] = []
+	cycle.ready_for_next_map.connect(func() -> void: announced.append(true))
+	cycle.nights_required_for_next_map = 2
+
+	cycle.reset_for_new_map(0)
+
+	assert_int(announced.size()).is_equal(0)
+	assert_bool(cycle.is_ready_for_next_map()).is_true()

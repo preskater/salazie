@@ -109,6 +109,14 @@ func _process(delta: float) -> void:
 	if _day_time >= day_length:
 		_day_time -= day_length
 		_advance_day()
+	sync_sky()
+
+
+## One clock on the farm: the sky shows the farm day, dawn to night, instead of
+## following a cycle of its own that ran three times slower than "Jour N".
+func sync_sky() -> void:
+	if farm_active and playing:
+		DayNightCycle.set_progress(day, _day_time / day_length)
 
 func _advance_day() -> void:
 	day += 1
