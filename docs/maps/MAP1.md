@@ -45,9 +45,14 @@ Two optional routes parallel the main trail through the gorge.
 - `climb_point.gd` joins the `interactable` group; `E` starts a 0.22 s fade,
   teleports the player to the destination and fades back in, then emits
   `climb_finished`.
-- `stealth_zone.gd` joins the `stealth_zones` group. On exit it only clears
-  concealment or noise muting when no other overlapping zone still provides it,
-  so nested zones behave.
+- `stealth_zone.gd` joins the `stealth_zones` group. Zones and hide spots are
+  *sources*: they call `add_cover(self)` / `add_quiet(self)` on the player and
+  withdraw only themselves on exit. The player is concealed or muted while at
+  least one source remains, so a bush inside the cave and the alcove inside the
+  spray nest correctly.
+- Line of sight: props (rocks, trees, walls, the cabin) are on physics layers
+  `world` (1) and `vision_blockers` (2); the guard's `VisionRay` masks layer 2.
+  Water and the map bounds are on layer 1 only: they stop movement, not sight.
 - The player has `noise_muted`; while set, `emit_noise()` skips the guard
   broadcast. Guards keep their normal vision, chase and catch logic.
 

@@ -130,10 +130,17 @@ func add_prop(parent: Node2D, path: String, position: Vector2, scale := 1.0,
 	return sprite
 
 
+## Physics layers: 1 is the world everything collides with, 2 is what blocks a
+## guard's line of sight. Props are on both; water and map bounds only on 1.
+const WORLD_LAYER := 1
+const VISION_BLOCKER_LAYER := 2
+
+
 func add_collision(parent: Node2D, position: Vector2, size: Vector2,
 		name_hint := "PropCollision") -> StaticBody2D:
 	var body := StaticBody2D.new()
 	body.name = name_hint
+	body.collision_layer = WORLD_LAYER | VISION_BLOCKER_LAYER
 	body.position = position
 	var shape := CollisionShape2D.new()
 	var rectangle := RectangleShape2D.new()

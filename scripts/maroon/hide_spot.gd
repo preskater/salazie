@@ -49,7 +49,7 @@ func _on_body_entered(body: Node2D) -> void:
 	label.text = "Caché"
 	ring.visible = true
 	label.visible = true
-	body.call("set_hidden", true)
+	body.call("add_cover", self)
 
 
 func _on_body_exited(body: Node2D) -> void:
@@ -58,7 +58,8 @@ func _on_body_exited(body: Node2D) -> void:
 	_inside = false
 	ring.visible = false
 	label.visible = false
-	body.call("set_hidden", false)
+	# Only this bush stops covering: a cave around it still does.
+	body.call("remove_cover", self)
 	if not _completed:
 		_timer = 0.0
 		hidden_cancelled.emit()

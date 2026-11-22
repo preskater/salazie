@@ -194,3 +194,44 @@ func test_ignores_noise_during_give_up_cooldown() -> void:
 
 	guard.hear_noise(guard.global_position + Vector2(10, 0), 9999.0)
 	assert_int(guard.state).is_equal(GUARD_SCRIPT.State.SUSPICIOUS)
+
+
+func _wall(at: Vector2, layer: int) -> StaticBody2D:
+	var wall: StaticBody2D = auto_free(StaticBody2D.new())
+	wall.collision_layer = layer
+	var shape := CollisionShape2D.new()
+	var rectangle := RectangleShape2D.new()
+	rectangle.size = Vector2(24, 200)
+	shape.shape = rectangle
+	wall.add_child(shape)
+	add_child(wall)
+	wall.global_position = at
+	return wall
+
+
+func test_a_vision_blocker_hides_what_is_behind_it() -> void:
+	# Regression (#19): the ray masked a layer nothing was on, so guards saw
+	# through every rock, tree and wall.
+	var guard := _spawn_guard(Vector2(5000, 5000))
+	var target := Vector2(5200, 5000)
+	assert_bool(guard.can_see(target)).is_true()
+
+	_wall(Vector2(5100, 5000), 1 | 2)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	# The guard started its patrol while the wall registered.
+	guard.facing = Vector2.RIGHT
+
+	assert_bool(guard.can_see(target)).is_false()
+	assert_bool(guard.can_see(Vector2(5060, 5000))).is_true()
+
+
+func test_a_plain_world_collider_does_not_block_the_view() -> void:
+	# Water and map bounds stop feet, not eyes.
+	var guard := _spawn_guard(Vector2(7000, 5000))
+	_wall(Vector2(7100, 5000), 1)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	guard.facing = Vector2.RIGHT
+
+	assert_bool(guard.can_see(Vector2(7200, 5000))).is_true()
