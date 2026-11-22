@@ -27,7 +27,7 @@ Technical reference for the second map of Salazie. Narrative intent lives in
 | Zone | Area | Content |
 |---|---|---|
 | Farmstead | x 28–62, y 20–31 | Farmer house, barn, silo, well, doghouse, tractor, scarecrow |
-| Kitchen garden | x 32–35, y 35–36 | 8 `CropPlot`s (4 start tilled); the objective target |
+| Kitchen garden | x 32–35, y 35–36 | 8 `CropPlot`s: 4 tilled at the start, 4 fallow until a field slot is bought |
 | Cow pasture | x 30–44, y 42–49 | Fenced pen; 3 cows |
 | Hen pen | x 50–62, y 35–42 | Fenced pen, coop, henhouse, feeder; 3 hens, 1 rooster, 2 chicks |
 | Market hamlet | x 38–56, y 56–64 | Market stand, crates, cottage, seller and villager |
@@ -59,6 +59,19 @@ buy more seeds. Prices change when the day changes.
 | `tomato` | Tomate | 4 G | 9 G | 16 s |
 | `carrot` | Carotte | 3 G | 7 G | 12 s |
 
+### What the market offers do
+
+| Offer | Price | Effect |
+|---|---|---|
+| Parcelle (`field_slot`, 2 in stock) | 35 G | Each one opens two fallow plots east of the garden (`CropPlot.required_slots`). The garden starts with 4 of its 8 plots |
+| Houe (`hoe`) | 20 G | Crops grow 25 % faster (`CropPlot.HOE_GROWTH_BONUS`) |
+| Grange (`barn`) | 60 G | Ripe crops on the cyclone's path are brought in as produce instead of destroyed |
+
+Money spent on these is still wealth: `GameState.net_worth()` is the purse plus the purchase
+price of what is owned. `earn_100` and the heritage handed to Map 3 are computed from the
+net worth, so investing never pushes the goal away. Selling back at half price is a real
+loss. A crop growing on a plot whose slot was sold can still be harvested.
+
 `CropPlot` states: `EMPTY → TILLED → GROWING → READY → TILLED` after harvest. Sprout and
 mid-stage textures swap automatically while growing.
 
@@ -70,7 +83,7 @@ mid-stage textures swap automatically while growing.
 | `plant_seed` | Plant a seed | — |
 | `harvest_crop` | Harvest a crop | — |
 | `sell_produce` | Sell produce | — |
-| `earn_100` | Reach 100 G before day 6 | Day 6 starts first |
+| `earn_100` | Reach a net worth of 100 G before day 6 | Day 6 starts first |
 
 A farmer with no seed, no produce, nothing in the ground and not enough money for the
 cheapest seed is *destitute* (`FarmMap.is_destitute()`): the objective points at the
@@ -251,8 +264,7 @@ map, menu, settings, save and UI-asset suites in `tests/unit/`.
 
 - One autosave slot managed by `SaveGame`. Plots and the farmer's position are part of the
   save (`FarmMap.save_world()`); the cyclone's position and the animals are not.
-- Buildings and slots bought at the market are recorded as owned assets only; they do not
-  appear in the world or unlock new plots yet.
+- Buildings bought at the market have an effect but no sprite in the world yet.
 - Animals are decorative; they do not produce eggs or milk and do not react to the player.
 - Fruit trees and field crops are visual only; only the 8 `CropPlot`s are harvestable.
 - The day-6 prosperity deadline is the only failure source on this map.

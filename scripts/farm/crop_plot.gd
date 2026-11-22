@@ -4,9 +4,17 @@ extends Node2D
 enum State { EMPTY, TILLED, GROWING, READY }
 
 const TILLED_TEXTURE := preload("res://sprites/farm_48x48/singles/Fences/Topsoil_48x48.png")
+## Assets bought at the market (`grant_id` of the offers in economy.tres).
+const FIELD_SLOT_ASSET := &"field_slot"
+const HOE_ASSET := &"hoe"
+## Soil worked with the hoe grows crops this much faster.
+const HOE_GROWTH_BONUS := 1.25
 
 @export var crop_type := "corn"
 @export var initial_state: State = State.EMPTY
+## Number of "Parcelle" slots the farmer must own before this plot can be
+## worked. 0 is part of the starting garden.
+@export var required_slots := 0
 
 var state: State = State.EMPTY
 var growth := 0.0
@@ -28,7 +36,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if state != State.GROWING:
 		return
-	growth += delta
+	growth += delta * growth_speed()
 	var total := float(GameState.CROPS[crop_type]["growth"])
 	if growth >= total:
 		state = State.READY
@@ -40,7 +48,19 @@ func _process(delta: float) -> void:
 		_shown_stage = stage
 		_sync_visual()
 
+## A plot beyond the starting garden stays fallow until its slot is bought.
+## A crop already in the ground can still be harvested if the slot was sold.
+func is_locked() -> bool:
+	return Economy.owned_count(FIELD_SLOT_ASSET) < required_slots
+
+
+func growth_speed() -> float:
+	return HOE_GROWTH_BONUS if Economy.owned_count(HOE_ASSET) > 0 else 1.0
+
+
 func get_interaction_prompt() -> String:
+	if is_locked() and state != State.GROWING and state != State.READY:
+		return "Terre en friche — achetez une parcelle au marché"
 	match state:
 		State.EMPTY:
 			return InputHints.prompt(&"interact", "Préparer la parcelle")
@@ -58,6 +78,10 @@ func get_interaction_prompt() -> String:
 	return ""
 
 func interact(_player: Node2D) -> void:
+	if is_locked() and state != State.READY:
+		if state != State.GROWING:
+			GameState.announce("Cette terre n'est pas à vous : achetez une parcelle au marché.")
+		return
 	match state:
 		State.EMPTY:
 			state = State.TILLED
@@ -113,6 +137,19 @@ func from_dict(data: Dictionary) -> void:
 	_shown_stage = -1
 	_ensure_textures()
 	_sync_visual()
+
+
+## Brings a ripe crop under cover instead of losing it: the produce is kept and
+## the plot is ready for the next seed. Used by the barn when a cyclone passes.
+func shelter_crop() -> bool:
+	if state != State.READY:
+		return false
+	GameState.add_produce(crop_type, 1)
+	state = State.TILLED
+	growth = 0.0
+	_shown_stage = -1
+	_sync_visual()
+	return true
 
 
 ## The cyclone only takes ripe crops; the plot keeps its tilled soil.

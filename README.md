@@ -31,7 +31,7 @@ Il doit aider les habitants et prendre de bonnes décisions.
 Chaque génération possède une liste de tâches. Une tâche peut être **réussie** ou **échouée** ; les échecs sont conservés dans le résultat de la génération, même si la tâche est retentée et réussie ensuite. La map est terminée lorsque toutes les tâches sont résolues : les échecs restants ne bloquent pas le passage, mais ils affaiblissent le résultat et l'épilogue.
 
 1. Survivre comme marron : nourriture, eau, cachette, traversée des patrouilles et refuge.
-2. Cultiver et vendre comme cultivateur : préparer, planter, récolter, vendre et atteindre 100 G avant le jour 6.
+2. Cultiver et vendre comme cultivateur : préparer, planter, récolter, vendre et réunir 100 G de patrimoine (argent et biens) avant le jour 6.
 3. Écouter, évaluer et décider comme héritier : habitants, zones fragiles, plan et vote du conseil.
 
 Sur la map 1, être repéré par une patrouille ou s'effondrer de faim ou de soif est un revers : les deux premiers réduisent l'argent de départ du cultivateur et pèsent sur le vote final. Les échecs de la map 2 réduisent l'héritage transmis à l'héritier. À la fin de la map 3, le plan choisi et le vote du conseil déterminent l'épilogue.

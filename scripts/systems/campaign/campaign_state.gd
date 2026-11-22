@@ -118,7 +118,7 @@ const TASKS := {
 		{
 			"id": "earn_100",
 			"label": "Faire prospérer la ferme",
-			"hint": "Atteignez 100 G avant le jour 6.",
+			"hint": "Réunissez 100 G, argent et biens compris, avant le jour 6.",
 			"target": 1,
 			"retryable": false,
 		},
@@ -523,8 +523,9 @@ func starting_money_for_map(map_id: int) -> int:
 ## Family heritage handed from the farm to the heir.
 func heritage_for_map3() -> int:
 	var failures := failure_events_for_map(2)
-	var money := int(GameState.money)
-	return maxi(0, int(floor(float(money) * (1.0 - 0.1 * float(failures)))))
+	# Buildings, land and tools are handed down with the purse.
+	var wealth := GameState.net_worth()
+	return maxi(0, int(floor(float(wealth) * (1.0 - 0.1 * float(failures)))))
 
 
 func next_map_label() -> String:

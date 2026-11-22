@@ -1230,9 +1230,11 @@ initial_state = 1
 
 [node name="Plot_34_35" parent="World" unique_id=474170283 instance=ExtResource("73_bhb0f")]
 position = Vector2(1656, 1728)
+required_slots = 1
 
 [node name="Plot_35_35" parent="World" unique_id=1265813908 instance=ExtResource("73_bhb0f")]
 position = Vector2(1704, 1728)
+required_slots = 2
 
 [node name="Plot_32_36" parent="World" unique_id=2110986644 instance=ExtResource("73_bhb0f")]
 position = Vector2(1560, 1776)
@@ -1244,9 +1246,11 @@ initial_state = 1
 
 [node name="Plot_34_36" parent="World" unique_id=438984053 instance=ExtResource("73_bhb0f")]
 position = Vector2(1656, 1776)
+required_slots = 1
 
 [node name="Plot_35_36" parent="World" unique_id=1425720331 instance=ExtResource("73_bhb0f")]
 position = Vector2(1704, 1776)
+required_slots = 2
 
 [node name="Cottage" parent="World" unique_id=1186044800 instance=ExtResource("3_cujnu")]
 position = Vector2(2640, 3024)

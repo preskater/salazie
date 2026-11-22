@@ -190,6 +190,17 @@ func owned_count(asset_id: StringName) -> int:
 	return count
 
 
+## What the owned assets of the current generation cost to buy. Money turned
+## into a barn is still wealth: prosperity goals and the heritage count it.
+func owned_value(currency_id: StringName = &"") -> int:
+	var total := 0
+	for entry: EconomyOffer in offers():
+		if currency_id != &"" and entry.currency_id != currency_id:
+			continue
+		total += owned_count(entry.asset_id()) * maxi(0, entry.price)
+	return total
+
+
 func can_buy(offer_id: StringName, quantity := 1) -> bool:
 	return _check_buy(offer_id, quantity) == &""
 
