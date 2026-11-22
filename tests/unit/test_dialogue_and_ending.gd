@@ -108,12 +108,13 @@ func test_a_line_never_pauses_the_game() -> void:
 	assert_int(box.process_mode).is_equal(Node.PROCESS_MODE_ALWAYS)
 
 
-func test_a_line_hides_itself_after_five_seconds() -> void:
+func test_a_line_hides_itself_after_its_reading_time() -> void:
 	var box := _spawn_dialogue()
 	box.show_line("Mamie Rose", "Bonjour.")
 	var timer := _timer(box)
 	assert_bool(timer.one_shot).is_true()
-	assert_float(timer.time_left).is_between(4.5, 5.0)
+	assert_float(timer.time_left).is_between(
+		DialogueBox.MIN_DURATION - 0.5, DialogueBox.MIN_DURATION)
 
 	timer.timeout.emit()
 
@@ -127,12 +128,13 @@ func test_a_new_line_replaces_the_previous_one_and_restarts_the_delay() -> void:
 	box.show_line("Mamie Rose", "Bonjour.")
 	var timer := _timer(box)
 	await get_tree().create_timer(0.3).timeout
-	assert_float(timer.time_left).is_less(4.9)
+	assert_float(timer.time_left).is_less(DialogueBox.MIN_DURATION - 0.1)
 
 	box.show_line("Le facteur", "Du courrier pour la mairie.")
 
 	assert_array(_labels(box)).contains_exactly(["Le facteur", "Du courrier pour la mairie."])
-	assert_float(timer.time_left).is_between(4.9, 5.0)
+	assert_float(timer.time_left).is_between(
+		DialogueBox.MIN_DURATION - 0.1, DialogueBox.MIN_DURATION)
 	assert_bool(box.visible).is_true()
 
 
@@ -311,3 +313,46 @@ func test_the_button_goes_back_to_the_main_menu() -> void:
 	assert_bool(SceneRouter.is_gameplay).is_false()
 	# The campaign is over: leaving the epilogue writes no save.
 	assert_bool(FileAccess.file_exists(TEST_SAVE_PATH)).is_false()
+
+
+# --- #44 -----------------------------------------------------------------------
+
+func _action(action: StringName) -> InputEventAction:
+	var event := InputEventAction.new()
+	event.action = action
+	event.pressed = true
+	return event
+
+
+func test_a_long_line_stays_longer_than_a_short_one() -> void:
+	var box := _spawn_dialogue()
+	var long_text := "La rivière ronge la berge. Sans végétation, le sol part avec chaque crue, " \
+		+ "et les maisons du bas se rapprochent de l'eau d'année en année."
+
+	assert_float(box.reading_time("Bonjour.")).is_equal(DialogueBox.MIN_DURATION)
+	assert_float(box.reading_time(long_text)).is_equal_approx(
+		long_text.length() * DialogueBox.SECONDS_PER_CHARACTER, 0.001)
+	assert_float(box.reading_time(long_text)).is_greater(7.0)
+	assert_float(box.reading_time(long_text.repeat(10))).is_equal(DialogueBox.MAX_DURATION)
+
+
+func test_interact_or_accept_dismisses_the_line() -> void:
+	var box := _spawn_dialogue()
+	var closes: Array[bool] = []
+	box.closed.connect(func() -> void: closes.append(true))
+
+	box.show_line("Mamie Rose", "Bonjour.")
+	box._unhandled_input(_action(&"move_left"))
+	assert_bool(box.visible).is_true()
+	box._unhandled_input(_action(&"interact"))
+	assert_bool(box.visible).is_false()
+
+	box.show_line("Mamie Rose", "Encore vous ?")
+	box._unhandled_input(_action(&"ui_accept"))
+	assert_bool(box.visible).is_false()
+	assert_int(closes.size()).is_equal(2)
+
+	# Nothing to dismiss: the press is left for whoever needs it.
+	box._unhandled_input(_action(&"interact"))
+	box.hide_line()
+	assert_int(closes.size()).is_equal(2)

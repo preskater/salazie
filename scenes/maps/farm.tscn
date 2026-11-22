@@ -1285,7 +1285,7 @@ position = Vector2(1992, 2976)
 [node name="NPCSeller" parent="World" unique_id=797403996 instance=ExtResource("79_mq0d2")]
 position = Vector2(1992, 2736)
 speaker = "Marchande"
-lines = PackedStringArray("Le maïs se vend bien aujourd\'hui. Regardez les prix avant de planter !", "Chaque jour apporte son prix. Cultivez ce que le marché réclame.", "Vos récoltes se vendent au comptoir. Revenez quand le panier est plein.")
+lines = PackedStringArray("Regardez les prix avant de planter : ils changent chaque matin.", "Chaque jour apporte son prix. Cultivez ce que le marché réclame.", "Vos récoltes se vendent au comptoir. Revenez quand le panier est plein.")
 tint = Color(0.78, 0.88, 1, 1)
 
 [node name="NPCVillager" parent="World" unique_id=915935137 instance=ExtResource("79_mq0d2")]

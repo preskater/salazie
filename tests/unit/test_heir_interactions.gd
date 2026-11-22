@@ -412,8 +412,10 @@ func test_a_rejected_plan_still_leads_to_the_epilogue() -> void:
 	assert_str(result.get_title_text()).is_equal("Map 3 — L'héritier")
 	assert_str((result.find_child("Subtitle", true, false) as Label).text).starts_with(
 		"Génération difficile")
-	assert_str((result.find_child("Footer", true, false) as Label).text).starts_with(
-		"Épilogue de Salazie\nHéritage familial : 100 G · Soutien du conseil : ")
+	assert_str((result.find_child("Footer", true, false) as Label).text).is_equal(
+		"Le conseil refuse votre plan : le village se divisera, mais la vallée continuera."
+		+ "\nHéritage familial : 100 G · Soutien du conseil : %d / %d" % [
+			Campaign.SUPPORT_START, Campaign.SUPPORT_NEEDED])
 	assert_str(Campaign.task_last_failure("become_mayor")).is_equal(
 		"Le conseil a rejeté votre plan (soutien %d/%d)" % [
 			Campaign.SUPPORT_START, Campaign.SUPPORT_NEEDED])
@@ -440,7 +442,8 @@ func test_an_adopted_plan_leads_to_the_epilogue_as_mayor() -> void:
 	Campaign.set_choice("funded_foret", "1")
 
 	hall.call("interact", map.get_node("World/Player"))
-	assert_str((map.get_node("DialogueBox") as DialogueBox).get_text()).contains("adopté")
+	assert_str(((map.get_node("GenerationResult") as GenerationResult).get("_footer") as Label).text) \
+		.contains("adopte")
 	assert_str((result.find_child("Subtitle", true, false) as Label).text).starts_with(
 		"Génération accomplie")
 	(result.find_child("ContinueButton", true, false) as Button).pressed.emit()

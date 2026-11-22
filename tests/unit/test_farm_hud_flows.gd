@@ -506,3 +506,27 @@ func test_a_market_without_property_offers_only_lists_the_crops() -> void:
 	assert_int(hud.sell_rows.get_child_count()).is_equal(GameState.CROP_ORDER.size())
 	assert_int(hud.buy_rows.get_child_count()).is_equal(GameState.CROP_ORDER.size())
 	assert_bool(_button(hud, "Buy_corn").disabled).is_false()
+
+
+func test_messages_arriving_together_are_each_shown() -> void:
+	# Regression (#40): on day 6 the new prices, the missed deadline and the
+	# cyclone were announced in one frame and only the last was ever seen.
+	var hud := await _spawn_hud()
+	var label: Label = hud.notification_label
+	var timer: Timer = hud.get_node("NotificationTimer")
+
+	hud.notify("Jour 6 — les prix changent")
+	hud.notify("Le délai du marché est passé")
+	hud.notify("Le cyclone traverse la ferme !")
+
+	assert_str(label.text).is_equal("Jour 6 — les prix changent")
+	assert_float(timer.time_left).is_less_equal(FarmHUD.MIN_NOTIFICATION_TIME)
+	timer.timeout.emit()
+	assert_str(label.text).is_equal("Le délai du marché est passé")
+	assert_bool(label.visible).is_true()
+	timer.timeout.emit()
+	assert_str(label.text).is_equal("Le cyclone traverse la ferme !")
+	# The last one keeps the full time.
+	assert_float(timer.time_left).is_greater(FarmHUD.MIN_NOTIFICATION_TIME)
+	timer.timeout.emit()
+	assert_bool(label.visible).is_false()

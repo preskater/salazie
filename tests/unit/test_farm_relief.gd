@@ -187,3 +187,46 @@ func test_shoulder_buttons_walk_through_the_seeds() -> void:
 	assert_str(GameState.selected_seed).is_equal(GameState.CROP_ORDER[-1])
 	map._unhandled_input(next)
 	assert_str(GameState.selected_seed).is_equal(GameState.CROP_ORDER[0])
+
+
+func test_villagers_say_their_lines_in_order() -> void:
+	# Regression (#44): lines were drawn at random, so one could be heard twice
+	# while another never came up.
+	var map := await _spawn_farm()
+	var villager: FarmNPC = map.get_node("World/NPCVillager")
+	var heard: Array[String] = []
+	for index: int in villager.lines.size() * 2:
+		heard.append(villager.next_line())
+
+	assert_array(heard.slice(0, villager.lines.size())).is_equal(Array(villager.lines))
+	assert_array(heard.slice(villager.lines.size())).is_equal(Array(villager.lines))
+
+
+func test_a_villager_with_nothing_to_say_still_greets() -> void:
+	var map := await _spawn_farm()
+	var villager: FarmNPC = map.get_node("World/NPCVillager")
+	villager.lines = PackedStringArray()
+
+	assert_str(villager.next_line()).is_equal("Bienvenue à Salazie.")
+
+
+func test_the_seller_talks_about_todays_prices() -> void:
+	var map := await _spawn_farm()
+	var seller: FarmNPC = map.get_node("World/NPCSeller")
+	for crop: String in GameState.CROP_ORDER:
+		GameState.prices[crop] = int(GameState.CROPS[crop]["base_price"])
+	GameState.prices["tomato"] = int(GameState.CROPS["tomato"]["base_price"]) + 4
+
+	var first := seller.next_line()
+
+	assert_str(first).contains("tomate")
+	assert_str(first).contains("%d" % int(GameState.prices["tomato"]))
+	assert_str(seller.next_line()).is_equal(seller.lines[0])
+
+	# A bad day for every crop is said as such.
+	for crop: String in GameState.CROP_ORDER:
+		GameState.prices[crop] = maxi(1, int(GameState.CROPS[crop]["base_price"]) - 3)
+	assert_str(map.market_tip()).contains("bas")
+	GameState.prices.clear()
+	assert_str(map.market_tip()).is_empty()
+	GameState.reset()

@@ -1,7 +1,14 @@
 class_name DialogueBox
 extends CanvasLayer
-## Lightweight NPC dialogue panel used by Map 3. It never pauses the game and
-## hides itself after a short delay.
+## Lightweight NPC dialogue panel used by Map 3. It never pauses the game. A
+## line stays long enough to be read (the delay grows with its length) and can
+## be dismissed at once with `interact` or `ui_accept`.
+
+signal closed()
+
+const MIN_DURATION := 3.0
+const SECONDS_PER_CHARACTER := 0.06
+const MAX_DURATION := 14.0
 
 const THEME := preload("res://themes/salazie/salazie_theme.tres")
 const TEXT_DARK := Color(0.22, 0.14, 0.08)
@@ -23,11 +30,30 @@ func show_line(speaker: String, text: String) -> void:
 	_speaker.text = speaker
 	_text.text = text
 	show()
-	_timer.start(5.0)
+	_timer.start(reading_time(text))
+
+
+## How long a line stays without input: about 16 characters a second, which is
+## a comfortable reading pace, within sensible bounds.
+func reading_time(text: String) -> float:
+	return clampf(text.length() * SECONDS_PER_CHARACTER, MIN_DURATION, MAX_DURATION)
 
 
 func hide_line() -> void:
+	if not visible:
+		return
+	_timer.stop()
 	hide()
+	closed.emit()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not visible:
+		return
+	if event.is_action_pressed(&"interact") or event.is_action_pressed(&"ui_accept"):
+		hide_line()
+		# The same press must not also talk to whoever stands in front.
+		get_viewport().set_input_as_handled()
 
 
 func get_text() -> String:

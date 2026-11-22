@@ -35,6 +35,9 @@ const NEGATIVE := Color(0.62, 0.14, 0.1)
 const SLOT_SCENE := preload("res://scenes/farm/ui/item_slot.tscn")
 
 var _price_labels := {}
+const NOTIFICATION_TIME := 3.5
+const MIN_NOTIFICATION_TIME := 1.6
+
 var _sell_buttons := {}
 var _buy_buttons := {}
 var _extra_offers: Array[EconomyOffer] = []
@@ -44,6 +47,7 @@ var _seed_slots := {}
 var _produce_slots := {}
 var _icons := {}
 var _prompt_text := ""
+var _pending_notifications: Array[String] = []
 var _market_open := false
 var _inventory_open := false
 
@@ -94,10 +98,24 @@ func set_prompt(text: String) -> void:
 func set_objective(text: String) -> void:
 	objective_label.text = text
 
+## Shows a message. When several arrive together (day 6 brings the new prices,
+## the missed deadline and the cyclone in one frame) each one gets
+## `MIN_NOTIFICATION_TIME` on screen instead of only the last being seen.
 func notify(text: String) -> void:
+	var timer: Timer = $NotificationTimer
+	if notification_label.visible and not timer.is_stopped():
+		_pending_notifications.append(text)
+		var shown_for := timer.wait_time - timer.time_left
+		timer.start(maxf(0.05, MIN_NOTIFICATION_TIME - shown_for))
+		return
+	_show_notification(text)
+
+
+func _show_notification(text: String) -> void:
 	notification_label.text = text
 	notification_label.visible = true
-	$NotificationTimer.start()
+	$NotificationTimer.start(MIN_NOTIFICATION_TIME if not _pending_notifications.is_empty()
+		else NOTIFICATION_TIME)
 
 func show_dialogue(speaker: String, text: String) -> void:
 	dialogue_speaker.text = speaker
@@ -174,6 +192,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 func _hide_notification() -> void:
+	if not _pending_notifications.is_empty():
+		_show_notification(_pending_notifications.pop_front())
+		return
 	notification_label.visible = false
 
 func _hide_dialogue() -> void:

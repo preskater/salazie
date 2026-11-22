@@ -412,22 +412,26 @@ func _on_town_hall_requested() -> void:
 		return
 	_council_done = true
 	var support := Campaign.mayor_support()
+	var verdict := ""
 	if Campaign.has_mayor_support():
 		Campaign.complete_task("become_mayor")
-		_dialogue.show_line("Le conseil", "Votre plan est adopté. Salazie vous confie son avenir.")
+		verdict = "Le conseil adopte votre plan : Salazie vous confie son avenir."
 	else:
 		Campaign.fail_task("become_mayor", "Le conseil a rejeté votre plan (soutien %d/%d)"
 			% [support, Campaign.SUPPORT_NEEDED])
-		_dialogue.show_line("Le conseil", "Votre plan est refusé. Le village se divisera, mais la vallée continuera.")
-	await _show_result_and_end(support)
+		verdict = "Le conseil refuse votre plan : le village se divisera, mais la vallée continuera."
+	_dialogue.hide_line()
+	await _show_result_and_end(support, verdict)
 
 
 ## `support` is the score the council voted on. Reading it again here would
 ## count the rejection itself as one more failure and show a lower number.
-func _show_result_and_end(support: int) -> void:
+func _show_result_and_end(support: int, verdict: String) -> void:
 	var overlay := get_tree().get_first_node_in_group("generation_result") as GenerationResult
 	if overlay != null:
-		overlay.show_result(Campaign.map_summary(), "Épilogue de Salazie",
+		# The verdict heads the report: as a dialogue line it was covered by this
+		# very panel before anyone could read it.
+		overlay.show_result(Campaign.map_summary(), verdict,
 			"Héritage familial : %d G · Soutien du conseil : %d / %d" % [
 				Campaign.heritage, support, Campaign.SUPPORT_NEEDED])
 		await overlay.confirmed

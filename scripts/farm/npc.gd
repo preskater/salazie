@@ -15,6 +15,11 @@ signal dialogue_requested(speaker: String, text: String)
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 
 var player: Node2D
+## Optional line built at the moment of talking (today's market tip). It takes
+## its turn among `lines`; an empty result is skipped.
+var line_provider := Callable()
+
+var _next_line := 0
 
 var _home := Vector2.ZERO
 var _target := Vector2.ZERO
@@ -72,10 +77,24 @@ func get_interaction_prompt() -> String:
 	return InputHints.prompt(&"interact", "Parler à %s" % speaker)
 
 func interact(_player: Node2D) -> void:
-	var text := "Bienvenue à Salazie."
-	if not lines.is_empty():
-		text = lines[randi() % lines.size()]
-	dialogue_requested.emit(speaker, text)
+	dialogue_requested.emit(speaker, next_line())
+
+
+## Lines come in order and loop, so talking twice never repeats one while
+## another was never heard.
+func next_line() -> String:
+	var pool: Array[String] = []
+	if line_provider.is_valid():
+		var live := String(line_provider.call())
+		if not live.is_empty():
+			pool.append(live)
+	for line: String in lines:
+		pool.append(line)
+	if pool.is_empty():
+		return "Bienvenue à Salazie."
+	var text := pool[_next_line % pool.size()]
+	_next_line += 1
+	return text
 
 func _face_towards(v: Vector2) -> void:
 	if absf(v.x) >= absf(v.y):

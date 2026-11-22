@@ -78,6 +78,7 @@ func _ready() -> void:
 	if seller != null:
 		# Connected after the HUD so the relief line replaces the usual one.
 		seller.dialogue_requested.connect(_on_seller_talked)
+		seller.line_provider = market_tip
 	# Deferred: planting spends the seed before the plot starts growing, and the
 	# farmer must not look ruined in between.
 	GameState.inventory_changed.connect(_check_relief, CONNECT_DEFERRED)
@@ -421,6 +422,27 @@ func _check_relief() -> void:
 	_relief_announced = true
 	GameState.announce("Plus rien à planter ni à vendre : allez voir la Marchande.")
 	_refresh_objective()
+
+
+## What the seller says about today's prices: the crop that pays best compared
+## with its usual price.
+func market_tip() -> String:
+	var best := ""
+	var best_ratio := 0.0
+	for crop: String in GameState.CROP_ORDER:
+		if not GameState.prices.has(crop):
+			continue
+		var ratio := float(GameState.prices[crop]) / float(GameState.CROPS[crop]["base_price"])
+		if ratio > best_ratio:
+			best_ratio = ratio
+			best = crop
+	if best.is_empty():
+		return ""
+	var label := String(GameState.CROPS[best]["label"]).to_lower()
+	var price := GameState.format_money(int(GameState.prices[best]))
+	if best_ratio >= 1.0:
+		return "Aujourd'hui, c'est le %s qui se vend le mieux : %s pièce." % [label, price]
+	return "Les prix sont bas aujourd'hui. Le %s tient encore le mieux : %s pièce." % [label, price]
 
 
 func _on_seller_talked(speaker: String, _text: String) -> void:
