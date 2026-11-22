@@ -32,9 +32,9 @@ Chaque génération possède une liste de tâches. Une tâche peut être **réus
 
 1. Survivre comme marron : nourriture, eau, cachette, traversée des patrouilles et refuge.
 2. Cultiver et vendre comme cultivateur : préparer, planter, récolter, vendre et réunir 100 G de patrimoine (argent et biens) avant le jour 6.
-3. Écouter, évaluer et décider comme héritier : habitants, zones fragiles, plan et vote du conseil.
+3. Écouter, évaluer, financer et décider comme héritier : habitants, zones fragiles, plan et vote du conseil.
 
-Sur la map 1, être repéré par une patrouille ou s'effondrer de faim ou de soif est un revers : les deux premiers réduisent l'argent de départ du cultivateur et pèsent sur le vote final. Les échecs de la map 2 réduisent l'héritage transmis à l'héritier. À la fin de la map 3, le plan choisi et le vote du conseil déterminent l'épilogue.
+Sur la map 1, être repéré par une patrouille ou s'effondrer de faim ou de soif est un revers : les deux premiers réduisent l'argent de départ du cultivateur et pèsent sur le vote final. Les échecs de la map 2 réduisent l'héritage transmis à l'héritier. Sur la map 3, l'héritage devient le budget de l'héritier : financer les zones fragiles, écouter tous les habitants et parcourir le village rapportent des voix au conseil. Il en faut six ; la famille en apporte cinq, moins une par échec des trois générations. Le plan choisi et le vote déterminent l'épilogue.
 
 La liste des tâches est visible en permanence en haut de l'écran. **T** ou **Select/Back** ouvre le détail, avec les tâches réussies, échouées et les raisons des échecs.
 

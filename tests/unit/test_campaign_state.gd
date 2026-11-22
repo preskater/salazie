@@ -97,16 +97,90 @@ func test_map_two_failures_reduce_the_heritage() -> void:
 	assert_int(Campaign.heritage_for_map3()).is_equal(90)
 
 
-func test_mayor_support_drops_with_failures() -> void:
-	assert_int(Campaign.mayor_support()).is_equal(6)
-	assert_bool(Campaign.has_mayor_support()).is_true()
+func test_inherited_support_drops_with_failures() -> void:
+	assert_int(Campaign.mayor_support()).is_equal(Campaign.SUPPORT_START)
 
 	var failures: Array[String] = ["find_food", "find_water", "reach_refuge"]
 	for i in failures.size():
 		Campaign.fail_task(failures[i], "Échec %d" % i, 1)
 
-	assert_int(Campaign.mayor_support()).is_equal(3)
+	assert_int(Campaign.mayor_support()).is_equal(Campaign.SUPPORT_START - 3)
+	assert_int(int(Campaign.support_breakdown()["inherited"])).is_equal(2)
+
+	Campaign.fail_task("earn_100", "a", 2)
+	Campaign.record_setback("b", 2)
+	Campaign.record_setback("c", 2)
+	assert_int(int(Campaign.support_breakdown()["inherited"])).is_equal(0)
+
+
+func test_a_flawless_family_still_has_to_act_in_the_village() -> void:
+	# Regression (#26): the vote was decided before Map 3 loaded.
 	assert_bool(Campaign.has_mayor_support()).is_false()
+
+	Campaign.set_choice("funded_foret", "1")
+
+	assert_int(Campaign.mayor_support()).is_equal(Campaign.SUPPORT_NEEDED)
+	assert_bool(Campaign.has_mayor_support()).is_true()
+
+
+func test_every_village_action_is_one_voice() -> void:
+	for site_id: String in Campaign.FRAGILE_SITES:
+		Campaign.set_choice("funded_" + site_id, "1")
+	assert_int(int(Campaign.support_breakdown()["sites"])).is_equal(3)
+
+	for index: int in Campaign.RESIDENT_COUNT - 1:
+		Campaign.set_choice("listened_%d" % index, "1")
+	assert_int(Campaign.residents_heard()).is_equal(4)
+	assert_int(int(Campaign.support_breakdown()["residents"])).is_equal(0)
+	Campaign.set_choice("listened_last", "1")
+	assert_int(int(Campaign.support_breakdown()["residents"])).is_equal(1)
+
+	Campaign.set_choice("visited_belvedere", "1")
+	assert_int(int(Campaign.support_breakdown()["landmarks"])).is_equal(0)
+	Campaign.set_choice("visited_jardin", "1")
+	assert_int(int(Campaign.support_breakdown()["landmarks"])).is_equal(1)
+
+	var breakdown := Campaign.support_breakdown()
+	assert_int(int(breakdown["total"])).is_equal(Campaign.SUPPORT_START + 5)
+	assert_int(int(breakdown["needed"])).is_equal(Campaign.SUPPORT_NEEDED)
+
+
+func test_a_plan_is_coherent_with_what_the_heir_did() -> void:
+	assert_bool(Campaign.plan_is_coherent()).is_false()
+
+	Campaign.set_choice("map3_plan", "forest")
+	assert_bool(Campaign.plan_is_coherent()).is_false()
+	Campaign.set_choice("funded_berge", "1")
+	assert_bool(Campaign.plan_is_coherent()).is_true()
+	assert_int(int(Campaign.support_breakdown()["coherence"])).is_equal(1)
+
+	Campaign.set_choice("map3_plan", "farms")
+	assert_bool(Campaign.plan_is_coherent()).is_false()
+	Campaign.set_choice("funded_marche", "1")
+	assert_bool(Campaign.plan_is_coherent()).is_true()
+
+	Campaign.set_choice("map3_plan", "tourism")
+	assert_bool(Campaign.plan_is_coherent()).is_false()
+	Campaign.set_choice("visited_belvedere", "1")
+	Campaign.set_choice("visited_jardin", "1")
+	assert_bool(Campaign.plan_is_coherent()).is_true()
+
+	Campaign.set_choice("map3_plan", "casino")
+	assert_bool(Campaign.plan_is_coherent()).is_false()
+
+
+func test_a_hard_family_history_can_still_be_won_back() -> void:
+	Campaign.record_setback("a", 1)
+	Campaign.record_setback("b", 1)
+	Campaign.fail_task("earn_100", "Le délai est passé", 2)
+	assert_int(Campaign.mayor_support()).is_equal(2)
+
+	Campaign.set_choice("map3_plan", "forest")
+	for site_id: String in Campaign.FRAGILE_SITES:
+		Campaign.set_choice("funded_" + site_id, "1")
+
+	assert_int(Campaign.mayor_support()).is_equal(6)
+	assert_bool(Campaign.has_mayor_support()).is_true()
 
 
 func test_round_trip_keeps_tasks_failures_and_results() -> void:
@@ -189,8 +263,7 @@ func test_setbacks_weigh_on_the_generation_but_are_capped() -> void:
 	assert_int(Campaign.setbacks_for_map(1)).is_equal(6)
 	assert_int(Campaign.failure_events_for_map(1)).is_equal(Campaign.SETBACK_CAP)
 	assert_int(Campaign.starting_money_for_map(2)).is_equal(20)
-	assert_int(Campaign.mayor_support()).is_equal(4)
-	assert_bool(Campaign.has_mayor_support()).is_true()
+	assert_int(Campaign.mayor_support()).is_equal(Campaign.SUPPORT_START - Campaign.SETBACK_CAP)
 
 
 func test_setback_announces_itself_and_defaults_to_the_current_map() -> void:
@@ -225,7 +298,9 @@ func test_setbacks_across_generations_can_cost_the_election() -> void:
 	Campaign.fail_task("earn_100", "Le délai est passé", 2)
 
 	assert_int(Campaign.total_failure_events()).is_equal(3)
-	assert_int(Campaign.mayor_support()).is_equal(3)
+	assert_int(Campaign.mayor_support()).is_equal(2)
+	# One funded site is no longer enough for this family.
+	Campaign.set_choice("funded_foret", "1")
 	assert_bool(Campaign.has_mayor_support()).is_false()
 
 

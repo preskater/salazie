@@ -7,6 +7,13 @@ extends Node2D
 signal ride_finished
 
 const MAP_SIZE := Vector2(3456.0, 2496.0)
+const ECONOMY_GENERATION := &"heritier"
+const EURO := &"euro"
+const GREEN_CREDIT := &"credit_vert"
+## Green credits are the residents' trust: listening and walking the village
+## earn them, and they pay for what money cannot buy.
+const CREDITS_PER_RESIDENT := 4
+const CREDITS_PER_LANDMARK := 3
 const SHUTTLE_LANE_X := 1752.0
 const SHUTTLE_SCENE := preload("res://scenes/heir/shuttle.tscn")
 const PLAYER_SCENE := preload("res://scenes/player/player.tscn")
@@ -27,6 +34,22 @@ var _target: Node = null
 var _shuttle: Node2D
 var _shuttle_active := false
 var _council_done := false
+var _budget_label: Label
+var _support_label: Label
+
+
+## The farm's gourdes become the heir's euros, once: a save made in the village
+## already holds the heir's wallets and must not be reset.
+func _enter_tree() -> void:
+	if not Economy.has_generation(ECONOMY_GENERATION) \
+			or Economy.current_generation_id() == ECONOMY_GENERATION:
+		return
+	# Read while the farm's economy is still selected.
+	if Campaign.heritage <= 0:
+		Campaign.heritage = Campaign.heritage_for_map3()
+	Economy.select_generation(ECONOMY_GENERATION)
+	Economy.set_balance(EURO, Campaign.heritage)
+	Economy.set_balance(GREEN_CREDIT, 0)
 
 
 func _ready() -> void:
@@ -37,7 +60,6 @@ func _ready() -> void:
 	GameState.farm_active = false
 	Campaign.ensure_map(3)
 	Campaign.current_map = 3
-	Campaign.heritage = Campaign.heritage_for_map3() if Campaign.heritage <= 0 else Campaign.heritage
 	DayNightCycle.nights_required_for_next_map = 0
 	DayNightCycle.running = true
 	DayNightCycle.tint_enabled = true
@@ -94,6 +116,9 @@ func _connect_world() -> void:
 			npc.player = _player
 	for node: Node in get_tree().get_nodes_in_group("fragile_sites"):
 		node.inspected.connect(_on_site_inspected)
+		node.funding_requested.connect(_on_site_funding_requested.bind(node))
+	Economy.balance_changed.connect(_refresh_status.unbind(2))
+	Campaign.choices_changed.connect(_refresh_status)
 	for node: Node in get_tree().get_nodes_in_group("decision_points"):
 		node.requested.connect(_on_decision_requested)
 	for node: Node in get_tree().get_nodes_in_group("town_halls"):
@@ -124,15 +149,14 @@ func _add_ui() -> void:
 	overlay.layer = 5
 	add_child(overlay)
 
-	var heritage := Label.new()
-	heritage.name = "HeritageLabel"
+	var heritage := _status_label("HeritageLabel", Vector2(22, 18), 20)
 	heritage.text = "Héritage familial : %d G" % Campaign.heritage
-	heritage.position = Vector2(22, 18)
-	heritage.add_theme_color_override("font_color", Color(0.95, 0.90, 0.78))
-	heritage.add_theme_color_override("font_outline_color", Color(0.08, 0.06, 0.04))
-	heritage.add_theme_constant_override("outline_size", 6)
-	heritage.add_theme_font_size_override("font_size", 20)
 	overlay.add_child(heritage)
+	_budget_label = _status_label("BudgetLabel", Vector2(22, 46), 17)
+	overlay.add_child(_budget_label)
+	_support_label = _status_label("SupportLabel", Vector2(22, 70), 17)
+	overlay.add_child(_support_label)
+	_refresh_status()
 
 	_hint_label = Label.new()
 	_hint_label.name = "HintLabel"
@@ -169,6 +193,27 @@ func _add_ui() -> void:
 
 	get_viewport().size_changed.connect(_layout_hud)
 	_layout_hud()
+
+
+func _status_label(label_name: String, at: Vector2, font_size: int) -> Label:
+	var label := Label.new()
+	label.name = label_name
+	label.position = at
+	label.add_theme_color_override("font_color", Color(0.95, 0.90, 0.78))
+	label.add_theme_color_override("font_outline_color", Color(0.08, 0.06, 0.04))
+	label.add_theme_constant_override("outline_size", 6)
+	label.add_theme_font_size_override("font_size", font_size)
+	return label
+
+
+## Budget left and where the council stands, always on screen.
+func _refresh_status() -> void:
+	if _budget_label == null:
+		return
+	_budget_label.text = "Budget : %s" % GameState.format_wallets()
+	var support := Campaign.support_breakdown()
+	_support_label.text = "Soutien du conseil : %d / %d" % [
+		int(support["total"]), int(support["needed"])]
 
 
 func _controls_hint() -> String:
@@ -230,7 +275,10 @@ func _on_npc_dialogue(speaker: String, text: String, npc_id: String) -> void:
 	if Campaign.get_choice("listened_" + npc_id) != "1":
 		Campaign.set_choice("listened_" + npc_id, "1")
 		Campaign.add_task_progress("listen", 1)
-		_notify("Vous écoutez %s (%d/3)." % [speaker, Campaign.task_progress("listen")])
+		Economy.add_currency(GREEN_CREDIT, CREDITS_PER_RESIDENT)
+		_notify("Vous écoutez %s (%d/%d) : +%s." % [
+			speaker, Campaign.residents_heard(), Campaign.RESIDENT_COUNT,
+			Economy.format_amount(GREEN_CREDIT, CREDITS_PER_RESIDENT)])
 
 
 func _on_site_inspected(site_id: String, title: String, description: String) -> void:
@@ -245,7 +293,26 @@ func _on_landmark_inspected(title: String, text: String, landmark_id: String) ->
 	_dialogue.show_line(String(title).capitalize(), text)
 	if Campaign.get_choice("visited_" + landmark_id) != "1":
 		Campaign.set_choice("visited_" + landmark_id, "1")
-		_notify("Lieu découvert : %s." % String(title).capitalize())
+		Economy.add_currency(GREEN_CREDIT, CREDITS_PER_LANDMARK)
+		_notify("Lieu découvert : %s : +%s." % [String(title).capitalize(),
+			Economy.format_amount(GREEN_CREDIT, CREDITS_PER_LANDMARK)])
+
+
+## The heir pays for the protection of an inspected site. Each funded site is
+## one more voice at the council.
+func _on_site_funding_requested(site_id: String, offer_id: StringName, site: Node) -> void:
+	var offer := Economy.offer(offer_id)
+	if offer == null:
+		return
+	if not Economy.buy(offer_id):
+		var missing := offer.price - Economy.balance(offer.currency_id)
+		_notify("%s : il manque %s." % [offer.label,
+			Economy.format_amount(offer.currency_id, maxi(missing, 0))])
+		return
+	Campaign.set_choice("funded_" + site_id, "1")
+	_dialogue.show_line(String(site.get("title")),
+		"%s est financé. Les habitants s'en souviendront au conseil." % offer.label)
+	_notify("Site protégé : %s." % String(site.get("title")))
 
 
 func _on_ride_requested(stop_id: String, destination: Vector2, stop: Node2D) -> void:
@@ -349,8 +416,8 @@ func _on_town_hall_requested() -> void:
 		Campaign.complete_task("become_mayor")
 		_dialogue.show_line("Le conseil", "Votre plan est adopté. Salazie vous confie son avenir.")
 	else:
-		Campaign.fail_task("become_mayor",
-			"Le conseil a rejeté votre plan (soutien %d/6)" % support)
+		Campaign.fail_task("become_mayor", "Le conseil a rejeté votre plan (soutien %d/%d)"
+			% [support, Campaign.SUPPORT_NEEDED])
 		_dialogue.show_line("Le conseil", "Votre plan est refusé. Le village se divisera, mais la vallée continuera.")
 	await _show_result_and_end()
 
@@ -359,7 +426,8 @@ func _show_result_and_end() -> void:
 	var overlay := get_tree().get_first_node_in_group("generation_result") as GenerationResult
 	if overlay != null:
 		overlay.show_result(Campaign.map_summary(), "Épilogue de Salazie",
-			"Héritage familial : %d G" % Campaign.heritage)
+			"Héritage familial : %d G · Soutien du conseil : %d / %d" % [
+				Campaign.heritage, Campaign.mayor_support(), Campaign.SUPPORT_NEEDED])
 		await overlay.confirmed
 	await SceneRouter.go_to_ending()
 
