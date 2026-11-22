@@ -145,12 +145,23 @@ jobs:
       - name: Import project
         run: godot --headless --import
 
-      - name: Smoke test main scene
-        run: timeout 60s godot --headless --quit-after 5 --audio-driver Dummy
+      # Godot exits 0 after a script error: the script scans every log.
+      - name: Smoke test every reachable scene
+        run: GODOT_BIN=godot bash tools/ci/smoke.sh
+
+      - name: Upload smoke logs
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: smoke-logs
+          path: reports/smoke/
+          if-no-files-found: ignore
+          retention-days: 7
 
   build:
     name: Export ${{ matrix.name }}
-    needs: prepare
+    # No build artifact for a commit whose tests fail.
+    needs: [prepare, test]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:

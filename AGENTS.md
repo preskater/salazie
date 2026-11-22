@@ -108,8 +108,8 @@ On Linux/CI, `godot` is on `PATH`.
 # Import after a fresh checkout
 "$GODOT_BIN" --headless --import
 
-# Headless smoke run
-"$GODOT_BIN" --headless --quit-after 5 --audio-driver Dummy
+# Headless smoke run of every reachable scene, with a log scan
+GODOT_BIN="$GODOT_BIN" bash tools/ci/smoke.sh
 
 # Export (verify each output exists)
 "$GODOT_BIN" --headless --export-release "Linux" export/linux/salazie.x86_64
@@ -213,8 +213,9 @@ Workflow: `.github/workflows/godot-ci.yml`
 - `test`: gdUnit4 on Ubuntu, report uploaded.
 - `coverage`: instruments a copy of the project, reruns gdUnit4 on it, publishes the
   per-script table and fails below `COVERAGE_MIN`.
-- `prepare`: imports the project once and runs the smoke test, then saves the `.godot` cache.
-- `build`: matrix over Linux, Windows, macOS and Web; each job restores the import cache, exports one platform, and uploads a `salazie-<platform>` artifact.
+- `prepare`: imports the project once and runs `tools/ci/smoke.sh` (boot scene, the three maps,
+  the ending and the sandbox, each log scanned for errors), then saves the `.godot` cache.
+- `build`: matrix over Linux, Windows, macOS and Web; each job restores the import cache, exports one platform, and uploads a `salazie-<platform>` artifact. It needs `prepare` and `test`.
 
 macOS uses the **universal** template and requires `rendering/textures/vram_compression/import_etc2_astc=true`. Do not switch the preset back to `x86_64`: Godot issue #121170 makes single-architecture macOS export fail with `Requested template binary "godot_macos_release.x86_64" not found`.
 
